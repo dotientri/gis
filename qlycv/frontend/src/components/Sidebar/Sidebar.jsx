@@ -34,41 +34,45 @@ export default function Sidebar() {
             </NavLink>
           </li>
 
-          <li className="nav-item">
-            <NavLink to="/dashboard" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-              Bảng Điều Khiển
-            </NavLink>
-          </li>
-          
-          <li className="nav-item">
-            <NavLink to="/parks" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-              Bản Đồ Công Viên
-            </NavLink>
-          </li>
+          {user && (
+            <>
+              <li className="nav-item">
+                <NavLink to="/dashboard" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+                  Bảng Điều Khiển
+                </NavLink>
+              </li>
+              
+              <li className="nav-item">
+                <NavLink to="/parks" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+                  Bản Đồ Công Viên
+                </NavLink>
+              </li>
 
-          <li className="nav-item">
-            <NavLink to="/parks-list" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-              Quản Lý Công Viên
-            </NavLink>
-          </li>
+              <li className="nav-item">
+                <NavLink to="/parks-list" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+                  Quản Lý Công Viên
+                </NavLink>
+              </li>
 
-          <li className="nav-item">
-            <NavLink to="/amenities" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-              Quản Lý Tiện Ích
-            </NavLink>
-          </li>
+              <li className="nav-item">
+                <NavLink to="/amenities" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+                  Quản Lý Tiện Ích
+                </NavLink>
+              </li>
 
-          <li className="nav-item">
-            <NavLink to="/incidents" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-              Báo Cáo Sự Cố
-            </NavLink>
-          </li>
+              <li className="nav-item">
+                <NavLink to="/incidents" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+                  Báo Cáo Sự Cố
+                </NavLink>
+              </li>
 
-          <li className="nav-item">
-            <NavLink to="/events" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-              Sự Kiện
-            </NavLink>
-          </li>
+              <li className="nav-item">
+                <NavLink to="/events" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+                  Sự Kiện
+                </NavLink>
+              </li>
+            </>
+          )}
 
           {isAdmin && (
             <li className="nav-item" style={{ marginTop: '20px', borderTop: '1px solid #334155', paddingTop: '10px' }}>

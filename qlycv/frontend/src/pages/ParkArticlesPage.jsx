@@ -56,7 +56,7 @@ export default function ParkArticlesPage() {
               
               <div className="article-content">
                 <h2 className="article-title">
-                  <Link to={`/parks/${park.ma_cong_vien || park.id}`}>
+                  <Link to={`/articles/${park.ma_cong_vien || park.id}`}>
                     {park.ten_cong_vien}
                   </Link>
                 </h2>
@@ -73,7 +73,7 @@ export default function ParkArticlesPage() {
                 </p>
 
                 <div className="article-footer">
-                  <Link to={`/parks/${park.ma_cong_vien || park.id}`} className="read-more-btn">
+                  <Link to={`/articles/${park.ma_cong_vien || park.id}`} className="read-more-btn">
                     Xem chi tiết →
                   </Link>
                 </div>

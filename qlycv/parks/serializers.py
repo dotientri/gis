@@ -50,6 +50,7 @@ class CongVienListSerializer(serializers.ModelSerializer):
     quan_huyen_ten = serializers.CharField(source='ma_quan_huyen.ten_quan_huyen', read_only=True)
     diem_trung_binh = serializers.FloatField(read_only=True)
     cay_so_luong = serializers.SerializerMethodField()
+    anh_dai_dien = serializers.SerializerMethodField()
     
     class Meta: 
         model = CongVien
@@ -62,6 +63,13 @@ class CongVienListSerializer(serializers.ModelSerializer):
 
     def get_cay_so_luong(self, obj):
         return obj.cay_xanh.count()
+
+    def get_anh_dai_dien(self, obj):
+        if obj.anh_dai_dien:
+            return obj.anh_dai_dien
+        # Nếu chưa có ảnh đại diện, lấy ảnh đầu tiên trong album
+        first_img = obj.hinh_anh.first()
+        return first_img.url_anh if first_img else None
 
 
 class CongVienDetailSerializer(serializers.ModelSerializer):

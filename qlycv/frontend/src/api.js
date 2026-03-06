@@ -25,6 +25,14 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      // Nếu lỗi 401 từ API lấy thông tin user (do token hết hạn/không hợp lệ)
+      // Thì chỉ cần xóa token để về trạng thái Guest, không cần redirect login
+      if (error.config.url && error.config.url.includes('/auth/me/')) {
+        localStorage.removeItem('authToken');
+        window.location.reload(); // Reload để App nhận diện lại là Guest
+        return Promise.reject(error);
+      }
+      
       localStorage.removeItem('authToken');
       window.location.href = '/login';
     }

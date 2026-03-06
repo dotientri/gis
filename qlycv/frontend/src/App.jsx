@@ -26,6 +26,7 @@ import AdminUsersPage from './pages/AdminUsersPage';
 
 // Pages - Other
 import ParkArticlesPage from './pages/ParkArticlesPage';
+import ArticleDetailPage from './pages/ArticleDetailPage';
 import AmenitiesPage from './pages/AmenitiesPage';
 import CreateAmenityPage from './pages/CreateAmenityPage';
 import EditAmenityPage from './pages/EditAmenityPage';
@@ -84,6 +85,7 @@ function App() {
         }>
             {/* --- PUBLIC ROUTES (Ai cũng xem được) --- */}
             <Route path="/articles" element={<ParkArticlesPage />} />
+            <Route path="/articles/:id" element={<ArticleDetailPage />} />
             <Route path="/parks" element={<ParkMapPage />} />
             <Route path="/parks-list" element={<ParkListPage />} />
             <Route path="/parks/:id" element={<ParkDetailPage />} />

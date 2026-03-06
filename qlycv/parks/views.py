@@ -168,7 +168,7 @@ class CongVienViewSet(viewsets.ModelViewSet):
 
         # Sắp xếp theo khoảng cách
         parks_with_distance.sort(key=lambda p: p.distance)
-        queryset = parks_with_distance[:20]
+        queryset = parks_with_distance[:50]  # Tăng giới hạn lên 50 công viên
         
         serializer = self.get_serializer(queryset, many=True)
         return Response({
@@ -439,6 +439,7 @@ class BaoCaoSuCoViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
+            
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
