@@ -1,0 +1,16 @@
+code,name,district,address,area,green_area,manager,phone,email,year,description,coordinates,free_entry
+PARK001,Tao Duc Park,Binh Thanh,123 Tao Duc Street,50000,25000,Binh Thanh District,0283 8118 888,contact@taoduc.vn,2005,Beautiful park with green areas and walking trails,"[10.7769, 106.6934]",true
+PARK002,Van Thanh Park,Tan Binh,456 Tan Ky Tan Quoc Vo Street,30000,15000,Tan Binh District,0283 8118 889,info@vanthanh.vn,2008,A peaceful park for recreation,"[10.8033, 106.6570]",true
+PARK003,Gia Dinh Park,Phu Nhuan,789 Nguyen Hue Street,40000,20000,Phu Nhuan District,0283 8118 890,contact@giadinh.vn,2010,Park with sports facilities,"[10.8081, 106.6795]",false,"[10.8081, 106.6795]",false
+PARK004,Le Van Tam Park,District 1,200 Nguyen Hue Boulevard,20000,10000,District 1,0283 8118 891,info@levantam.vn,2015,Central park with modern facilities,"[10.7794, 106.6995]",true
+PARK005,Thao Dien Green Space,District 2,100 Quoc Huong Street,60000,40000,District 2,0283 8118 892,contact@thaoiden.vn,2012,Large ecological park,"[10.8029, 106.7473]",true
+PARK006,Binh Quoi Park,Ho Chi Minh City,Saigon Zoo Complex Area,120000,80000,City Administration,0283 8118 893,info@binhquoi.vn,2000,Riverside park with natural attractions,"[10.8028, 106.6816]",false
+PARK007,Landmark 81 Park,Binh Thanh,Landmark Tower Complex,15000,8000,Landmark Tower,0283 8118 894,contact@landmark.vn,2018,Rooftop garden space,"[10.8333, 106.6833]",false
+PARK008,Tan Thuan Park,District 7,Tan Thuan Peninsula,80000,50000,District 7,0283 8118 895,info@tanthuan.vn,2006,Natural park for walking and sports,"[10.7381, 106.7246]",true
+PARK009,Hoang Van Thu Park,Tan Binh,Hoang Van Thu Street,25000,12000,Tan Binh District,0283 8118 896,contact@hoangvanthu.vn,2011,Community park,"[10.8204, 106.6389]",true
+PARK010,Tu Duc Memorial Park,Binh Thanh,Tu Duc Street,35000,18000,Binh Thanh District,0283 8118 897,info@tuduc.vn,2009,Historic memorial park,"[10.7885, 106.6944]",true
+PARK011,Dong Nai Park,Can Tho,100 Tran Hung Dao,45000,22000,Can Tho City,0292 3666 666,contact@dongnai.vn,2007,City recreational park,"[10.0496, 105.7469]",true
+PARK012,Tao Duc Riverside,Binh Thanh,Saigon River Area,70000,45000,Binh Thanh District,0283 8118 898,info@taoduc-river.vn,2013,Scenic riverside promenade,"[10.7850, 106.7000]",true
+PARK013,Van Kiep Park,District 8,Van Kiep Street,55000,30000,District 8,0283 8118 899,contact@vankiep.vn,2010,Nature and ecology focused,"[10.7431, 106.6462]",true
+PARK014,Hai Ba Trung Park,District 3,Hai Ba Trung Street,32000,16000,District 3,0283 8118 900,info@haibatrung.vn,2008,Urban recreation space,"[10.7905, 106.6832]",true
+PARK015,Binh Chieu Park,Binh Chanh,Long Binh Road,90000,60000,Binh Chanh District,0283 8118 901,contact@binhchieu.vn,2012,Large suburban park,"[10.6969, 106.6875]",true

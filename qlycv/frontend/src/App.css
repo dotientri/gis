@@ -1,0 +1,66 @@
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--gray-50);
+}
+
+.app-wrapper {
+  display: flex;
+  flex: 1;
+}
+
+.app-sidebar {
+  width: 250px;
+  background-color: var(--gray-900);
+  color: white;
+  overflow-y: auto;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.app-content {
+  flex: 1;
+  padding: 2rem;
+}
+
+.app-header {
+  background-color: white;
+  border-bottom: 1px solid var(--gray-200);
+  padding: 1rem;
+  box-shadow: var(--box-shadow);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.app-footer {
+  background-color: var(--gray-100);
+  border-top: 1px solid var(--gray-200);
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--gray-600);
+  font-size: 0.875rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .app-wrapper {
+    flex-direction: column;
+  }
+
+  .app-sidebar {
+    width: 100%;
+    max-height: 200px;
+  }
+
+  .app-content {
+    padding: 1rem;
+  }
+}

@@ -1,0 +1,37 @@
+.admin-list-page {
+  padding: 24px;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 24px;
+  background: white;
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.admin-table th {
+  background-color: var(--color-bg-secondary);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+}
+
+.admin-table tbody tr:hover {
+  background-color: var(--color-bg-tertiary);
+}
+
+.action-cell .btn {
+  margin-right: 8px;
+}
