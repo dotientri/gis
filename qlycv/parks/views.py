@@ -111,9 +111,9 @@ class CongVienViewSet(viewsets.ModelViewSet):
         return [IsParkManagerOrGISEditor()]
     
     def get_serializer_class(self):
-        if self.action == 'retrieve':
-            return CongVienDetailSerializer
-        return CongVienListSerializer
+        if self.action == 'list':
+            return CongVienListSerializer
+        return CongVienDetailSerializer
     
     @action(detail=False, methods=['post'], url_path='tim-gan-nhat', permission_classes=[AllowAny])
     def tim_gan_nhat(self, request):
@@ -416,6 +416,32 @@ class BaoCaoSuCoViewSet(viewsets.ModelViewSet):
         # Chỉ Quản lý có thể cập nhật trạng thái
         return [IsParkManager()]
     
+    def create(self, request, *args, **kwargs):
+        data = request.data.copy()
+        
+        # 1. Xử lý upload ảnh (Lưu vào mảng JSON url_hinh_anh)
+        images = request.FILES.getlist('hinh_anh_files')
+        image_urls = []
+        
+        if images:
+            for img in images:
+                file_name = default_storage.save(f'incident_images/{img.name}', ContentFile(img.read()))
+                file_url = request.build_absolute_uri(settings.MEDIA_URL + file_name)
+                image_urls.append(file_url)
+        
+        if image_urls:
+            data['url_hinh_anh'] = image_urls
+            
+        # 2. Tự động gán người báo cáo nếu đã đăng nhập
+        if request.user.is_authenticated:
+            data['ma_nguoi_bao_cao'] = request.user.ma_nguoi_dung
+
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
     @action(detail=True, methods=['patch'])
     def cap_nhat_trang_thai(self, request, pk=None):
         """Cập nhật trạng thái xử lý báo cáo"""

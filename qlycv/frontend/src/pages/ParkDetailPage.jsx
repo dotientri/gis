@@ -92,19 +92,19 @@ export default function ParkDetailPage() {
               <div className="meta-item">
                 <span className="label">Loại:</span>
                 <span className="value">
-                  {typeof park.ma_loai === 'object' ? park.ma_loai.ten_loai : park.ma_loai}
+                  {park.loai_ten || (park.ma_loai && typeof park.ma_loai === 'object' ? park.ma_loai.ten_loai : park.ma_loai) || 'Chưa xác định'}
                 </span>
               </div>
               <div className="meta-item">
                 <span className="label">Quận Huyện:</span>
                 <span className="value">
-                  {park.quan_huyen_ten || (typeof park.ma_quan_huyen === 'object' ? park.ma_quan_huyen.ten_quan_huyen : park.ma_quan_huyen)}
+                  {park.quan_huyen_ten || (park.ma_quan_huyen && typeof park.ma_quan_huyen === 'object' ? park.ma_quan_huyen.ten_quan_huyen : park.ma_quan_huyen) || 'Chưa xác định'}
                 </span>
               </div>
               <div className="meta-item">
                 <span className="label">Trạng Thái:</span>
-                <span className={`badge badge-${typeof park.ma_trang_thai === 'object' ? park.ma_trang_thai.ten_trang_thai : park.ma_trang_thai}`}>
-                  {park.trang_thai_ten || (typeof park.ma_trang_thai === 'object' ? park.ma_trang_thai.ten_trang_thai : park.ma_trang_thai)}
+                <span className={`badge badge-${park.ma_trang_thai && typeof park.ma_trang_thai === 'object' ? (park.ma_trang_thai.ten_trang_thai || 'unknown') : (park.ma_trang_thai || 'unknown')}`}>
+                  {park.trang_thai_ten || (park.ma_trang_thai && typeof park.ma_trang_thai === 'object' ? park.ma_trang_thai.ten_trang_thai : park.ma_trang_thai) || 'Chưa xác định'}
                 </span>
               </div>
               <div className="meta-item">

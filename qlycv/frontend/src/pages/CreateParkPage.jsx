@@ -50,14 +50,8 @@ export default function CreateParkPage() {
   
   // State cho hình ảnh và tiện ích
   const [parkImages, setParkImages] = useState([]);
-  const [amenities, setAmenities] = useState({
-    nha_ve_sinh: { checked: false, images: [], label: 'Nhà vệ sinh', code: 'nha_ve_sinh', description: '', quantity: 1 },
-    ho_boi: { checked: false, images: [], label: 'Hồ bơi', code: 'ho_boi', description: '', quantity: 1 },
-    san_the_thao: { checked: false, images: [], label: 'Sân thể thao', code: 'san_the_thao', description: '', quantity: 1 },
-    ho_nuoc: { checked: false, images: [], label: 'Hồ nước', code: 'ho_nuoc', description: '', quantity: 1 }
-  });
-
-  const AMENITY_KEYS = ['nha_ve_sinh', 'ho_boi', 'san_the_thao', 'ho_nuoc'];
+  // Khởi tạo state rỗng, sẽ được điền dữ liệu từ API
+  const [amenities, setAmenities] = useState({});
 
   // Tải danh sách Loại công viên và Quận huyện
   useEffect(() => {
@@ -70,7 +64,20 @@ export default function CreateParkPage() {
         ]);
         setParkTypes(typesRes.data.results || typesRes.data);
         setDistricts(districtsRes.data.results || districtsRes.data);
-        setAmenityTypes(amenitiesRes.data.results || amenitiesRes.data); // Lưu loại tiện ích
+        
+        // Xử lý danh sách tiện ích động
+        const typesList = amenitiesRes.data.results || amenitiesRes.data;
+        setAmenityTypes(typesList);
+        
+        const initialAmenities = {};
+        typesList.forEach(type => {
+          // Sử dụng ma_code làm key
+          initialAmenities[type.ma_code] = { 
+            checked: false, images: [], label: type.ten_loai, code: type.ma_code, 
+            id_type: type.ma_loai_tien_ich, description: '', quantity: 1 
+          };
+        });
+        setAmenities(initialAmenities);
       } catch (error) {
         console.error("Lỗi tải danh mục:", error);
       }
@@ -132,18 +139,13 @@ export default function CreateParkPage() {
         }
 
         // 3. Tạo tiện ích và upload ảnh tiện ích
-        for (const key of AMENITY_KEYS) {
+        for (const key of Object.keys(amenities)) {
           if (amenities[key].checked) {
-            // Tìm ID của loại tiện ích dựa trên mã code
-            const typeObj = amenityTypes.find(t => t.ma_code === amenities[key].code);
-            if (!typeObj) {
-              console.error(`Không tìm thấy loại tiện ích: ${amenities[key].code}`);
-              continue;
-            }
+            const item = amenities[key];
 
             const amenityFormData = new FormData();
             amenityFormData.append('ma_cong_vien', parkId);
-            amenityFormData.append('ma_loai_tien_ich', typeObj.ma_loai_tien_ich); // Gửi ID thay vì code
+            amenityFormData.append('ma_loai_tien_ich', item.id_type); // Dùng ID đã lưu
             amenityFormData.append('so_luong', amenities[key].quantity || 1);
             amenityFormData.append('mo_ta', amenities[key].description || ''); // Gửi ghi chú
             amenityFormData.append('tinh_trang', 'tot');
@@ -166,10 +168,19 @@ export default function CreateParkPage() {
         navigate(`/parks/${parkId}`);
       } catch (err) {
         console.error("Lỗi tạo công viên:", err.response?.data);
-        // Hiển thị lỗi chi tiết từ backend nếu có
-        const errorMsg = err.response?.data 
-          ? Object.entries(err.response.data).map(([k, v]) => `${k}: ${v}`).join(', ')
-          : 'Lỗi khi tạo công viên';
+        
+        // Xử lý hiển thị lỗi thân thiện hơn
+        let errorMsg = 'Lỗi khi tạo công viên';
+        if (err.response?.data) {
+          // Nếu lỗi là trùng tên (từ validator backend)
+          if (err.response.data.ten_cong_vien) {
+            errorMsg = err.response.data.ten_cong_vien[0];
+          } else {
+            // Các lỗi khác
+            errorMsg = Object.values(err.response.data).flat().join(', ');
+          }
+        }
+        
         showNotification(
           errorMsg,
           'error'
@@ -457,7 +468,7 @@ export default function CreateParkPage() {
         <div className="form-section">
           <h2>Tiện Ích Có Sẵn</h2>
           <div className="amenities-list">
-            {AMENITY_KEYS.map(key => (
+            {Object.keys(amenities).map(key => (
               <div key={key} className="amenity-item" style={{marginBottom: '20px', padding: '15px', border: '1px solid #eee', borderRadius: '8px'}}>
                 <div className="checkbox-group" style={{display: 'flex', alignItems: 'center', marginBottom: '10px'}}>
                   <input 

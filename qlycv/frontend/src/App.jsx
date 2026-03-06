@@ -25,10 +25,12 @@ import EditParkPage from './pages/EditParkPage';
 import AdminUsersPage from './pages/AdminUsersPage';
 
 // Pages - Other
+import ParkArticlesPage from './pages/ParkArticlesPage';
 import AmenitiesPage from './pages/AmenitiesPage';
 import CreateAmenityPage from './pages/CreateAmenityPage';
 import EditAmenityPage from './pages/EditAmenityPage';
 import EventsPage from './pages/EventsPage';
+import CreateIncidentPage from './pages/CreateIncidentPage';
 import IncidentsPage from './pages/IncidentsPage';
 import RatingsPage from './pages/RatingsPage';
 import TreesPage from './pages/TreesPage';
@@ -63,7 +65,7 @@ function App() {
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
         {/* Root redirect based on auth status */}
-        <Route path="/" element={token ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />} />
+        <Route path="/" element={<Navigate to="/articles" replace />} />
 
         {/* Authentication Routes */}
         <Route element={<AuthLayout />}>
@@ -71,29 +73,29 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
         </Route>
 
-        {/* Protected Main Routes */}
-        <Route element={<ProtectedRoute />}>
-          <Route element={
-            <div className="app-layout" style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden' }}>
-              {/* Sidebar cố định bên trái */}
-              <Sidebar />
-              {/* Khu vực nội dung chính bên phải */}
-              <main style={{ flex: 1, overflow: 'auto', position: 'relative', backgroundColor: '#f3f4f6' }}>
-                <Outlet />
-              </main>
-            </div>
-          }>
+        {/* Main Layout Routes (Public & Protected mixed) */}
+        <Route element={
+          <div className="app-layout" style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden' }}>
+            <Sidebar />
+            <main style={{ flex: 1, overflow: 'auto', position: 'relative', backgroundColor: '#f3f4f6' }}>
+              <Outlet />
+            </main>
+          </div>
+        }>
+            {/* --- PUBLIC ROUTES (Ai cũng xem được) --- */}
+            <Route path="/articles" element={<ParkArticlesPage />} />
+            <Route path="/parks" element={<ParkMapPage />} />
+            <Route path="/parks-list" element={<ParkListPage />} />
+            <Route path="/parks/:id" element={<ParkDetailPage />} />
+            
+            {/* --- PROTECTED ROUTES (Cần đăng nhập) --- */}
+            <Route element={<ProtectedRoute />}>
             {/* Dashboard */}
             <Route path="/dashboard" element={<DashboardPage />} />
 
             {/* Admin Routes */}
             <Route path="/admin/users" element={<AdminUsersPage />} />
 
-            {/* Parks */}
-            <Route path="/parks" element={<ParkMapPage />} />
-            <Route path="/parks-list" element={<ParkListPage />} />
-            <Route path="/parks/:id" element={<ParkDetailPage />} />
-            
             {/* Park Management - Protected by Role */}
             <Route element={<ProtectedRoute roles={['QUAN_TRI', 'QUAN_LY_CV', 'BIEN_TAP_GIS']} />}>
               <Route path="/parks/create" element={<CreateParkPage />} />
@@ -114,6 +116,7 @@ function App() {
 
             {/* Incidents */}
             <Route path="/incidents" element={<IncidentsPage />} />
+            <Route path="/incidents/create" element={<CreateIncidentPage />} />
 
             {/* Ratings */}
             <Route path="/ratings" element={<RatingsPage />} />

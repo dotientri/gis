@@ -48,7 +48,7 @@ class CongVienListSerializer(serializers.ModelSerializer):
     loai_ten = serializers.CharField(source='ma_loai.ten_loai', read_only=True)
     trang_thai_ten = serializers.CharField(source='ma_trang_thai.ten_trang_thai', read_only=True)
     quan_huyen_ten = serializers.CharField(source='ma_quan_huyen.ten_quan_huyen', read_only=True)
-    diem_trung_binh = serializers.FloatField()
+    diem_trung_binh = serializers.FloatField(read_only=True)
     cay_so_luong = serializers.SerializerMethodField()
     
     class Meta: 
@@ -71,7 +71,7 @@ class CongVienDetailSerializer(serializers.ModelSerializer):
     quan_huyen_ten = serializers.CharField(source='ma_quan_huyen.ten_quan_huyen', read_only=True)
     phuong_xa_ten = serializers.CharField(source='ma_phuong_xa.ten_phuong_xa', read_only=True)
     hinh_anh = serializers.SerializerMethodField()
-    diem_trung_binh = serializers.FloatField()
+    diem_trung_binh = serializers.FloatField(read_only=True)
     google_maps_url = serializers.SerializerMethodField()
     tien_ich = serializers.SerializerMethodField()
     cay_so_luong = serializers.SerializerMethodField()
@@ -90,6 +90,16 @@ class CongVienDetailSerializer(serializers.ModelSerializer):
             'tien_ich', 'cay_so_luong', 'ngay_tao', 'ngay_cap_nhat'
         ]
     
+    def validate_ten_cong_vien(self, value):
+        """Kiểm tra tên công viên không được trùng lặp"""
+        # Kiểm tra trùng tên (không phân biệt hoa thường)
+        qs = CongVien.objects.filter(ten_cong_vien__iexact=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError("Tên công viên này đã tồn tại trong hệ thống. Vui lòng chọn tên khác.")
+        return value
+
     def get_google_maps_url(self, obj):
         if obj.toa_do_trung_tam and isinstance(obj.toa_do_trung_tam, list) and len(obj.toa_do_trung_tam) >= 2:
             return f"https://www.google.com/maps/dir/?api=1&destination={obj.toa_do_trung_tam[0]},{obj.toa_do_trung_tam[1]}"

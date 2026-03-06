@@ -1,95 +1,97 @@
 .sidebar {
-  width: 280px;
-  background-color: var(--gray-900);
-  color: white;
-  padding: 1.5rem 0;
-  overflow-y: auto;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+  width: 260px;
+  background-color: #111827; /* Màu nền tối đậm hơn (Gray 900) để tăng tương phản */
+  color: #ffffff; /* Màu chữ trắng */
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-right: 1px solid #334155;
+  flex-shrink: 0;
+}
+
+.sidebar-header {
+  padding: 20px;
+  border-bottom: 1px solid #374151;
+  background-color: #1f2937; /* Gray 800 */
+}
+
+.sidebar-brand {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #ffffff;
+  text-decoration: none;
+  display: block;
+  text-align: center;
+  letter-spacing: 0.5px;
 }
 
 .sidebar-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  flex: 1;
+  padding: 20px 0;
+  overflow-y: auto;
 }
 
-.sidebar-nav-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1rem 1.5rem;
-  color: rgba(255, 255, 255, 0.7);
+.sidebar-nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.nav-item {
+  margin-bottom: 2px;
+}
+
+.nav-link {
+  display: block;
+  padding: 12px 24px;
+  color: #9ca3af; /* Gray 400 */
   text-decoration: none;
-  transition: all 0.2s;
-  font-weight: 500;
-}
-
-.sidebar-nav-item:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: white;
-  padding-left: 2rem;
-}
-
-.sidebar-nav-item.active {
-  background-color: var(--primary-color);
-  color: white;
-  border-left: 4px solid white;
-  padding-left: 1.5rem;
-}
-
-.sidebar-nav-item span {
   font-size: 0.95rem;
+  transition: all 0.2s;
+  border-left: 4px solid transparent;
 }
 
-@media (max-width: 768px) {
-  .sidebar {
-    width: 100%;
-    max-height: 300px;
-    flex-wrap: wrap;
-    padding: 1rem 0;
-  }
-
-  .sidebar-nav {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 0;
-  }
-
-  .sidebar-nav-item {
-    flex: 0 0 50%;
-    padding: 0.75rem;
-    justify-content: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .sidebar-nav-item span {
-    display: none;
-  }
-
-  .sidebar-nav-item:hover {
-    padding-left: 0.75rem;
-  }
-
-  .sidebar-nav-item.active {
-    border-left: none;
-    border-bottom: 2px solid white;
-  }
+.nav-link:hover {
+  background-color: #1f2937;
+  color: #ffffff;
 }
 
-/* Scrollbar styling */
-.sidebar::-webkit-scrollbar {
-  width: 8px;
+.nav-link.active {
+  background-color: #1f2937;
+  color: #ffffff;
+  border-left-color: #3b82f6; /* Thanh highlight màu xanh */
+  font-weight: 600;
 }
 
-.sidebar::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
+.sidebar-footer {
+  padding: 20px;
+  border-top: 1px solid #374151;
+  background-color: #1f2937;
 }
 
-.sidebar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
+.user-info {
+  margin-bottom: 15px;
+  font-size: 0.9rem;
+  color: #d1d5db;
 }
 
-.sidebar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
+.user-info strong {
+  color: #fff;
+  display: block;
+}
+
+.btn-logout {
+  width: 100%;
+  padding: 10px;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.btn-logout:hover {
+  background-color: #dc2626;
 }

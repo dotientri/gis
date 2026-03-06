@@ -54,13 +54,8 @@ export default function EditParkPage() {
   const [existingImages, setExistingImages] = useState([]);
   const [newImages, setNewImages] = useState([]);
   
-  const [amenities, setAmenities] = useState({
-    nha_ve_sinh: { checked: false, newImages: [], existingImages: [], label: 'Nhà vệ sinh', code: 'nha_ve_sinh', description: '', quantity: 1, id: null },
-    ho_boi: { checked: false, newImages: [], existingImages: [], label: 'Hồ bơi', code: 'ho_boi', description: '', quantity: 1, id: null },
-    san_the_thao: { checked: false, newImages: [], existingImages: [], label: 'Sân thể thao', code: 'san_the_thao', description: '', quantity: 1, id: null },
-    ho_nuoc: { checked: false, newImages: [], existingImages: [], label: 'Hồ nước', code: 'ho_nuoc', description: '', quantity: 1, id: null }
-  });
-  const AMENITY_KEYS = ['nha_ve_sinh', 'ho_boi', 'san_the_thao', 'ho_nuoc'];
+  // State động
+  const [amenities, setAmenities] = useState({});
 
   const { values, errors, touched, isSubmitting, handleChange, handleBlur, handleSubmit, setFieldValue } = useForm(
     {
@@ -101,14 +96,13 @@ export default function EditParkPage() {
         }
 
         // Cập nhật tiện ích
-        for (const key of AMENITY_KEYS) {
+        for (const key of Object.keys(amenities)) {
           const item = amenities[key];
-          const typeObj = amenityTypes.find(t => t.ma_code === item.code);
           
-          if (item.checked && typeObj) {
+          if (item.checked) {
             const amenityData = new FormData();
             amenityData.append('ma_cong_vien', id);
-            amenityData.append('ma_loai_tien_ich', typeObj.ma_loai_tien_ich);
+            amenityData.append('ma_loai_tien_ich', item.id_type);
             amenityData.append('so_luong', item.quantity || 1);
             amenityData.append('mo_ta', item.description || '');
             amenityData.append('tinh_trang', 'tot');
@@ -139,8 +133,16 @@ export default function EditParkPage() {
         showNotification('Cập nhật công viên thành công!', 'success');
         navigate(`/parks/${id}`);
       } catch (err) {
+        let errorMsg = 'Lỗi khi cập nhật công viên';
+        if (err.response?.data) {
+          if (err.response.data.ten_cong_vien) {
+            errorMsg = err.response.data.ten_cong_vien[0];
+          } else {
+            errorMsg = Object.values(err.response.data).flat().join(', ');
+          }
+        }
         showNotification(
-          err.response?.data?.detail || 'Lỗi khi cập nhật công viên',
+          errorMsg,
           'error'
         );
       }
@@ -203,17 +205,27 @@ export default function EditParkPage() {
         // Map tiện ích hiện có vào state
         const existingAmenities = parkAmenitiesRes.data.results || parkAmenitiesRes.data;
         const types = amenitiesRes.data.results || amenitiesRes.data;
+        
         setAmenityTypes(types);
 
-        const newAmenitiesState = { ...amenities };
+        // Khởi tạo state động dựa trên danh sách loại tiện ích
+        const newAmenitiesState = {};
+        types.forEach(type => {
+          newAmenitiesState[type.ma_code] = {
+            checked: false, newImages: [], existingImages: [], 
+            label: type.ten_loai, code: type.ma_code, id_type: type.ma_loai_tien_ich,
+            description: '', quantity: 1, id: null 
+          };
+        });
+
+        // Điền dữ liệu cũ vào
         existingAmenities.forEach(am => {
           // Tìm key tương ứng dựa trên ma_loai_tien_ich
           const typeCode = types.find(t => t.ma_loai_tien_ich === am.ma_loai_tien_ich)?.ma_code;
-          const key = AMENITY_KEYS.find(k => amenities[k].code === typeCode);
           
-          if (key) {
-            newAmenitiesState[key] = {
-              ...newAmenitiesState[key],
+          if (typeCode && newAmenitiesState[typeCode]) {
+            newAmenitiesState[typeCode] = {
+              ...newAmenitiesState[typeCode],
               checked: true,
               id: am.ma_tien_ich || am.id,
               quantity: am.so_luong || 1,
@@ -509,7 +521,7 @@ export default function EditParkPage() {
         <div className="form-section">
           <h2>Tiện Ích</h2>
           <div className="amenities-list">
-            {AMENITY_KEYS.map(key => (
+            {Object.keys(amenities).map(key => (
               <div key={key} className="amenity-item" style={{marginBottom: '15px', padding: '15px', border: '1px solid #eee', borderRadius: '8px'}}>
                 <div className="checkbox-group" style={{display: 'flex', alignItems: 'center', marginBottom: '10px'}}>
                   <input 

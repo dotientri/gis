@@ -5,9 +5,10 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from parks.models import (
     NhomQuyen, QuanHuyen, PhuongXa, LoaiCongVien, TrangThaiCongVien,
-    CongVien, LoaiTienIch, TienIchCongVien
+    CongVien, LoaiTienIch, TienIchCongVien, DanhMucSuCo, NguoiDung
 )
 import json
+import hashlib
 
 
 class Command(BaseCommand):
@@ -18,6 +19,9 @@ class Command(BaseCommand):
         
         # 1. Tạo nhóm quyền
         self.create_permission_groups()
+
+        # 1.1 Tạo người dùng mẫu (MỚI)
+        self.create_users()
         
         # 2. Tạo quận huyện
         self.create_districts()
@@ -34,7 +38,10 @@ class Command(BaseCommand):
         # 6. Tạo loại tiện ích
         self.create_amenity_types()
         
-        # 7. Tạo công viên chi tiết
+        # 7. Tạo danh mục sự cố
+        self.create_incident_categories()
+        
+        # 8. Tạo công viên chi tiết
         self.create_parks_with_amenities()
         
         self.stdout.write(self.style.SUCCESS('\n✅ Khởi tạo dữ liệu hoàn thành!'))
@@ -57,6 +64,37 @@ class Command(BaseCommand):
             )
             if created:
                 self.stdout.write(f'  ✓ Tạo nhóm: {name}')
+
+    def create_users(self):
+        """Tạo người dùng mẫu"""
+        self.stdout.write('→ Tạo người dùng mẫu...')
+        
+        users = [
+            ('admin', 'admin@gis.com', 'QUAN_TRI', 'Quản Trị Viên'),
+            ('manager', 'manager@gis.com', 'QUAN_LY_CV', 'Quản Lý Công Viên'),
+            ('editor', 'editor@gis.com', 'BIEN_TAP_GIS', 'Biên Tập Viên'),
+            ('user', 'user@gis.com', 'CONG_DONG', 'Người Dùng'),
+        ]
+
+        password_hash = hashlib.sha256('123456'.encode()).hexdigest()
+
+        for username, email, role_code, fullname in users:
+            try:
+                role = NhomQuyen.objects.get(ten_nhom=role_code)
+                user, created = NguoiDung.objects.get_or_create(
+                    ten_dang_nhap=username,
+                    defaults={
+                        'email': email,
+                        'mat_khau_hash': password_hash,
+                        'ho_ten': fullname,
+                        'ma_nhom_quyen': role,
+                        'dang_hoat_dong': True
+                    }
+                )
+                if created:
+                    self.stdout.write(f'  ✓ Tạo user: {username} (Pass: 123456)')
+            except Exception as e:
+                self.stdout.write(self.style.WARNING(f'  ⚠ Lỗi tạo user {username}: {e}'))
 
     def create_districts(self):
         """Tạo quận huyện"""
@@ -224,6 +262,25 @@ class Command(BaseCommand):
             )
             if created:
                 self.stdout.write(f'  ✓ Tạo: {a["ten"]}')
+
+    def create_incident_categories(self):
+        """Tạo danh mục sự cố"""
+        self.stdout.write('→ Tạo danh mục sự cố...')
+        categories = [
+            'Hư hỏng tài sản',
+            'Vấn đề vệ sinh',
+            'An ninh trật tự',
+            'Cây xanh gãy đổ',
+            'Chiếu sáng công cộng',
+            'Khác',
+        ]
+        
+        for name in categories:
+            category, created = DanhMucSuCo.objects.get_or_create(
+                ten_danh_muc=name
+            )
+            if created:
+                self.stdout.write(f'  ✓ Tạo: {name}')
 
     def create_parks_with_amenities(self):
         """Tạo công viên với tiện ích"""

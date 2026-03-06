@@ -1,163 +1,101 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store';
 import { authAPI } from '../../api';
-import {
-  FiHome,
-  FiMap,
-  FiList,
-  FiCalendar,
-  FiAlertCircle,
-  FiStar,
-  FiCheckSquare,
-  FiUsers,
-  FiCheckCircle,
-  FiLogOut,
-} from 'react-icons/fi';
-import { FaTree } from 'react-icons/fa';
-import { PERMISSION_GROUPS } from '../../constants';
 import './Sidebar.css';
 
-const MENU_ITEMS = [
-  {
-    path: '/dashboard',
-    label: 'Trang Chủ',
-    icon: FiHome,
-    roles: [PERMISSION_GROUPS.ADMIN, PERMISSION_GROUPS.MANAGER, PERMISSION_GROUPS.INSPECTOR, PERMISSION_GROUPS.EDITOR, PERMISSION_GROUPS.COMMUNITY],
-  },
-  {
-    path: '/parks',
-    label: 'Bản Đồ Công Viên',
-    icon: FiMap,
-    roles: [PERMISSION_GROUPS.ADMIN, PERMISSION_GROUPS.MANAGER, PERMISSION_GROUPS.INSPECTOR, PERMISSION_GROUPS.EDITOR, PERMISSION_GROUPS.COMMUNITY],
-  },
-  {
-    path: '/parks-list',
-    label: 'Danh Sách Công Viên',
-    icon: FiList,
-    roles: [PERMISSION_GROUPS.ADMIN, PERMISSION_GROUPS.MANAGER, PERMISSION_GROUPS.INSPECTOR, PERMISSION_GROUPS.EDITOR, PERMISSION_GROUPS.COMMUNITY],
-  },
-  {
-    path: '/amenities',
-    label: 'Tiện Ích',
-    icon: FiCheckSquare,
-    roles: [PERMISSION_GROUPS.ADMIN, PERMISSION_GROUPS.MANAGER, PERMISSION_GROUPS.EDITOR],
-  },
-  {
-    path: '/events',
-    label: 'Sự Kiện',
-    icon: FiCalendar,
-    roles: [PERMISSION_GROUPS.ADMIN, PERMISSION_GROUPS.MANAGER, PERMISSION_GROUPS.EDITOR, PERMISSION_GROUPS.COMMUNITY],
-  },
-  {
-    path: '/incidents',
-    label: 'Báo Cáo Sự Cố',
-    icon: FiAlertCircle,
-    roles: [PERMISSION_GROUPS.ADMIN, PERMISSION_GROUPS.MANAGER, PERMISSION_GROUPS.COMMUNITY],
-  },
-  {
-    path: '/ratings',
-    label: 'Đánh Giá',
-    icon: FiStar,
-    roles: [PERMISSION_GROUPS.ADMIN, PERMISSION_GROUPS.MANAGER, PERMISSION_GROUPS.COMMUNITY],
-  },
-  {
-    path: '/trees',
-    label: 'Cây Xanh',
-    icon: FaTree,
-    roles: [PERMISSION_GROUPS.ADMIN, PERMISSION_GROUPS.EDITOR],
-  },
-  {
-    path: '/inspections',
-    label: 'Kiểm Tra',
-    icon: FiCheckCircle,
-    roles: [PERMISSION_GROUPS.ADMIN, PERMISSION_GROUPS.INSPECTOR, PERMISSION_GROUPS.MANAGER],
-  },
-  {
-    path: '/admin/users',
-    label: 'Quản Lý Người Dùng',
-    icon: FiUsers,
-    roles: [PERMISSION_GROUPS.ADMIN],
-  },
-  {
-    path: '/admin/approvals',
-    label: 'Duyệt Phê Duyệt',
-    icon: FiCheckCircle,
-    roles: [PERMISSION_GROUPS.ADMIN, PERMISSION_GROUPS.MANAGER],
-  },
-];
-
 export default function Sidebar() {
-  const location = useLocation();
+  const { user, logout } = useAuthStore();
   const navigate = useNavigate();
-  const { user, setToken, setUser } = useAuthStore();
-  
+
   const handleLogout = () => {
     authAPI.logout();
-    setToken(null);
-    setUser(null);
+    logout();
     navigate('/login');
   };
 
-  // --- LOGIC FIX: Xử lý phân quyền an toàn hơn ---
-  let userRole = user?.ma_nhom_quyen?.ten_nhom;
+  const handleLogin = () => {
+    navigate('/login');
+  };
 
-  // Nếu đã đăng nhập nhưng không đọc được role (do lỗi API trả về ID hoặc null)
-  if (user && !userRole) {
-    // Kiểm tra nhanh nếu là admin (dựa vào username/email đã seed)
-    if (user.ten_dang_nhap === 'admin' || user.email?.includes('admin')) {
-      userRole = 'QUAN_TRI';
-    } else {
-      // Mặc định gán quyền CỘNG ĐỒNG để hiện menu cơ bản
-      userRole = 'CONG_DONG';
-    }
-  }
-  
-  // Fallback chuỗi rỗng để không crash
-  userRole = userRole || '';
-
-  const visibleItems = MENU_ITEMS.filter((item) => item.roles.includes(userRole));
+  // Kiểm tra quyền Admin
+  const isAdmin = user?.nhom_quyen_code === 'QUAN_TRI';
 
   return (
-    <aside className="sidebar" style={{ backgroundColor: '#1a1c23', color: 'white', display: 'flex', flexDirection: 'column' }}>
-      <div className="sidebar-header" style={{ padding: '20px', borderBottom: '1px solid #333' }}>
-        <h3 style={{ margin: '0 0 5px 0', color: '#4ade80', fontSize: '1.2rem' }}>GIS Park</h3>
-        <div style={{ fontSize: '0.85rem', color: '#9ca3af' }}>Xin chào, {user?.ho_ten || user?.ten_dang_nhap || 'User'}</div>
+    <aside className="sidebar">
+      <div className="sidebar-header">
+        <div className="sidebar-brand">QUẢN LÝ CÔNG VIÊN</div>
       </div>
-      <nav className="sidebar-nav" style={{ flex: 1, padding: '10px 0' }}>
-        {visibleItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = location.pathname === item.path;
 
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
-              title={item.label}
-            >
-              <Icon size={20} />
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
+      <nav className="sidebar-nav">
+        <ul>
+          <li className="nav-item">
+            <NavLink to="/articles" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+              Bài Viết Công Viên
+            </NavLink>
+          </li>
+
+          <li className="nav-item">
+            <NavLink to="/dashboard" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+              Bảng Điều Khiển
+            </NavLink>
+          </li>
+          
+          <li className="nav-item">
+            <NavLink to="/parks" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+              Bản Đồ Công Viên
+            </NavLink>
+          </li>
+
+          <li className="nav-item">
+            <NavLink to="/parks-list" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+              Quản Lý Công Viên
+            </NavLink>
+          </li>
+
+          <li className="nav-item">
+            <NavLink to="/amenities" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+              Quản Lý Tiện Ích
+            </NavLink>
+          </li>
+
+          <li className="nav-item">
+            <NavLink to="/incidents" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+              Báo Cáo Sự Cố
+            </NavLink>
+          </li>
+
+          <li className="nav-item">
+            <NavLink to="/events" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+              Sự Kiện
+            </NavLink>
+          </li>
+
+          {isAdmin && (
+            <li className="nav-item" style={{ marginTop: '20px', borderTop: '1px solid #334155', paddingTop: '10px' }}>
+              <NavLink to="/admin/users" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+                Quản Trị Người Dùng
+              </NavLink>
+            </li>
+          )}
+        </ul>
       </nav>
 
-      <div style={{ padding: '10px', borderTop: '1px solid #333' }}>
-        <button
-          onClick={handleLogout}
-          className="sidebar-nav-item"
-          style={{ 
-            width: '100%', 
-            background: 'transparent', 
-            border: 'none', 
-            cursor: 'pointer',
-            color: '#ef4444',
-            justifyContent: 'flex-start'
-          }}
-        >
-          <FiLogOut size={20} />
-          <span>Đăng xuất</span>
-        </button>
+      <div className="sidebar-footer">
+        {user ? (
+          <>
+            <div className="user-info">
+              <strong>{user?.ho_ten || user?.ten_dang_nhap}</strong>
+              <small>{user?.nhom_quyen_ten}</small>
+            </div>
+            <button onClick={handleLogout} className="btn-logout">
+              Đăng Xuất
+            </button>
+          </>
+        ) : (
+          <button onClick={handleLogin} className="btn-logout" style={{backgroundColor: '#3b82f6'}}>
+            Đăng Nhập
+          </button>
+        )}
       </div>
     </aside>
   );
