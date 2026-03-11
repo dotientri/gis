@@ -57,7 +57,7 @@ class CongVienListSerializer(serializers.ModelSerializer):
         fields = [
             'ma_cong_vien', 'ten_cong_vien', 'ma_code', 'ma_loai', 'loai_ten',
             'ma_trang_thai', 'trang_thai_ten', 'ma_quan_huyen', 'quan_huyen_ten',
-            'dien_tich_m2', 'diem_trung_binh', 'so_luot_danh_gia',
+            'dien_tich_m2', 'diem_trung_binh', 'so_luot_danh_gia', 'ranh_gioi', 'toa_do_trung_tam',
             'anh_dai_dien', 'da_xac_minh', 'ngay_cap_nhat', 'cay_so_luong'
         ]
 

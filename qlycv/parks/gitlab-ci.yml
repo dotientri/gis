@@ -1,0 +1,10 @@
+stages:
+  - build
+  - deloy
+  - checklog
+build:
+  stage: build
+script:
+  - whoami
+  - pwd
+  - ls -lta

@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, Circle, Polygon } from 'react-leaflet';
 import L from 'leaflet';
 import { useApi } from '../hooks';
 import { parksAPI } from '../api';
@@ -368,6 +368,18 @@ export default function ParkMapPage() {
           )}
 
           {filteredParks.map((park) => (
+            <div key={`park-group-${park.ma_cong_vien || park.id}`}>
+            {/* Hiển thị ranh giới (Polygon) nếu có */}
+            {park.ranh_gioi && park.ranh_gioi.coordinates && (
+              <Polygon
+                positions={park.ranh_gioi.coordinates[0].map(coord => [coord[1], coord[0]])}
+                pathOptions={{ 
+                  color: selectedParkId === (park.ma_cong_vien || park.id) ? '#ef4444' : '#3b82f6',
+                  fillColor: selectedParkId === (park.ma_cong_vien || park.id) ? '#ef4444' : '#3b82f6',
+                  fillOpacity: 0.2 
+                }}
+              />
+            )}
             <Marker
               key={park.ma_cong_vien || park.id}
               position={park.toa_do_trung_tam || DEFAULT_CENTER}
@@ -399,6 +411,7 @@ export default function ParkMapPage() {
                 </div>
               </Popup>
             </Marker>
+            </div>
           ))}
         </MapContainer>
       </div>

@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from '../hooks';
 import { parksAPI, districtsAPI, parkTypesAPI, amenitiesAPI, imagesAPI } from '../api';
-import { useUIStore } from '../store';
+import { useUIStore, useAuthStore } from '../store';
 import '../styles/pages/ParkFormPage.css';
-import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap, FeatureGroup, Polygon } from 'react-leaflet';
+import { EditControl } from 'react-leaflet-draw';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet-draw/dist/leaflet.draw.css';
 import L from 'leaflet';
 
 // Fix lỗi icon mặc định của Leaflet
@@ -46,6 +48,7 @@ export default function EditParkPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { showNotification } = useUIStore();
+  const { token } = useAuthStore();
   const [park, setPark] = useState(null);
   const [districts, setDistricts] = useState([]);
   const [parkTypes, setParkTypes] = useState([]);
@@ -53,6 +56,7 @@ export default function EditParkPage() {
   const [amenityTypes, setAmenityTypes] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
   const [newImages, setNewImages] = useState([]);
+  const [boundary, setBoundary] = useState(null); // State lưu ranh giới (GeoJSON)
   
   // State động
   const [amenities, setAmenities] = useState({});
@@ -79,6 +83,7 @@ export default function EditParkPage() {
             parseFloat(values.toa_do_trung_tam_lat),
             parseFloat(values.toa_do_trung_tam_lng),
           ],
+          ranh_gioi: boundary // Gửi ranh giới về backend
         };
 
         const response = await parksAPI.update(id, parkData);
@@ -201,6 +206,10 @@ export default function EditParkPage() {
           setFieldValue('toa_do_trung_tam_lat', response.data.toa_do_trung_tam[0]);
           setFieldValue('toa_do_trung_tam_lng', response.data.toa_do_trung_tam[1]);
         }
+        
+        if (response.data.ranh_gioi) {
+          setBoundary(response.data.ranh_gioi);
+        }
 
         // Map tiện ích hiện có vào state
         const existingAmenities = parkAmenitiesRes.data.results || parkAmenitiesRes.data;
@@ -302,6 +311,30 @@ export default function EditParkPage() {
         showNotification('Lỗi khi xóa ảnh', 'error');
       }
     }
+  };
+
+  // Xử lý khi vẽ xong ranh giới
+  const onCreated = (e) => {
+    const { layerType, layer } = e;
+    if (layerType === 'polygon') {
+      const geojson = layer.toGeoJSON();
+      setBoundary(geojson.geometry);
+      showNotification('Đã tạo ranh giới mới', 'info');
+    }
+  };
+
+  // Xử lý khi chỉnh sửa ranh giới
+  const onEdited = (e) => {
+    const { layers } = e;
+    layers.eachLayer((layer) => {
+      const geojson = layer.toGeoJSON();
+      setBoundary(geojson.geometry);
+    });
+  };
+
+  // Xử lý khi xóa ranh giới
+  const onDeleted = () => {
+    setBoundary(null);
   };
 
   if (loading) {
@@ -448,10 +481,36 @@ export default function EditParkPage() {
               <LocationMarker setFieldValue={setFieldValue} />
               <RecenterMap lat={parseFloat(values.toa_do_trung_tam_lat)} lng={parseFloat(values.toa_do_trung_tam_lng)} />
               <Marker position={[parseFloat(values.toa_do_trung_tam_lat) || 10.8231, parseFloat(values.toa_do_trung_tam_lng) || 106.6797]} />
+              
+              {/* Công cụ vẽ ranh giới */}
+              <FeatureGroup>
+                <EditControl
+                  position='topright'
+                  onCreated={onCreated}
+                  onEdited={onEdited}
+                  onDeleted={onDeleted}
+                  draw={{
+                    rectangle: false,
+                    circle: false,
+                    circlemarker: false,
+                    marker: false,
+                    polyline: false,
+                    polygon: true, // Chỉ cho phép vẽ đa giác
+                  }}
+                />
+                {/* Hiển thị ranh giới hiện có */}
+                {boundary && boundary.coordinates && (
+                  <Polygon 
+                    positions={boundary.coordinates[0].map(coord => [coord[1], coord[0]])}
+                    color="blue"
+                  />
+                )}
+              </FeatureGroup>
             </MapContainer>
           </div>
-          <small style={{ display: 'block', marginTop: '5px', color: '#666' }}>
-            Click trực tiếp trên bản đồ để ghim vị trí chính xác
+          <small style={{ display: 'block', marginTop: '10px', color: '#666' }}>
+            Click bản đồ để ghim tâm. Dùng công cụ hình ngũ giác (bên phải) để vẽ ranh giới. 
+            Diện tích sẽ được tự động tính toán khi bạn bấm Cập Nhật.
           </small>
         </div>
 

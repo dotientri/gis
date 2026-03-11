@@ -16,6 +16,15 @@ from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 import json
 
+# GIS Libraries
+try:
+    import geopandas as gpd
+    from shapely.geometry import shape, mapping
+    from shapely.validation import make_valid
+    HAS_GEOPANDAS = True
+except ImportError:
+    HAS_GEOPANDAS = False
+
 from .permissions import (
     IsAuthenticated, IsAdmin, IsParkManager, IsGISEditor,
     IsParkManagerOrGISEditor, IsInspector, IsOwnerOrAdmin,
@@ -108,32 +117,80 @@ class CongVienViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.request.method == 'GET':
             return [AllowAny()]
+        # IsParkManagerOrGISEditor đã bao gồm nhóm QUAN_TRI (Admin) nên không cần dùng toán tử |
         return [IsParkManagerOrGISEditor()]
     
     def get_serializer_class(self):
         if self.action == 'list':
             return CongVienListSerializer
         return CongVienDetailSerializer
+
+    def _tinh_dien_tich_tu_ranh_gioi(self, instance):
+        """Hàm hỗ trợ: Tính diện tích từ ranh giới GeoJSON nếu có"""
+        if not HAS_GEOPANDAS or not instance.ranh_gioi:
+            return
+
+        try:
+            geom = shape(instance.ranh_gioi)
+            if not geom.is_valid:
+                geom = make_valid(geom)
+            
+            gdf = gpd.GeoDataFrame({'geometry': [geom]}, crs="EPSG:4326")
+            
+            # Mặc định dùng UTM Zone 48N (EPSG:32648) cho Việt Nam
+            target_crs = "EPSG:32648" 
+            if hasattr(gdf, 'estimate_utm_crs'):
+                try: target_crs = gdf.estimate_utm_crs()
+                except: pass 
+            
+            area_gdf = gdf.to_crs(target_crs)
+            area_m2 = area_gdf.geometry.area.iloc[0]
+            
+            instance.dien_tich_m2 = round(float(area_m2), 2)
+            instance.save(update_fields=['dien_tich_m2'])
+        except Exception as e:
+            print(f"Lỗi tự động tính diện tích: {e}")
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        self._tinh_dien_tich_tu_ranh_gioi(instance)
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        self._tinh_dien_tich_tu_ranh_gioi(instance)
     
-    @action(detail=False, methods=['post'], url_path='tim-gan-nhat', permission_classes=[AllowAny])
+    @action(detail=False, methods=['post', 'get'], url_path='tim-gan-nhat', permission_classes=[AllowAny])
     def tim_gan_nhat(self, request):
         """Tìm công viên gần nhất theo tọa độ GPS"""
+        vi_do_raw = None
+        kinh_do_raw = None
         try:
+            # Lấy data từ body (POST) hoặc query params (GET)
+            data = request.data if request.method == 'POST' else request.query_params
+            
             # Chấp nhận latitude, longitude hoặc vi_do, kinh_do
-            vi_do = float(request.data.get('vi_do') or request.data.get('latitude'))
-            kinh_do = float(request.data.get('kinh_do') or request.data.get('longitude'))
-            ban_kinh_km = float(request.data.get('ban_kinh_km', 50))  # Tăng bán kính mặc định
+            def get_val(keys):
+                for k in keys:
+                    if k in data and data[k] is not None and str(data[k]).strip() != '':
+                        return data[k]
+                return None
+
+            vi_do_raw = get_val(['vi_do', 'latitude'])
+            kinh_do_raw = get_val(['kinh_do', 'longitude'])
+            
+            if vi_do_raw is None or kinh_do_raw is None:
+                 # Nếu thiếu tọa độ, trả về list rỗng thay vì lỗi 400 để map không bị crash
+                 return Response({'count': 0, 'results': []})
+
+            vi_do = float(vi_do_raw)
+            kinh_do = float(kinh_do_raw)
+            ban_kinh_km = float(data.get('ban_kinh_km', 50))  # Tăng bán kính mặc định
         except (TypeError, ValueError):
             return Response({
-                'error': 'vi_do/latitude, kinh_do/longitude, và ban_kinh_km phải là các con số hợp lệ',
-                'received': f"vi_do={request.data.get('vi_do')}, kinh_do={request.data.get('kinh_do')}"
+                'error': 'Toa do khong hop le',
+                'detail': 'vi_do/latitude va kinh_do/longitude phai la so thuc'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        if not vi_do or not kinh_do:
-            return Response({
-                'error': 'vi_do/latitude và kinh_do/longitude là bắt buộc',
-                'data_keys': list(request.data.keys())
-            }, status=status.HTTP_400_BAD_REQUEST)
         
         import math
         def haversine(lat1, lon1, lat2, lon2):
@@ -197,6 +254,90 @@ class CongVienViewSet(viewsets.ModelViewSet):
         
         serializer = self.get_serializer(parks_not_checked, many=True)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def cat_ranh_gioi(self, request, pk=None):
+        """
+        Cắt ranh giới công viên theo ranh giới Quận/Huyện chứa nó.
+        Sử dụng Geopandas để thực hiện phép toán không gian (Clip/Intersection).
+        """
+        if not HAS_GEOPANDAS:
+            return Response(
+                {'error': 'Thư viện Geopandas chưa được cài đặt trên server.'}, 
+                status=status.HTTP_501_NOT_IMPLEMENTED
+            )
+
+        try:
+            park = self.get_object()
+            
+            # Lấy ranh giới hiện tại của công viên
+            if not park.ranh_gioi:
+                return Response({'error': 'Công viên chưa có ranh giới để cắt'}, status=400)
+            
+            # Lấy ranh giới quận huyện (Giả sử quận huyện có field hinh_hoc là GeoJSON)
+            if not park.ma_quan_huyen or not park.ma_quan_huyen.hinh_hoc:
+                 return Response({'error': 'Quận/Huyện trực thuộc chưa có dữ liệu ranh giới (hinh_hoc)'}, status=400)
+            
+            # 1. Tạo GeoDataFrame cho Công viên
+            park_geom = shape(park.ranh_gioi)
+            if not park_geom.is_valid:
+                park_geom = make_valid(park_geom)
+            gdf_park = gpd.GeoDataFrame({'geometry': [park_geom]}, crs="EPSG:4326")
+            
+            # 2. Tạo GeoDataFrame cho Quận/Huyện
+            district_geom = shape(park.ma_quan_huyen.hinh_hoc)
+            if not district_geom.is_valid:
+                district_geom = make_valid(district_geom)
+            gdf_district = gpd.GeoDataFrame({'geometry': [district_geom]}, crs="EPSG:4326")
+            
+            # 3. Thực hiện phép Cắt (Clip/Intersection)
+            # clip() sẽ giữ lại phần giao nhau
+            try:
+                clipped_gdf = gpd.clip(gdf_park, gdf_district)
+            except Exception as clip_err:
+                # Fallback: Dùng intersection của shapely nếu geopandas clip gặp lỗi topology phức tạp
+                clipped_geom = park_geom.intersection(district_geom)
+                clipped_gdf = gpd.GeoDataFrame({'geometry': [clipped_geom]}, crs="EPSG:4326")
+            
+            # Kiểm tra kết quả
+            if clipped_gdf.empty or clipped_gdf.geometry.iloc[0].is_empty:
+                return Response({
+                    'error': 'Ranh giới công viên nằm hoàn toàn bên ngoài ranh giới Quận/Huyện được chọn.'
+                }, status=400)
+            
+            # Cập nhật lại ranh giới mới
+            # Chuyển đổi về GeoJSON dict
+            result_geom = clipped_gdf.geometry.iloc[0]
+            park.ranh_gioi = mapping(result_geom)
+            
+            # Tự động tính diện tích (m2)
+            try:
+                # Đảm bảo GeoDataFrame có CRS trước khi chuyển đổi (phòng trường hợp clip làm mất CRS)
+                if not clipped_gdf.crs:
+                    clipped_gdf.set_crs("EPSG:4326", allow_override=True, inplace=True)
+
+                # Mặc định dùng UTM Zone 48N (EPSG:32648) cho Việt Nam
+                target_crs = "EPSG:32648" 
+                
+                # Cố gắng tự động xác định vùng UTM phù hợp
+                if hasattr(clipped_gdf, 'estimate_utm_crs'):
+                    try: target_crs = clipped_gdf.estimate_utm_crs()
+                    except: pass # Nếu lỗi estimate thì giữ nguyên 32648
+                
+                area_gdf = clipped_gdf.to_crs(target_crs)
+                area_m2 = area_gdf.geometry.area.iloc[0]
+                park.dien_tich_m2 = round(float(area_m2), 2)
+            except Exception as calc_err:
+                print(f"Lỗi tính diện tích: {calc_err}")
+                # Vẫn tiếp tục lưu dù lỗi tính diện tích
+            
+            park.save()
+            
+            return Response({'message': 'Đã cắt ranh giới thành công', 'ranh_gioi': park.ranh_gioi, 'dien_tich_m2': park.dien_tich_m2})
+        except Exception as e:
+            import traceback
+            print(traceback.format_exc())
+            return Response({'error': str(e)}, status=500)
 
 
 # ==================== TIỆN ÍCH & NỘI DUNG ====================
