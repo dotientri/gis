@@ -1,0 +1,4 @@
+{"type":"FeatureCollection","features":[
+  {"type":"Feature","geometry":{"type":"Point","coordinates":[106.67,10.75]},"properties":{"name":"Công viên A"}},
+  {"type":"Feature","geometry":{"type":"Point","coordinates":[106.66,10.74]},"properties":{"name":"Công viên B"}}
+]}
