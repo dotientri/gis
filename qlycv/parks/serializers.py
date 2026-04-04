@@ -1,8 +1,3 @@
-"""
-Django REST Framework Serializers for Parks API
-Serializers cho tất cả 20 bảng dữ liệu
-"""
-
 from rest_framework import serializers
 from .models import (
     QuanHuyen, PhuongXa, LoaiCongVien, TrangThaiCongVien, CongVien,
@@ -11,9 +6,8 @@ from .models import (
     DanhGiaCongVien, LoaiKiemTra, KiemTraCongVien, DanhMucSuCo, BaoCaoSuCo,
     LoaiCay, CayXanh, SuKienCongVien, NhatKyThayDoi, ThongKetruyenCap
 )
+from django.contrib.auth.hashers import make_password
 
-
-# ==================== NHÓM 1: ĐỊA LÝ HÀNH CHÍNH ====================
 
 class QuanHuyenSerializer(serializers.ModelSerializer):
     class Meta:
@@ -29,8 +23,6 @@ class PhuongXaSerializer(serializers.ModelSerializer):
         fields = ['ma_phuong_xa', 'ma_quan_huyen', 'quan_huyen_ten', 'ten_phuong_xa', 'ma_code', 'loai', 'dien_tich_km2', 'hinh_hoc']
 
 
-# ==================== NHÓM 2: CÔNG VIÊN ====================
-
 class LoaiCongVienSerializer(serializers.ModelSerializer):
     class Meta:
         model = LoaiCongVien
@@ -44,12 +36,12 @@ class TrangThaiCongVienSerializer(serializers.ModelSerializer):
 
 
 class CongVienListSerializer(serializers.ModelSerializer):
-    """Danh sách công viên - Thông tin tóm tắt"""
     loai_ten = serializers.CharField(source='ma_loai.ten_loai', read_only=True)
     trang_thai_ten = serializers.CharField(source='ma_trang_thai.ten_trang_thai', read_only=True)
     quan_huyen_ten = serializers.CharField(source='ma_quan_huyen.ten_quan_huyen', read_only=True)
     diem_trung_binh = serializers.FloatField(read_only=True)
     cay_so_luong = serializers.SerializerMethodField()
+    tien_ich_so_luong = serializers.SerializerMethodField()
     anh_dai_dien = serializers.SerializerMethodField()
     
     class Meta: 
@@ -58,22 +50,23 @@ class CongVienListSerializer(serializers.ModelSerializer):
             'ma_cong_vien', 'ten_cong_vien', 'ma_code', 'ma_loai', 'loai_ten',
             'ma_trang_thai', 'trang_thai_ten', 'ma_quan_huyen', 'quan_huyen_ten',
             'dien_tich_m2', 'diem_trung_binh', 'so_luot_danh_gia', 'ranh_gioi', 'toa_do_trung_tam',
-            'anh_dai_dien', 'da_xac_minh', 'ngay_cap_nhat', 'cay_so_luong'
+            'anh_dai_dien', 'da_xac_minh', 'ngay_cap_nhat', 'cay_so_luong', 'tien_ich_so_luong'
         ]
 
     def get_cay_so_luong(self, obj):
         return obj.cay_xanh.count()
 
+    def get_tien_ich_so_luong(self, obj):
+        return obj.tien_ich.count()
+
     def get_anh_dai_dien(self, obj):
         if obj.anh_dai_dien:
             return obj.anh_dai_dien
-        # Nếu chưa có ảnh đại diện, lấy ảnh đầu tiên trong album
         first_img = obj.hinh_anh.first()
         return first_img.url_anh if first_img else None
 
 
 class CongVienDetailSerializer(serializers.ModelSerializer):
-    """Chi tiết công viên - Thông tin đầy đủ"""
     loai_ten = serializers.CharField(source='ma_loai.ten_loai', read_only=True)
     trang_thai_ten = serializers.CharField(source='ma_trang_thai.ten_trang_thai', read_only=True)
     quan_huyen_ten = serializers.CharField(source='ma_quan_huyen.ten_quan_huyen', read_only=True)
@@ -82,6 +75,7 @@ class CongVienDetailSerializer(serializers.ModelSerializer):
     diem_trung_binh = serializers.FloatField(read_only=True)
     google_maps_url = serializers.SerializerMethodField()
     tien_ich = serializers.SerializerMethodField()
+    tien_ich_so_luong = serializers.SerializerMethodField()
     cay_so_luong = serializers.SerializerMethodField()
     
     class Meta:
@@ -95,12 +89,10 @@ class CongVienDetailSerializer(serializers.ModelSerializer):
             'gio_mo_cua', 'gio_dong_cua', 'mo_cua_24_7', 'mien_phi_vao_cua',
             'gia_ve', 'nam_thanh_lap', 'mo_ta', 'lich_su', 'diem_trung_binh',
             'so_luot_danh_gia', 'anh_dai_dien', 'da_xac_minh', 'hinh_anh', 'google_maps_url',
-            'tien_ich', 'cay_so_luong', 'ngay_tao', 'ngay_cap_nhat'
+            'tien_ich', 'tien_ich_so_luong', 'cay_so_luong', 'ngay_tao', 'ngay_cap_nhat'
         ]
     
     def validate_ten_cong_vien(self, value):
-        """Kiểm tra tên công viên không được trùng lặp"""
-        # Kiểm tra trùng tên (không phân biệt hoa thường)
         qs = CongVien.objects.filter(ten_cong_vien__iexact=value)
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)
@@ -121,11 +113,12 @@ class CongVienDetailSerializer(serializers.ModelSerializer):
         tien_ich = obj.tien_ich.all()
         return TienIchCongVienSerializer(tien_ich, many=True).data
     
+    def get_tien_ich_so_luong(self, obj):
+        return obj.tien_ich.count()
+    
     def get_cay_so_luong(self, obj):
         return obj.cay_xanh.count()
 
-
-# ==================== NHÓM 3: TIỆN ÍCH &NỘI DUNG ====================
 
 class LoaiTienIchSerializer(serializers.ModelSerializer):
     class Meta:
@@ -148,8 +141,6 @@ class HinhAnhCongVienSerializer(serializers.ModelSerializer):
         fields = ['ma_hinh_anh', 'ma_cong_vien', 'url_anh', 'mo_ta', 'la_anh_chinh', 'ngay_chup']
 
 
-# ==================== NHÓM 4: NGƯỜI DÙNG & PHÂN QUYỀN ====================
-
 class NhomQuyenSerializer(serializers.ModelSerializer):
     class Meta:
         model = NhomQuyen
@@ -159,19 +150,20 @@ class NhomQuyenSerializer(serializers.ModelSerializer):
 class NguoiDungSerializer(serializers.ModelSerializer):
     nhom_quyen_ten = serializers.CharField(source='ma_nhom_quyen.get_ten_nhom_display', read_only=True)
     nhom_quyen_code = serializers.CharField(source='ma_nhom_quyen.ten_nhom', read_only=True)
+    ma_cong_vien_ten = serializers.CharField(source='ma_cong_vien.ten_cong_vien', read_only=True, allow_null=True)
     
     class Meta:
         model = NguoiDung
         fields = [
-            'ma_nguoi_dung', 'ma_nhom_quyen', 'nhom_quyen_ten', 'nhom_quyen_code', 'ten_dang_nhap',
-            'email', 'ho_ten', 'dang_hoat_dong', 'da_xac_thuc_email',
+            'ma_nguoi_dung', 'ma_nhom_quyen', 'nhom_quyen_ten', 'nhom_quyen_code', 
+            'ma_cong_vien', 'ma_cong_vien_ten',
+            'ten_dang_nhap', 'email', 'ho_ten', 'dang_hoat_dong', 'da_xac_thuc_email',
             'so_lan_dang_nhap', 'lan_dang_nhap_cuoi', 'ngay_tao', 'ngay_cap_nhat'
         ]
         extra_kwargs = {'mat_khau_hash': {'write_only': True}}
 
 
 class NguoiDungCreateSerializer(serializers.ModelSerializer):
-    """Serializer cho tạo tài khoản mới (với mã hóa mật khẩu)"""
     mat_khau = serializers.CharField(write_only=True)
     
     class Meta:
@@ -180,15 +172,10 @@ class NguoiDungCreateSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         mat_khau = validated_data.pop('mat_khau')
+        validated_data['mat_khau_hash'] = make_password(mat_khau)
         user = NguoiDung.objects.create(**validated_data)
-        # Mã hóa mật khẩu (trong thực tế nên dùng hashing thích hợp)
-        import hashlib
-        user.mat_khau_hash = hashlib.sha256(mat_khau.encode()).hexdigest()
-        user.save()
         return user
 
-
-# ==================== NHÓM 5: NGHIỆP VỤ ====================
 
 class DanhGiaCongVienSerializer(serializers.ModelSerializer):
     cong_vien_ten = serializers.CharField(source='ma_cong_vien.ten_cong_vien', read_only=True)
@@ -241,12 +228,10 @@ class BaoCaoSuCoSerializer(serializers.ModelSerializer):
             'ma_bao_cao', 'ma_cong_vien', 'cong_vien_ten', 'ma_danh_muc',
             'danh_muc_ten', 'tieu_de', 'noi_dung_mo_ta', 'url_hinh_anh',
             'trang_thai', 'muc_do_uu_tien', 'ma_nguoi_phu_trach',
-            'nguoi_phu_trach_ten', 'ma_nguoi_bao_cao', 'vi_tri',
-            'so_nguoi_xac_nhan', 'ngay_tao', 'ngay_cap_nhat'
+            'nguoi_phu_trach_ten', 'ma_nguoi_bao_cao', 'vi_tri', 'dia_chi',
+            'so_nguoi_xac_nhan', 'ngay_tao', 'ngay_cap_nhat', 'is_archived', 'ngay_luu_tru'
         ]
 
-
-# ==================== NHÓM 6: SINH THÁI & HỆ THỐNG ====================
 
 class LoaiCaySerializer(serializers.ModelSerializer):
     class Meta:

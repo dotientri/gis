@@ -22,11 +22,8 @@ export default function ParkDetailPage() {
     }
   }, [id]);
 
-  // Kiểm tra quyền quản lý công viên
-  const canManageParks = user && (
-    user.ten_dang_nhap === 'admin' || // Admin luôn có quyền
-    ['QUAN_TRI', 'QUAN_LY_CV', 'BIEN_TAP_GIS'].includes(user.nhom_quyen_code)
-  );
+  // Kiểm tra quyền quản lý công viên (Admin)
+  const canManageParks = user && user.nhom_quyen_code === 'QUAN_TRI';
 
   const handleDelete = async () => {
     if (window.confirm('Bạn có chắc chắn muốn xóa công viên này?')) {
@@ -68,6 +65,48 @@ export default function ParkDetailPage() {
 
   return (
     <div className="park-detail-page">
+      {/* LIGHT THEME INJECTION */}
+      <style>{`
+        :root { color-scheme: light; }
+        html, body, #root, .app-container { background-color: #f3f4f6 !important; color: #111827 !important; height: 100%; }
+        
+        /* SIDEBAR FIX */
+        .sidebar, aside, nav, .left-menu, .nav-menu, .main-sidebar, [class*="sidebar"], [class*="Sidebar"], [class*="Sider"], .pro-sidebar-inner {
+            background-color: #ffffff !important;
+            background: #ffffff !important;
+            border-right: 1px solid #e5e7eb !important;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05) !important;
+        }
+        .sidebar *, aside *, nav *, [class*="sidebar"] * {
+            color: #111827 !important;
+            text-shadow: none !important;
+        }
+        .sidebar a:hover, aside a:hover, .nav-link:hover, .pro-menu-item:hover { 
+            background-color: #eff6ff !important;
+            color: #2563eb !important;
+        }
+        
+        /* ACTIVE STATE */
+        .sidebar .active, .sidebar .selected, .sidebar .current, .sidebar .is-active, .sidebar .router-link-active,
+        aside .active, aside .selected, aside .current, aside .is-active, aside .router-link-active,
+        .nav-link.active, li.active > a, a[aria-current="page"], .pro-menu-item.active {
+            background-color: #e5e7eb !important;
+            color: #000000 !important;
+            font-weight: 700 !important;
+            box-shadow: inset 4px 0 0 #3b82f6 !important;
+        }
+        .sidebar .active *, .sidebar .selected *, [aria-current="page"] * { color: #000000 !important; }
+        
+        .park-detail-page { background-color: #f3f4f6; padding: 20px; min-height: 100vh; }
+        .detail-card, .sidebar-card { background: #ffffff !important; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e5e7eb; padding: 24px; margin-bottom: 24px; }
+        h1, h2, h3 { color: #111827 !important; }
+        .label { color: #6b7280 !important; font-weight: 600; }
+        .value { color: #111827 !important; font-weight: 500; }
+        p { color: #374151 !important; line-height: 1.6; }
+        .amenity-card { background: #f9fafb !important; border: 1px solid #e5e7eb !important; }
+        .amenity-name { color: #111827 !important; font-weight: 700; }
+        .rating-author { color: #111827 !important; font-weight: 700; }
+      `}</style>
       <div className="detail-header">
         <Link to="/parks-list" className="btn btn-ghost">
           ← Quay lại
@@ -153,7 +192,8 @@ export default function ParkDetailPage() {
             ) : parkAmenities.length > 0 ? (
               <div className="amenities-grid">
                 {parkAmenities.map((amenity) => (
-                  <div key={amenity.id} className="amenity-card">
+                  // FIX: Sử dụng đúng primary key (ma_tien_ich) thay vì id
+                  <div key={amenity.ma_tien_ich || amenity.id} className="amenity-card">
                     <div className="amenity-name">{amenity.ten_tien_ich}</div>
                     <div className="amenity-details">
                       <p>Loại: {amenity.loai_tien_ich_ten || amenity.ma_loai_tien_ich}</p>
@@ -178,7 +218,8 @@ export default function ParkDetailPage() {
             ) : parkRatings.length > 0 ? (
               <div className="ratings-list">
                 {parkRatings.slice(0, 5).map((rating) => (
-                  <div key={rating.id} className="rating-item">
+                  // FIX: Sử dụng đúng primary key (ma_danh_gia) thay vì id
+                  <div key={rating.ma_danh_gia || rating.id} className="rating-item">
                     <div className="rating-header">
                       <span className="rating-author">{rating.nguoi_danh_gia_ho_ten || 'Ẩn danh'}</span>
                       <span className="rating-score">{rating.diem}/5</span>

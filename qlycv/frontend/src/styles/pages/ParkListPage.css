@@ -112,18 +112,20 @@
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
+  min-height: 320px;
   background: white;
   border-radius: 10px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
 }
 
 .loading-container .spinner {
-  width: 50px;
-  height: 50px;
-  border: 4px solid #e0e0e0;
-  border-top-color: #667eea;
+  width: 40px;
+  height: 40px;
+  border: 5px solid rgba(226, 232, 240, 0.5);
+  border-top-color: #0ea5e9;
+  border-right-color: #3b82f6;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: spin-smooth 0.8s linear infinite;
   margin-bottom: 15px;
 }
 

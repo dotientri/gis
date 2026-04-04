@@ -2,7 +2,6 @@ from django.db import migrations
 import hashlib
 
 def hash_password(password):
-    """Hash password using SHA256 to match auth_views.py"""
     return hashlib.sha256(password.encode()).hexdigest()
 
 def create_initial_data(apps, schema_editor):
@@ -13,12 +12,8 @@ def create_initial_data(apps, schema_editor):
     LoaiCongVien = apps.get_model('parks', 'LoaiCongVien')
     TrangThaiCongVien = apps.get_model('parks', 'TrangThaiCongVien')
 
-    # 1. Tạo các nhóm quyền
     groups = {
         'QUAN_TRI': 'Quản trị viên',
-        'QUAN_LY_CV': 'Quản lý công viên',
-        'KIEM_TRA': 'Nhân viên kiểm tra',
-        'BIEN_TAP_GIS': 'Biên tập viên GIS',
         'CONG_DONG': 'Người dùng cộng đồng'
     }
     
@@ -27,33 +22,32 @@ def create_initial_data(apps, schema_editor):
         g, _ = NhomQuyen.objects.get_or_create(ten_nhom=code, defaults={'mo_ta': name})
         db_groups[code] = g
 
-    # 2. Tạo tài khoản Admin mặc định
-    if not NguoiDung.objects.filter(ten_dang_nhap='admin').exists():
-        NguoiDung.objects.create(
-            ten_dang_nhap='admin',
-            email='admin@gispark.com',
-            mat_khau_hash=hash_password('admin123'), # Mật khẩu mặc định: admin123
-            ho_ten='Administrator',
-            ma_nhom_quyen=db_groups['QUAN_TRI'],
-            dang_hoat_dong=True,
-            da_xac_thuc_email=True,
-            token='admin-initial-token'
-        )
+    NguoiDung.objects.update_or_create(
+        ten_dang_nhap='admin',
+        defaults={
+            'email': 'admin@gispark.com',
+            'mat_khau_hash': hash_password('admin123'),
+            'ho_ten': 'Administrator',
+            'ma_nhom_quyen': db_groups['QUAN_TRI'],
+            'dang_hoat_dong': True,
+            'da_xac_thuc_email': True,
+            'token': 'admin-initial-token'
+        }
+    )
 
-    # 3. Tạo tài khoản User thường (Cộng đồng)
-    if not NguoiDung.objects.filter(ten_dang_nhap='user').exists():
-        NguoiDung.objects.create(
-            ten_dang_nhap='user',
-            email='user@gispark.com',
-            mat_khau_hash=hash_password('user123'), # Pass: user123
-            ho_ten='Nguyễn Văn A',
-            ma_nhom_quyen=db_groups['CONG_DONG'],
-            dang_hoat_dong=True,
-            da_xac_thuc_email=True,
-            token='user-initial-token'
-        )
+    NguoiDung.objects.update_or_create(
+        ten_dang_nhap='user',
+        defaults={
+            'email': 'user@gispark.com',
+            'mat_khau_hash': hash_password('user123'),
+            'ho_ten': 'Nguyễn Văn A',
+            'ma_nhom_quyen': db_groups['CONG_DONG'],
+            'dang_hoat_dong': True,
+            'da_xac_thuc_email': True,
+            'token': 'user-initial-token'
+        }
+    )
 
-    # 4. Tạo các loại tiện ích bắt buộc (Nhà vệ sinh, Hồ bơi, Sân thể thao)
     amenities = [
         {'ten': 'Nhà vệ sinh', 'code': 'nha_ve_sinh', 'icon': '/icons/toilet.png'},
         {'ten': 'Hồ bơi', 'code': 'ho_boi', 'icon': '/icons/pool.png'},
@@ -69,7 +63,6 @@ def create_initial_data(apps, schema_editor):
             defaults={'ten_loai': item['ten'], 'icon_url': item['icon']}
         )
 
-    # 5. Tạo dữ liệu Quận/Huyện (TP.HCM)
     districts = [
         {'name': 'Quận 1', 'code': 'Q1', 'type': 'quan'},
         {'name': 'Quận 3', 'code': 'Q3', 'type': 'quan'},
@@ -101,7 +94,6 @@ def create_initial_data(apps, schema_editor):
             defaults={'ten_quan_huyen': d['name'], 'loai': d['type']}
         )
 
-    # 6. Tạo dữ liệu Loại công viên
     park_types = [
         {'name': 'Công viên văn hóa', 'code': 'CV_VAN_HOA'},
         {'name': 'Công viên cây xanh', 'code': 'CV_CAY_XANH'},
@@ -116,7 +108,6 @@ def create_initial_data(apps, schema_editor):
             defaults={'ten_loai': t['name']}
         )
 
-    # 7. Tạo dữ liệu Trạng thái công viên (để dùng mặc định)
     statuses = [
         {'name': 'Quy hoạch', 'code': 'quy_hoach', 'color': '#3b82f6'},
         {'name': 'Đang xây dựng', 'code': 'dang_xay_dung', 'color': '#f59e0b'},
@@ -134,7 +125,6 @@ def create_initial_data(apps, schema_editor):
         )
         db_statuses[s['code']] = status
     
-    # Đảm bảo status "hoat_dong" luôn tồn tại
     hoat_dong_status = db_statuses.get('hoat_dong')
 
 def remove_initial_data(apps, schema_editor):

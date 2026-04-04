@@ -1,6 +1,3 @@
-"""
-URL routing for parks app
-"""
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from . import views
@@ -8,7 +5,6 @@ from . import auth_views
 from . import debug_views
 from . import admin_views
 
-# Create router and register viewsets
 router = DefaultRouter()
 router.register(r'quan-huyen', views.QuanHuyenViewSet)
 router.register(r'phuong-xa', views.PhuongXaViewSet)
@@ -31,7 +27,6 @@ router.register(r'su-kien-cong-vien', views.SuKienCongVienViewSet)
 router.register(r'nhat-ky-thay-doi', views.NhatKyThayDoiViewSet)
 router.register(r'thong-ke-truyen-cap', views.ThongKeTruyenCapViewSet)
 
-# Admin Routes
 router.register(r'admin/users', admin_views.AdminUsersViewSet, basename='admin-users')
 router.register(r'admin/ratings', admin_views.AdminRatingsViewSet, basename='admin-ratings')
 router.register(r'admin/events', admin_views.AdminEventsViewSet, basename='admin-events')
@@ -44,7 +39,6 @@ urlpatterns = [
     path('auth/register/', auth_views.register, name='api-register'),
     path('auth/me/', auth_views.get_current_user, name='api-me'),
     path('dashboard/thong-ke/', views.dashboard_thong_ke, name='api-dashboard'),
-    # Debug endpoints
     path('debug/parks-coordinates/', debug_views.debug_parks_coordinates, name='debug-parks-coordinates'),
     path('debug/nearest-parks/', debug_views.debug_nearest_parks, name='debug-nearest-parks'),
 ]

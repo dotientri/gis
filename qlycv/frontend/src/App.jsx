@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useEffect } from 'react';
-import { useAuthStore } from './store';
+import { useAuthStore, useUIStore } from './store';
 import { authAPI } from './api';
 
 // Layouts
@@ -11,9 +11,6 @@ import Sidebar from './components/Sidebar/Sidebar';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 
-// Pages - Dashboard
-import DashboardPage from './pages/DashboardPage';
-
 // Pages - Parks
 import ParkMapPage from './pages/ParkMapPage';
 import ParkListPage from './pages/ParkListPage';
@@ -23,6 +20,7 @@ import EditParkPage from './pages/EditParkPage';
 
 // Pages - Admin
 import AdminUsersPage from './pages/AdminUsersPage';
+import AdminUserFormPage from './pages/AdminUserFormPage';
 
 // Pages - Other
 import ParkArticlesPage from './pages/ParkArticlesPage';
@@ -31,6 +29,7 @@ import AmenitiesPage from './pages/AmenitiesPage';
 import CreateAmenityPage from './pages/CreateAmenityPage';
 import EditAmenityPage from './pages/EditAmenityPage';
 import EventsPage from './pages/EventsPage';
+import EventFormPage from './pages/EventFormPage';
 import CreateIncidentPage from './pages/CreateIncidentPage';
 import IncidentsPage from './pages/IncidentsPage';
 import RatingsPage from './pages/RatingsPage';
@@ -62,6 +61,8 @@ function App() {
     }
   }, [token, user, setUser]);
 
+  const { isSidebarOpen } = useUIStore();
+
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
@@ -92,14 +93,14 @@ function App() {
             
             {/* --- PROTECTED ROUTES (Cần đăng nhập) --- */}
             <Route element={<ProtectedRoute />}>
-            {/* Dashboard */}
-            <Route path="/dashboard" element={<DashboardPage />} />
 
             {/* Admin Routes */}
             <Route path="/admin/users" element={<AdminUsersPage />} />
+            <Route path="/admin/users/create" element={<AdminUserFormPage />} />
+            <Route path="/admin/users/edit/:id" element={<AdminUserFormPage />} />
 
-            {/* Park Management - Protected by Role */}
-            <Route element={<ProtectedRoute roles={['QUAN_TRI', 'QUAN_LY_CV', 'BIEN_TAP_GIS']} />}>
+            {/* Park Management - Admin Only */}
+            <Route element={<ProtectedRoute roles={['QUAN_TRI']} />}>
               <Route path="/parks/create" element={<CreateParkPage />} />
               <Route path="/parks/:id/edit" element={<EditParkPage />} />
             </Route>
@@ -107,14 +108,16 @@ function App() {
             {/* Amenities */}
             <Route path="/amenities" element={<AmenitiesPage />} />
             
-            {/* Amenity Management - Protected by Role */}
-            <Route element={<ProtectedRoute roles={['QUAN_TRI', 'QUAN_LY_CV', 'BIEN_TAP_GIS']} />}>
+            {/* Amenity Management - Admin Only */}
+            <Route element={<ProtectedRoute roles={['QUAN_TRI']} />}>
               <Route path="/amenities/create" element={<CreateAmenityPage />} />
               <Route path="/amenities/:id/edit" element={<EditAmenityPage />} />
             </Route>
 
             {/* Events */}
             <Route path="/events" element={<EventsPage />} />
+            <Route path="/events/create" element={<EventFormPage />} />
+            <Route path="/events/:id/edit" element={<EventFormPage />} />
 
             {/* Incidents */}
             <Route path="/incidents" element={<IncidentsPage />} />

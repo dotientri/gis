@@ -140,9 +140,9 @@ export const RATING_LABELS = {
 export const MAP_CONFIG = {
   DEFAULT_CENTER: [10.8231, 106.6797],
   DEFAULT_ZOOM: 10,
-  TILE_LAYER: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  TILE_LAYER: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
   ATTRIBUTION:
-    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    '&copy; <a href="https://carto.com/attributions">CARTO</a>, &copy; OpenStreetMap contributors',
 };
 
 // API Pagination

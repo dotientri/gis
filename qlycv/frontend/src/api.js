@@ -213,6 +213,12 @@ export const incidentsAPI = {
   
   assign: (id, maQuanLy) =>
     api.patch(`/bao-cao-su-co/${id}/`, { ma_nguoi_phu_trach: maQuanLy }),
+  
+  exportExcel: (params) =>
+    api.get('/bao-cao-su-co/export_excel/', { 
+      params,
+      responseType: 'arraybuffer'
+    }),
 };
 
 // ==================== SỰ KIỆN (EVENTS) ====================
@@ -285,6 +291,8 @@ export const adminAPI = {
   createUser: (data) => api.post('/admin/users/', data),
   updateUser: (id, data) => api.put(`/admin/users/${id}/`, data),
   deleteUser: (id) => api.delete(`/admin/users/${id}/`),
+  
+  getParks: (params) => api.get('/cong-vien/', { params }),
   
   getRatings: (params) => api.get('/admin/ratings/', { params }),
   getEvents: (params) => api.get('/admin/events/', { params }),

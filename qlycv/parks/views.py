@@ -1,8 +1,3 @@
-"""
-Django REST Framework Views for GIS Park Management System
-Cung cấp CRUD API cho tất cả các bảng dữ liệu
-"""
-
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action, api_view
 from rest_framework.permissions import AllowAny
@@ -16,7 +11,6 @@ from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 import json
 
-# GIS Libraries
 try:
     import geopandas as gpd
     from shapely.geometry import shape, mapping
@@ -25,10 +19,23 @@ try:
 except ImportError:
     HAS_GEOPANDAS = False
 
+# Import for Excel export
+try:
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    HAS_OPENPYXL = True
+except ImportError:
+    HAS_OPENPYXL = False
+
+from io import BytesIO
+from django.http import HttpResponse
+
 from .permissions import (
     IsAuthenticated, IsAdmin, IsParkManager, IsGISEditor,
     IsParkManagerOrGISEditor, IsInspector, IsOwnerOrAdmin,
-    CanCreatePark, CanRateAndReview, CanReportIncident
+    CanCreatePark, CanRateAndReview, CanReportIncident,
+    IsGuest, IsUser, IsManagerOrAdmin, CanManageAmenities,
+    CanHandleIncident, CanCreateEvent, IsReadOnly, CanUpdateParkStatus
 )
 
 from .models import (
@@ -50,10 +57,7 @@ from .serializers import (
 )
 
 
-# ==================== ĐỊA LÝ HÀNH CHÍNH ====================
-
 class QuanHuyenViewSet(viewsets.ModelViewSet):
-    """CRUD quận / huyện - Chỉ Admin/Quản lý có thể tạo/sửa/xóa"""
     queryset = QuanHuyen.objects.all()
     serializer_class = QuanHuyenSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
@@ -67,7 +71,6 @@ class QuanHuyenViewSet(viewsets.ModelViewSet):
 
 
 class PhuongXaViewSet(viewsets.ModelViewSet):
-    """CRUD phường / xã - Chỉ Admin/Quản lý có thể tạo/sửa/xóa"""
     queryset = PhuongXa.objects.select_related('ma_quan_huyen')
     serializer_class = PhuongXaSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
@@ -80,21 +83,17 @@ class PhuongXaViewSet(viewsets.ModelViewSet):
         return [IsAdmin()]
 
 
-# ==================== CÔNG VIÊN ====================
-
 class LoaiCongVienViewSet(viewsets.ModelViewSet):
-    """CRUD loại công viên - Chỉ Admin/GIS Editor có thể tạo/sửa/xóa"""
     queryset = LoaiCongVien.objects.all()
     serializer_class = LoaiCongVienSerializer
     
     def get_permissions(self):
         if self.request.method == 'GET':
             return [AllowAny()]
-        return [IsGISEditor()]
+        return [IsAdmin()]
 
 
 class TrangThaiCongVienViewSet(viewsets.ModelViewSet):
-    """CRUD trạng thái công viên - Chỉ Admin có thể tạo/sửa/xóa"""
     queryset = TrangThaiCongVien.objects.all()
     serializer_class = TrangThaiCongVienSerializer
     
@@ -105,7 +104,19 @@ class TrangThaiCongVienViewSet(viewsets.ModelViewSet):
 
 
 class CongVienViewSet(viewsets.ModelViewSet):
-    """CRUD công viên - Chỉ Quản lý/Biên tập viên GIS có thể tạo/sửa/xóa"""
+    """
+    Công viên endpoint.
+    
+    Quyền:
+    - GET: Công khai (AllowAny)
+    - POST/DELETE: Chỉ Admin
+    - PUT/PATCH: Admin hoặc Manager quản lý công viên đó
+    
+    LƯU Ý:
+    - Manager được edit thông tin công viên (nhưng không được đổi trạng thái/loại)
+    - Manager chỉ được edit công viên được gán cho mình
+    - Manager quản lý: sự cố, tiện ích, sự kiện của công viên
+    """
     queryset = CongVien.objects.select_related(
         'ma_loai', 'ma_trang_thai', 'ma_quan_huyen', 'ma_phuong_xa'
     )
@@ -115,18 +126,30 @@ class CongVienViewSet(viewsets.ModelViewSet):
     ordering_fields = ['-diem_trung_binh', '-so_luot_danh_gia', 'ten_cong_vien']
     
     def get_permissions(self):
+        if self.action == 'tim_gan_nhat':
+            return [AllowAny()]
         if self.request.method == 'GET':
             return [AllowAny()]
-        # IsParkManagerOrGISEditor đã bao gồm nhóm QUAN_TRI (Admin) nên không cần dùng toán tử |
-        return [IsParkManagerOrGISEditor()]
+        # POST/DELETE - Chỉ Admin
+        if self.request.method in ['POST', 'DELETE']:
+            return [IsAdmin()]
+        # PUT/PATCH - Admin hoặc Manager quản lý công viên đó
+        if self.request.method in ['PUT', 'PATCH']:
+            return [IsManagerOrAdmin()]
+        return [IsAdmin()]
     
     def get_serializer_class(self):
         if self.action == 'list':
             return CongVienListSerializer
         return CongVienDetailSerializer
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.action == 'list':
+            queryset = queryset.annotate(tien_ich_so_luong=Count('tien_ich', distinct=True))
+        return queryset
+
     def _tinh_dien_tich_tu_ranh_gioi(self, instance):
-        """Hàm hỗ trợ: Tính diện tích từ ranh giới GeoJSON nếu có"""
         if not HAS_GEOPANDAS or not instance.ranh_gioi:
             return
 
@@ -137,7 +160,6 @@ class CongVienViewSet(viewsets.ModelViewSet):
             
             gdf = gpd.GeoDataFrame({'geometry': [geom]}, crs="EPSG:4326")
             
-            # Mặc định dùng UTM Zone 48N (EPSG:32648) cho Việt Nam
             target_crs = "EPSG:32648" 
             if hasattr(gdf, 'estimate_utm_crs'):
                 try: target_crs = gdf.estimate_utm_crs()
@@ -155,20 +177,158 @@ class CongVienViewSet(viewsets.ModelViewSet):
         instance = serializer.save()
         self._tinh_dien_tich_tu_ranh_gioi(instance)
 
+    def update(self, request, *args, **kwargs):
+        """Kiểm tra manager chỉ edit công viên của mình"""
+        try:
+            park = self.get_object()
+            
+            # Manager chỉ được edit công viên mình quản lý
+            if hasattr(request.user, 'ma_nhom_quyen') and request.user.ma_nhom_quyen.ten_nhom == 'QUAN_LY':
+                # FIX: So sánh đúng giữa park.ma_cong_vien (ID) và request.user.ma_cong_vien (FK hoặc ID)
+                user_assigned_park_id = request.user.ma_cong_vien_id if hasattr(request.user.ma_cong_vien, 'ma_cong_vien') else request.user.ma_cong_vien
+                if park.ma_cong_vien != user_assigned_park_id:
+                    return Response(
+                        {'error': 'Bạn chỉ được quản lý công viên được gán cho mình'},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+                
+                # Manager KHÔNG được update trạng thái + loại công viên
+                update_data = dict(request.data)
+                if 'ma_trang_thai' in update_data or 'ma_loai' in update_data:
+                    return Response(
+                        {'error': 'Bạn không có quyền thay đổi trạng thái hoặc loại công viên'},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+            
+            return super().update(request, *args, **kwargs)
+        except Exception as e:
+            return Response(
+                {'error': f'Lỗi khi cập nhật công viên: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
     def perform_update(self, serializer):
-        instance = serializer.save()
-        self._tinh_dien_tich_tu_ranh_gioi(instance)
+        try:
+            instance = serializer.save()
+            self._tinh_dien_tich_tu_ranh_gioi(instance)
+        except Exception as e:
+            raise serializers.ValidationError(f'Lỗi khi lưu công viên: {str(e)}')
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAdmin], url_path='assign-manager')
+    def assign_manager(self, request, pk=None):
+        """
+        Admin phân công manager cho công viên
+        
+        Request body: { "manager_id": 123 } hoặc { "manager_username": "manager_test" }
+        """
+        try:
+            park = self.get_object()
+            manager_id = request.data.get('manager_id')
+            manager_username = request.data.get('manager_username')
+            
+            # Xác thực đầu vào
+            if not manager_id and not manager_username:
+                return Response(
+                    {'error': 'Cần cung cấp manager_id hoặc manager_username'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Tìm manager
+            try:
+                if manager_id:
+                    manager = NguoiDung.objects.get(ma_nguoi_dung=manager_id)
+                else:
+                    manager = NguoiDung.objects.get(ten_dang_nhap=manager_username)
+            except NguoiDung.DoesNotExist:
+                return Response(
+                    {'error': 'Manager không tồn tại'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            # Kiểm tra manager có role QUAN_LY không
+            if manager.ma_nhom_quyen.ten_nhom != 'QUAN_LY':
+                return Response(
+                    {'error': f'Người dùng "{manager.ten_dang_nhap}" không phải là manager'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Kiểm tra manager đã được assign cho công viên khác chưa
+            if manager.ma_cong_vien and manager.ma_cong_vien != park:
+                return Response(
+                    {'error': f'Manager "{manager.ten_dang_nhap}" đã được gán cho công viên khác: {manager.ma_cong_vien.ten_cong_vien}'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Phân công
+            manager.ma_cong_vien = park
+            manager.save()
+            
+            return Response({
+                'message': f'Đã phân công công viên "{park.ten_cong_vien}" cho manager "{manager.ten_dang_nhap}"',
+                'park': CongVienDetailSerializer(park).data,
+                'manager': NguoiDungSerializer(manager).data
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {'error': f'Lỗi phân công manager: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAdmin], url_path='unassign-manager')
+    def unassign_manager(self, request, pk=None):
+        """
+        Admin gỡ bỏ phân công manager khỏi công viên
+        """
+        try:
+            park = self.get_object()
+            
+            # Tìm manager được assign cho công viên này
+            manager = NguoiDung.objects.filter(ma_cong_vien=park, ma_nhom_quyen__ten_nhom='QUAN_LY').first()
+            
+            if not manager:
+                return Response(
+                    {'error': 'Không có manager nào được gán cho công viên này'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            # Gỡ bỏ phân công
+            old_manager_name = manager.ten_dang_nhap
+            manager.ma_cong_vien = None
+            manager.save()
+            
+            return Response({
+                'message': f'Đã gỡ bỏ manager "{old_manager_name}" khỏi công viên "{park.ten_cong_vien}"',
+                'park': CongVienDetailSerializer(park).data
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {'error': f'Lỗi gỡ bỏ manager: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
     
     @action(detail=False, methods=['post', 'get'], url_path='tim-gan-nhat', permission_classes=[AllowAny])
     def tim_gan_nhat(self, request):
-        """Tìm công viên gần nhất theo tọa độ GPS"""
+        """
+        Tìm công viên gần nhất dựa trên vị trí.
+        
+        Tham số:
+        - vi_do/latitude (float): Vĩ độ
+        - kinh_do/longitude (float): Kinh độ  
+        - ban_kinh_km (float): Bán kính tìm kiếm (km), mặc định 50km
+        
+        Trả về:
+        - count: Số công viên tìm được
+        - results: Danh sách TOP 50 công viên gần nhất (chỉ hoạt động)
+        - user_location: Vị trí người dùng
+        - radius_km: Bán kính tìm kiếm
+        """
         vi_do_raw = None
         kinh_do_raw = None
         try:
-            # Lấy data từ body (POST) hoặc query params (GET)
             data = request.data if request.method == 'POST' else request.query_params
+            print(f"🔍 tim_gan_nhat request received - method: {request.method}")
+            print(f"📊 Request data/params: {dict(data)}")
             
-            # Chấp nhận latitude, longitude hoặc vi_do, kinh_do
             def get_val(keys):
                 for k in keys:
                     if k in data and data[k] is not None and str(data[k]).strip() != '':
@@ -179,13 +339,15 @@ class CongVienViewSet(viewsets.ModelViewSet):
             kinh_do_raw = get_val(['kinh_do', 'longitude'])
             
             if vi_do_raw is None or kinh_do_raw is None:
-                 # Nếu thiếu tọa độ, trả về list rỗng thay vì lỗi 400 để map không bị crash
-                 return Response({'count': 0, 'results': []})
+                print(f"⚠️  Missing coords - lat: {vi_do_raw}, lng: {kinh_do_raw}")
+                return Response({'count': 0, 'results': []})
 
             vi_do = float(vi_do_raw)
             kinh_do = float(kinh_do_raw)
-            ban_kinh_km = float(data.get('ban_kinh_km', 50))  # Tăng bán kính mặc định
-        except (TypeError, ValueError):
+            ban_kinh_km = float(data.get('ban_kinh_km', 50))
+            print(f"✅ Coords received - lat: {vi_do}, lng: {kinh_do}, radius: {ban_kinh_km} km")
+        except (TypeError, ValueError) as e:
+            print(f"❌ Parse error: {e}")
             return Response({
                 'error': 'Toa do khong hop le',
                 'detail': 'vi_do/latitude va kinh_do/longitude phai la so thuc'
@@ -194,8 +356,7 @@ class CongVienViewSet(viewsets.ModelViewSet):
         
         import math
         def haversine(lat1, lon1, lat2, lon2):
-            """Tính khoảng cách giữa 2 tọa độ GPS (km)"""
-            R = 6371  # Bán kính Trái Đất (km)
+            R = 6371
             dLat = math.radians(lat2 - lat1)
             dLon = math.radians(lon2 - lon1)
             a = (math.sin(dLat / 2) * math.sin(dLat / 2) +
@@ -205,11 +366,12 @@ class CongVienViewSet(viewsets.ModelViewSet):
             return R * c
 
         parks_with_distance = []
-        # Lấy tất cả công viên, không chỉ những cái "hoạt động"
-        active_parks = self.queryset.all()
+        
+        # Chỉ tìm công viên "hoạt động" để cho kết quả chính xác
+        active_parks = self.queryset.filter(ma_trang_thai__ma_code__iexact='hoat_dong')
+        print(f"📍 Total active parks in DB: {active_parks.count()}")
 
         for park in active_parks:
-            # Kiểm tra tọa độ có hợp lệ
             if not park.toa_do_trung_tam:
                 continue
             
@@ -217,34 +379,68 @@ class CongVienViewSet(viewsets.ModelViewSet):
                 try:
                     park_lat, park_lon = float(park.toa_do_trung_tam[0]), float(park.toa_do_trung_tam[1])
                     distance = haversine(vi_do, kinh_do, park_lat, park_lon)
+                    print(f"  📌 {park.ten_cong_vien}: {distance:.2f} km")
                     if distance <= ban_kinh_km:
                         park.distance = distance
                         parks_with_distance.append(park)
-                except (ValueError, TypeError):
-                    continue  # Bỏ qua công viên có tọa độ không hợp lệ
+                except (ValueError, TypeError) as e:
+                    print(f"  ⚠️  Error parsing {park.ten_cong_vien}: {e}")
+                    continue
 
-        # Sắp xếp theo khoảng cách
         parks_with_distance.sort(key=lambda p: p.distance)
-        queryset = parks_with_distance[:50]  # Tăng giới hạn lên 50 công viên
+        queryset = parks_with_distance[:50]
+        print(f"💚 Parks within {ban_kinh_km}km: {len(queryset)}")
         
         serializer = self.get_serializer(queryset, many=True)
+        results = serializer.data
+        
+        for i, park_data in enumerate(results):
+            park_data['khoang_cach_km'] = round(queryset[i].distance, 2)
+
         return Response({
             'count': len(queryset),
             'user_location': {'latitude': vi_do, 'longitude': kinh_do},
             'radius_km': ban_kinh_km,
-            'results': serializer.data
+            'results': results
         })
     
     @action(detail=False, methods=['get'])
     def ban_do(self, request):
-        """API trả về toàn bộ công viên hoạt động để hiển thị trên bản đồ (không phân trang)"""
-        queryset = self.queryset.filter(ma_trang_thai__ten_trang_thai='hoat_dong')
+        """
+        Endpoint hiển thị bản đồ công viên.
+        - Mặc định: hiển thị TẤT CẢ công viên (trừ "quy_hoạch")
+        - Query param 'trang_thai' để filter theo trạng thái cụ thể
+        - Query param 'include_quy_hoach=true' để bao gồm công viên quy hoạch
+        
+        Các trạng thái:
+        - hoat_dong (xanh): Hoạt động
+        - dang_xay_dung (cam): Đang xây dựng
+        - cai_tao (vàng): Cải tạo/Sửa chữa
+        - tam_dong (đỏ): Tạm đóng
+        - ngung_hoat_dong (xám): Ngưng hoạt động
+        - quy_hoach (xám): Quy hoạch (không hiển thị mặc định)
+        """
+        queryset = self.queryset.all()
+        
+        # Mặc định loại bỏ "quy_hoạch" (chưa xây dựng)
+        include_quy_hoach = request.query_params.get('include_quy_hoach', '').lower() == 'true'
+        if not include_quy_hoach:
+            queryset = queryset.exclude(ma_trang_thai__ma_code__iexact='quy_hoach')
+        
+        # Filter theo trạng thái nếu có query param
+        trang_thai = request.query_params.get('trang_thai')
+        if trang_thai:
+            queryset = queryset.filter(ma_trang_thai__ma_code__iexact=trang_thai)
+        
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
     
     @action(detail=False, methods=['get'])
     def can_kiem_tra(self, request):
-        """Danh sách công viên chưa kiểm tra trong 30 ngày"""
+        """
+        Lấy danh sách công viên cần kiểm tra (chưa kiểm tra trong 30 ngày).
+        Chỉ bao gồm công viên có trạng thái "hoạt động".
+        """
         thoi_gian_30_ngay = timezone.now() - timedelta(days=30)
         parks_not_checked = CongVien.objects.filter(
             ma_trang_thai__ten_trang_thai='hoat_dong'
@@ -257,10 +453,6 @@ class CongVienViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def cat_ranh_gioi(self, request, pk=None):
-        """
-        Cắt ranh giới công viên theo ranh giới Quận/Huyện chứa nó.
-        Sử dụng Geopandas để thực hiện phép toán không gian (Clip/Intersection).
-        """
         if not HAS_GEOPANDAS:
             return Response(
                 {'error': 'Thư viện Geopandas chưa được cài đặt trên server.'}, 
@@ -270,56 +462,42 @@ class CongVienViewSet(viewsets.ModelViewSet):
         try:
             park = self.get_object()
             
-            # Lấy ranh giới hiện tại của công viên
             if not park.ranh_gioi:
                 return Response({'error': 'Công viên chưa có ranh giới để cắt'}, status=400)
             
-            # Lấy ranh giới quận huyện (Giả sử quận huyện có field hinh_hoc là GeoJSON)
             if not park.ma_quan_huyen or not park.ma_quan_huyen.hinh_hoc:
                  return Response({'error': 'Quận/Huyện trực thuộc chưa có dữ liệu ranh giới (hinh_hoc)'}, status=400)
             
-            # 1. Tạo GeoDataFrame cho Công viên
             park_geom = shape(park.ranh_gioi)
             if not park_geom.is_valid:
                 park_geom = make_valid(park_geom)
             gdf_park = gpd.GeoDataFrame({'geometry': [park_geom]}, crs="EPSG:4326")
             
-            # 2. Tạo GeoDataFrame cho Quận/Huyện
             district_geom = shape(park.ma_quan_huyen.hinh_hoc)
             if not district_geom.is_valid:
                 district_geom = make_valid(district_geom)
             gdf_district = gpd.GeoDataFrame({'geometry': [district_geom]}, crs="EPSG:4326")
             
-            # 3. Thực hiện phép Cắt (Clip/Intersection)
-            # clip() sẽ giữ lại phần giao nhau
             try:
                 clipped_gdf = gpd.clip(gdf_park, gdf_district)
             except Exception as clip_err:
-                # Fallback: Dùng intersection của shapely nếu geopandas clip gặp lỗi topology phức tạp
                 clipped_geom = park_geom.intersection(district_geom)
                 clipped_gdf = gpd.GeoDataFrame({'geometry': [clipped_geom]}, crs="EPSG:4326")
             
-            # Kiểm tra kết quả
             if clipped_gdf.empty or clipped_gdf.geometry.iloc[0].is_empty:
                 return Response({
                     'error': 'Ranh giới công viên nằm hoàn toàn bên ngoài ranh giới Quận/Huyện được chọn.'
                 }, status=400)
             
-            # Cập nhật lại ranh giới mới
-            # Chuyển đổi về GeoJSON dict
             result_geom = clipped_gdf.geometry.iloc[0]
             park.ranh_gioi = mapping(result_geom)
             
-            # Tự động tính diện tích (m2)
             try:
-                # Đảm bảo GeoDataFrame có CRS trước khi chuyển đổi (phòng trường hợp clip làm mất CRS)
                 if not clipped_gdf.crs:
                     clipped_gdf.set_crs("EPSG:4326", allow_override=True, inplace=True)
 
-                # Mặc định dùng UTM Zone 48N (EPSG:32648) cho Việt Nam
                 target_crs = "EPSG:32648" 
                 
-                # Cố gắng tự động xác định vùng UTM phù hợp
                 if hasattr(clipped_gdf, 'estimate_utm_crs'):
                     try: target_crs = clipped_gdf.estimate_utm_crs()
                     except: pass # Nếu lỗi estimate thì giữ nguyên 32648
@@ -329,7 +507,6 @@ class CongVienViewSet(viewsets.ModelViewSet):
                 park.dien_tich_m2 = round(float(area_m2), 2)
             except Exception as calc_err:
                 print(f"Lỗi tính diện tích: {calc_err}")
-                # Vẫn tiếp tục lưu dù lỗi tính diện tích
             
             park.save()
             
@@ -340,21 +517,25 @@ class CongVienViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=500)
 
 
-# ==================== TIỆN ÍCH & NỘI DUNG ====================
-
 class LoaiTienIchViewSet(viewsets.ModelViewSet):
-    """CRUD loại tiện ích - Chỉ GIS Editor có thể tạo/sửa/xóa"""
     queryset = LoaiTienIch.objects.all()
     serializer_class = LoaiTienIchSerializer
     
     def get_permissions(self):
         if self.request.method == 'GET':
             return [AllowAny()]
-        return [IsGISEditor()]
+        return [IsAdmin()]
 
 
 class TienIchCongVienViewSet(viewsets.ModelViewSet):
-    """CRUD tiện ích công viên - Chỉ Quản lý/GIS Editor có thể tạo/sửa/xóa"""
+    """
+    Tiện ích công viên.
+    
+    Quyền:
+    - GET: Công khai (AllowAny)
+    - POST/PUT/PATCH: Manager (quản lý công viên) hoặc Admin
+    - DELETE: Admin
+    """
     queryset = TienIchCongVien.objects.select_related('ma_cong_vien', 'ma_loai_tien_ich')
     serializer_class = TienIchCongVienSerializer
     filter_backends = [DjangoFilterBackend]
@@ -363,26 +544,29 @@ class TienIchCongVienViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.request.method == 'GET':
             return [AllowAny()]
-        return [IsParkManagerOrGISEditor()]
+        if self.request.method in ['POST', 'PUT', 'PATCH']:
+            return [CanManageAmenities()]
+        if self.request.method == 'DELETE':
+            return [IsAdmin()]
+        return [IsAdmin()]
     
     def create(self, request, *args, **kwargs):
-        # Xử lý upload nhiều ảnh cho tiện ích
-        data = request.data.copy()
+        if hasattr(request.data, 'dict'):
+            data = request.data.dict()
+        else:
+            data = request.data.copy()
         
-        # Lấy danh sách file từ key 'hinh_anh_files'
         images = request.FILES.getlist('hinh_anh_files')
         image_urls = []
         
         if images:
             for img in images:
-                # Lưu file và lấy đường dẫn
                 file_name = default_storage.save(f'amenity_images/{img.name}', ContentFile(img.read()))
                 file_url = request.build_absolute_uri(settings.MEDIA_URL + file_name)
                 image_urls.append(file_url)
         
-        # Lưu mảng URL vào field hinh_anh (JSON)
         if image_urls:
-            data['hinh_anh'] = image_urls # Serializer sẽ tự xử lý JSONField
+            data['hinh_anh'] = image_urls
             
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
@@ -393,13 +577,15 @@ class TienIchCongVienViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        data = request.data.copy()
         
-        # Xử lý upload thêm ảnh cho tiện ích
+        if hasattr(request.data, 'dict'):
+            data = request.data.dict()
+        else:
+            data = request.data.copy()
+        
         images = request.FILES.getlist('hinh_anh_files')
         
         if images:
-            # Lấy danh sách ảnh hiện tại
             current_images = instance.hinh_anh or []
             new_urls = []
             for img in images:
@@ -407,7 +593,6 @@ class TienIchCongVienViewSet(viewsets.ModelViewSet):
                 file_url = request.build_absolute_uri(settings.MEDIA_URL + file_name)
                 new_urls.append(file_url)
             
-            # Gộp ảnh cũ và mới
             data['hinh_anh'] = current_images + new_urls
             
         serializer = self.get_serializer(instance, data=data, partial=partial)
@@ -417,7 +602,6 @@ class TienIchCongVienViewSet(viewsets.ModelViewSet):
 
 
 class HinhAnhCongVienViewSet(viewsets.ModelViewSet):
-    """CRUD hình ảnh công viên - Chỉ Quản lý/GIS Editor có thể tạo/sửa/xóa"""
     queryset = HinhAnhCongVien.objects.select_related('ma_cong_vien')
     serializer_class = HinhAnhCongVienSerializer
     filter_backends = [DjangoFilterBackend]
@@ -426,16 +610,14 @@ class HinhAnhCongVienViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.request.method == 'GET':
             return [AllowAny()]
-        return [IsParkManagerOrGISEditor()]
+        return [IsAdmin()]
     
     def create(self, request, *args, **kwargs):
-        # Xử lý upload ảnh công viên
         data = request.data.copy()
         file = request.FILES.get('url_anh')
         
         if file:
             file_name = default_storage.save(f'park_images/{file.name}', ContentFile(file.read()))
-            # Tạo URL đầy đủ
             file_url = request.build_absolute_uri(settings.MEDIA_URL + file_name)
             data['url_anh'] = file_url
             
@@ -446,16 +628,12 @@ class HinhAnhCongVienViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
-# ==================== NGƯỜI DÙNG & PHÂN QUYỀN ====================
-
 class NhomQuyenViewSet(viewsets.ReadOnlyModelViewSet):
-    """Xem danh sách nhóm quyền"""
     queryset = NhomQuyen.objects.all()
     serializer_class = NhomQuyenSerializer
 
 
 class NguoiDungViewSet(viewsets.ModelViewSet):
-    """CRUD nhân viên - Chỉ Admin có thể quản lý tài khoản"""
     queryset = NguoiDung.objects.select_related('ma_nhom_quyen')
     serializer_class = NguoiDungSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
@@ -465,11 +643,9 @@ class NguoiDungViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
             return [IsAdmin()]
-        # Chỉ xem danh sách hoặc thông tin cá nhân
         return [IsAuthenticated()]
     
     def get_queryset(self):
-        # Nếu không phải Admin, chỉ xem thông tin cá nhân
         if hasattr(self.request, 'user') and self.request.user and self.request.user.ma_nhom_quyen.ten_nhom != 'QUAN_TRI':
             return NguoiDung.objects.filter(ma_nguoi_dung=self.request.user.ma_nguoi_dung)
         return self.queryset
@@ -480,10 +656,7 @@ class NguoiDungViewSet(viewsets.ModelViewSet):
         return NguoiDungSerializer
 
 
-# ==================== NGHIỆP VỤ ====================
-
 class DanhGiaCongVienViewSet(viewsets.ModelViewSet):
-    """CRUD đánh giá công viên - Người dùng có thể tạo, Admin duyệt"""
     queryset = DanhGiaCongVien.objects.select_related('ma_cong_vien', 'ma_nguoi_dung')
     serializer_class = DanhGiaCongVienSerializer
     filter_backends = [DjangoFilterBackend]
@@ -498,14 +671,12 @@ class DanhGiaCongVienViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'], permission_classes=[IsAdmin])
     def danh_gia_chua_duyet(self, request):
-        """Lấy danh sách đánh giá chưa duyệt (chỉ Admin)"""
         queryset = self.queryset.filter(da_duyet=False)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
 
 class LoaiKiemTraViewSet(viewsets.ModelViewSet):
-    """CRUD loại kiểm tra - Chỉ Admin có thể tạo/sửa/xóa"""
     queryset = LoaiKiemTra.objects.all()
     serializer_class = LoaiKiemTraSerializer
     
@@ -516,7 +687,6 @@ class LoaiKiemTraViewSet(viewsets.ModelViewSet):
 
 
 class KiemTraCongVienViewSet(viewsets.ModelViewSet):
-    """CRUD kiểm tra công viên - Chỉ Kiểm tra viên có thể tạo/sửa"""
     queryset = KiemTraCongVien.objects.select_related('ma_cong_vien', 'ma_nguoi_kiem_tra')
     serializer_class = KiemTraCongVienSerializer
     filter_backends = [DjangoFilterBackend]
@@ -525,11 +695,10 @@ class KiemTraCongVienViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.request.method == 'GET':
             return [AllowAny()]
-        return [IsInspector()]
+        return [IsAdmin()]
 
 
 class DanhMucSuCoViewSet(viewsets.ModelViewSet):
-    """CRUD danh mục sự cố - Chỉ Admin có thể tạo/sửa/xóa"""
     queryset = DanhMucSuCo.objects.all()
     serializer_class = DanhMucSuCoSerializer
     
@@ -540,27 +709,50 @@ class DanhMucSuCoViewSet(viewsets.ModelViewSet):
 
 
 class BaoCaoSuCoViewSet(viewsets.ModelViewSet):
-    """CRUD báo cáo sự cố - Người dùng tạo, Quản lý xử lý"""
+    """
+    Báo cáo sự cố công viên.
+    
+    Quyền:
+    - GET: Công khai (AllowAny)
+    - POST: Người dùng xác thực (báo cáo sự cố)
+    - PUT/PATCH: Manager (xử lý sự cố của công viên mình) hoặc Admin
+    - DELETE: Admin
+    """
     queryset = BaoCaoSuCo.objects.select_related(
         'ma_cong_vien', 'ma_danh_muc', 'ma_nguoi_phu_trach', 'ma_nguoi_bao_cao'
-    )
+    ).filter(is_archived=False)  # Default: show only active incidents
     serializer_class = BaoCaoSuCoSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['ma_cong_vien', 'trang_thai', 'muc_do_uu_tien']
+    filterset_fields = ['ma_cong_vien', 'trang_thai', 'muc_do_uu_tien', 'is_archived']
     ordering_fields = ['-muc_do_uu_tien', '-ngay_tao']
     
     def get_permissions(self):
         if self.request.method == 'GET':
             return [AllowAny()]
         if self.request.method == 'POST':
-            return [IsAuthenticated()]
-        # Chỉ Quản lý có thể cập nhật trạng thái
-        return [IsParkManager()]
+            return [CanReportIncident()]  # Người dùng bất kỳ có thể báo cáo
+        if self.request.method in ['PUT', 'PATCH']:
+            return [CanHandleIncident()]  # Manager/Admin xử lý
+        if self.request.method == 'DELETE':
+            return [IsAdmin()]
+        return [IsAdmin()]
+    
+    def get_queryset(self):
+        """Manager chỉ thấy sự cố của công viên mình"""
+        queryset = super().get_queryset()
+        
+        if hasattr(self.request.user, 'ma_nhom_quyen') and self.request.user.ma_nhom_quyen.ten_nhom == 'QUAN_LY':
+            # Manager chỉ thấy sự cố của công viên mình
+            return queryset.filter(ma_cong_vien=self.request.user.ma_cong_vien)
+        
+        return queryset
     
     def create(self, request, *args, **kwargs):
-        data = request.data.copy()
+        if hasattr(request.data, 'dict'):
+            data = request.data.dict()
+        else:
+            data = request.data.copy()
         
-        # 1. Xử lý upload ảnh (Lưu vào mảng JSON url_hinh_anh)
         images = request.FILES.getlist('hinh_anh_files')
         image_urls = []
         
@@ -573,8 +765,13 @@ class BaoCaoSuCoViewSet(viewsets.ModelViewSet):
         if image_urls:
             data['url_hinh_anh'] = image_urls
             
-        # 2. Tự động gán người báo cáo nếu đã đăng nhập
-        if request.user.is_authenticated:
+        if 'vi_tri' in data and isinstance(data['vi_tri'], str):
+            try:
+                data['vi_tri'] = json.loads(data['vi_tri'])
+            except:
+                pass
+
+        if request.user and hasattr(request.user, 'ma_nguoi_dung'):
             data['ma_nguoi_bao_cao'] = request.user.ma_nguoi_dung
 
         serializer = self.get_serializer(data=data)
@@ -584,22 +781,177 @@ class BaoCaoSuCoViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
+    def update(self, request, *args, **kwargs):
+        """Auto-archive khi cập nhật status thành da_xu_ly"""
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        
+        # Tạo data dict để có thể modify
+        data = dict(request.data)
+        
+        # Nếu update status thành "da_xu_ly" → archive
+        if data.get('trang_thai') == 'da_xu_ly':
+            data['is_archived'] = True
+            data['ngay_luu_tru'] = timezone.now().isoformat()
+        
+        serializer = self.get_serializer(instance, data=data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        
+        if getattr(instance, '_prefetched_objects_cache', None):
+            instance._prefetched_objects_cache = {}
+        
+        return Response(serializer.data)
+
     @action(detail=True, methods=['patch'])
     def cap_nhat_trang_thai(self, request, pk=None):
-        """Cập nhật trạng thái xử lý báo cáo"""
         bao_cao = self.get_object()
         trang_thai = request.data.get('trang_thai')
         if trang_thai:
             bao_cao.trang_thai = trang_thai
+            
+            # Auto-archive khi xử lý xong
+            if trang_thai == 'da_xu_ly':
+                bao_cao.is_archived = True
+                bao_cao.ngay_luu_tru = timezone.now()
+            
             bao_cao.save()
             return Response({'message': 'Cập nhật trạng thái thành công'})
         return Response({'error': 'trang_thai là bắt buộc'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['get'], permission_classes=[IsManagerOrAdmin])
+    def export_excel(self, request):
+        """
+        Export incidents to Excel without duplicates.
+        Manager: chỉ export sự cố của công viên mình
+        Admin: export tất cả
+        Query params: ?is_archived=false (default), ?date=YYYY-MM-DD
+        """
+        try:
+            if not HAS_OPENPYXL:
+                return Response(
+                    {'error': 'openpyxl không được cài đặt'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Get query parameters
+            is_archived = request.query_params.get('is_archived', 'false').lower() == 'true'
+            date_str = request.query_params.get('date')  # YYYY-MM-DD format for specific day
+            
+            # Filter incidents
+            queryset = self.get_queryset().filter(is_archived=is_archived)
+            
+            # Manager chỉ export sự cố của công viên mình
+            if hasattr(request.user, 'ma_nhom_quyen') and request.user.ma_nhom_quyen.ten_nhom == 'QUAN_LY':
+                queryset = queryset.filter(ma_cong_vien=request.user.ma_cong_vien)
+            
+            # If date specified, filter by that day
+            if date_str:
+                try:
+                    from datetime import datetime
+                    filter_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                    queryset = queryset.filter(ngay_tao__date=filter_date)
+                except:
+                    return Response(
+                        {'error': 'Invalid date format. Use YYYY-MM-DD'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            else:
+                # Default: today
+                from datetime import date
+                queryset = queryset.filter(ngay_tao__date=date.today())
+            
+            # Remove duplicates: keep only incidents with unique titles per park per day
+            seen = set()
+            unique_incidents = []
+            for incident in queryset:
+                key = (incident.ma_cong_vien.ma_cong_vien, incident.tieu_de)
+                if key not in seen:
+                    seen.add(key)
+                    unique_incidents.append(incident)
+            
+            # Create Excel workbook
+            wb = openpyxl.Workbook()
+            ws = wb.active
+            ws.title = 'Sự cố công viên'
+            
+            # Define styles
+            header_fill = PatternFill(start_color='4472C4', end_color='4472C4', fill_type='solid')
+            header_font = Font(bold=True, color='FFFFFF', size=12)
+            border = Border(
+                left=Side(style='thin'),
+                right=Side(style='thin'),
+                top=Side(style='thin'),
+                bottom=Side(style='thin')
+            )
+            center_align = Alignment(horizontal='center', vertical='center', wrap_text=True)
+            left_align = Alignment(horizontal='left', vertical='top', wrap_text=True)
+            
+            # Header row
+            headers = ['STT', 'Công viên', 'Tiêu đề', 'Mô tả', 'Loại sự cố', 'Mức độ ưu tiên',
+                       'Trạng thái', 'Người báo cáo', 'Người phụ trách', 'Số xác nhận', 'Ngày tạo']
+            
+            for col_num, header in enumerate(headers, 1):
+                cell = ws.cell(row=1, column=col_num)
+                cell.value = header
+                cell.font = header_font
+                cell.fill = header_fill
+                cell.alignment = center_align
+                cell.border = border
+            
+            # Set column widths
+            column_widths = [5, 20, 25, 30, 15, 15, 15, 15, 15, 10, 15]
+            for col_num, width in enumerate(column_widths, 1):
+                ws.column_dimensions[openpyxl.utils.get_column_letter(col_num)].width = width
+            
+            # Data rows
+            for row_num, incident in enumerate(unique_incidents, 2):
+                row_data = [
+                    row_num - 1,  # STT
+                    incident.ma_cong_vien.ten_cong_vien,
+                    incident.tieu_de,
+                    incident.noi_dung_mo_ta,
+                    incident.ma_danh_muc.ten_danh_muc if incident.ma_danh_muc else 'N/A',
+                    incident.get_muc_do_uu_tien_display(),
+                    incident.get_trang_thai_display(),
+                    incident.ma_nguoi_bao_cao.ten_dang_nhap if incident.ma_nguoi_bao_cao else 'Anonymous',
+                    incident.ma_nguoi_phu_trach.ten_dang_nhap if incident.ma_nguoi_phu_trach else 'Chưa phân công',
+                    incident.so_nguoi_xac_nhan,
+                    incident.ngay_tao.strftime('%d/%m/%Y %H:%M')
+                ]
+                
+                for col_num, value in enumerate(row_data, 1):
+                    cell = ws.cell(row=row_num, column=col_num)
+                    cell.value = value
+                    cell.border = border
+                    if col_num == 1:
+                        cell.alignment = center_align
+                    else:
+                        cell.alignment = left_align
+            
+            # Create response
+            excel_file = BytesIO()
+            wb.save(excel_file)
+            excel_file.seek(0)
+            
+            response = HttpResponse(
+                excel_file.getvalue(),
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = f'attachment; filename="su_co_{date_str or timezone.now().date()}.xlsx"'
+            return response
+            
+        except Exception as e:
+            import traceback
+            print(f"❌ Export Excel Error: {e}")
+            traceback.print_exc()
+            return Response(
+                {'error': f'Lỗi xuất Excel: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
-
-# ==================== SINH THÁI & HỆ THỐNG ====================
 
 class LoaiCayViewSet(viewsets.ModelViewSet):
-    """CRUD loại cây - Chỉ Admin có thể tạo/sửa/xóa"""
     queryset = LoaiCay.objects.all()
     serializer_class = LoaiCaySerializer
     filter_backends = [filters.SearchFilter]
@@ -612,7 +964,6 @@ class LoaiCayViewSet(viewsets.ModelViewSet):
 
 
 class CayXanhViewSet(viewsets.ModelViewSet):
-    """CRUD cây xanh - Quản lý/GIS Editor có thể tạo/sửa/xóa"""
     queryset = CayXanh.objects.select_related('ma_cong_vien', 'ma_loai_cay')
     serializer_class = CayXanhSerializer
     filter_backends = [DjangoFilterBackend]
@@ -621,11 +972,10 @@ class CayXanhViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.request.method == 'GET':
             return [AllowAny()]
-        return [IsParkManagerOrGISEditor()]
+        return [IsAdmin()]
     
     @action(detail=False, methods=['get'])
     def thong_ke_tinh_trang(self, request):
-        """Thống kê cây theo tình trạng sức khỏe"""
         stats = CayXanh.objects.values('tinh_trang').annotate(
             count=Count('ma_cay')
         ).order_by('tinh_trang')
@@ -633,7 +983,15 @@ class CayXanhViewSet(viewsets.ModelViewSet):
 
 
 class SuKienCongVienViewSet(viewsets.ModelViewSet):
-    """CRUD sự kiện công viên - Người dùng tạo, Admin duyệt"""
+    """
+    Sự kiện công viên.
+    
+    Quyền:
+    - GET: Công khai (AllowAny)
+    - POST: Manager (thêm sự kiện cho công viên mình) hoặc Admin
+    - PUT/PATCH: Admin (cần để duyệt sự kiện)
+    - DELETE: Admin
+    """
     queryset = SuKienCongVien.objects.select_related('ma_cong_vien')
     serializer_class = SuKienCongVienSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
@@ -644,12 +1002,16 @@ class SuKienCongVienViewSet(viewsets.ModelViewSet):
         if self.request.method == 'GET':
             return [AllowAny()]
         if self.request.method == 'POST':
-            return [IsAuthenticated()]
+            return [CanCreateEvent()]  # Manager/Admin tạo sự kiện
+        if self.request.method in ['PUT', 'PATCH']:
+            return [IsAdmin()]  # Chỉ Admin duyệt sự kiện
+        if self.request.method == 'DELETE':
+            return [IsAdmin()]
         return [IsAdmin()]
     
     @action(detail=False, methods=['get'])
     def su_kien_sap_toi(self, request):
-        """Danh sách sự kiện sắp diễn ra"""
+        """Lấy danh sách sự kiện sắp tới (trong 7 ngày)."""
         thoi_gian_hien_tai = timezone.now()
         thoi_gian_mot_tuan = thoi_gian_hien_tai + timedelta(days=7)
         
@@ -664,7 +1026,6 @@ class SuKienCongVienViewSet(viewsets.ModelViewSet):
 
 
 class NhatKyThayDoiViewSet(viewsets.ReadOnlyModelViewSet):
-    """Xem lịch sử thay đổi dữ liệu - Chỉ Admin có thể xem"""
     queryset = NhatKyThayDoi.objects.select_related('ma_nguoi_dung')
     serializer_class = NhatKyThayDoiSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
@@ -674,20 +1035,15 @@ class NhatKyThayDoiViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class ThongKeTruyenCapViewSet(viewsets.ReadOnlyModelViewSet):
-    """Xem thống kê truy cập hệ thống - Chỉ Admin có thể xem"""
     queryset = ThongKetruyenCap.objects.all()
     serializer_class = ThongKeTruyenCapSerializer
     ordering_fields = ['-ngay']
     permission_classes = [IsAdmin]
 
 
-# ==================== DASHBOARD THỐNG KÊ ====================
-
 @api_view(['GET'])
 def dashboard_thong_ke(request):
-    """Dashboard thống kê tổng quan - Chỉ Admin"""
     try:
-        # Kiểm tra quyền
         token = request.headers.get('Authorization', '').replace('Bearer ', '')
         if token:
             try:

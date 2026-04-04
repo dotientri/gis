@@ -1,6 +1,3 @@
-"""
-Authentication API Views
-"""
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
@@ -8,13 +5,8 @@ from rest_framework.response import Response
 from django.db.models import Q
 from .models import NguoiDung, NhomQuyen
 from .serializers import NguoiDungSerializer
-import hashlib
+from django.contrib.auth.hashers import make_password, check_password
 import uuid
-
-
-def hash_password(password):
-    """Hash password using SHA256"""
-    return hashlib.sha256(password.encode()).hexdigest()
 
 
 def generate_token():
@@ -22,49 +14,57 @@ def generate_token():
     return str(uuid.uuid4())
 
 
+import logging
+logger = logging.getLogger(__name__)
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login(request):
-    """User login"""
-    # Chấp nhận ten_dang_nhap, username HOẶC email
     identifier = request.data.get('ten_dang_nhap') or request.data.get('username') or request.data.get('email')
     mat_khau = request.data.get('mat_khau') or request.data.get('password')
     
+    logger.info(f"Login attempt with identifier: '{identifier}'")
+    if identifier:
+        identifier = str(identifier).strip()
+    if mat_khau:
+        mat_khau = str(mat_khau).strip()
+
     if not identifier or not mat_khau:
+        logger.warning("Login failed: Identifier or password not provided.")
         return Response(
             {'error': 'Vui lòng cung cấp tên đăng nhập/email và mật khẩu'},
             status=status.HTTP_400_BAD_REQUEST
         )
     
     try:
-        # Tìm user theo tên đăng nhập HOẶC email
-        user = NguoiDung.objects.get(Q(ten_dang_nhap=identifier) | Q(email=identifier))
+        user = NguoiDung.objects.get(Q(ten_dang_nhap__iexact=identifier) | Q(email__iexact=identifier))
+        logger.info(f"User found: {user.ten_dang_nhap}")
     except NguoiDung.DoesNotExist:
+        logger.warning(f"Login failed: User with identifier '{identifier}' not found.")
         return Response(
             {'error': 'Tên đăng nhập hoặc mật khẩu không chính xác'},
             status=status.HTTP_401_UNAUTHORIZED
         )
     
-    # Hash password to verify
-    password_hash = hash_password(mat_khau)
-    
-    if user.mat_khau_hash != password_hash:
+    if not check_password(mat_khau, user.mat_khau_hash):
+        logger.warning(f"Login failed: Password mismatch for user '{user.ten_dang_nhap}'.")
         return Response(
             {'error': 'Tên đăng nhập hoặc mật khẩu không chính xác'},
             status=status.HTTP_401_UNAUTHORIZED
         )
     
     if not user.dang_hoat_dong:
+        logger.warning(f"Login failed: User '{user.ten_dang_nhap}' is inactive.")
         return Response(
             {'error': 'Tài khoản của bạn đã bị vô hiệu hóa'},
             status=status.HTTP_401_UNAUTHORIZED
         )
     
-    # Generate or reuse token
     if not user.token:
         user.token = generate_token()
         user.save(update_fields=['token'])
     
+    logger.info(f"Login successful for user '{user.ten_dang_nhap}'.")
     return Response({
         'token': user.token,
         'user': NguoiDungSerializer(user).data
@@ -74,7 +74,6 @@ def login(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register(request):
-    """User registration"""
     ten_dang_nhap = request.data.get('ten_dang_nhap')
     email = request.data.get('email')
     password = request.data.get('password')
@@ -86,26 +85,24 @@ def register(request):
             status=status.HTTP_400_BAD_REQUEST
         )
     
-    if NguoiDung.objects.filter(ten_dang_nhap=ten_dang_nhap).exists():
+    if NguoiDung.objects.filter(ten_dang_nhap__iexact=ten_dang_nhap).exists():
         return Response(
             {'error': 'Tên đăng nhập đã tồn tại'},
             status=status.HTTP_400_BAD_REQUEST
         )
     
-    if NguoiDung.objects.filter(email=email).exists():
+    if NguoiDung.objects.filter(email__iexact=email).exists():
         return Response(
             {'error': 'Email đã được đăng ký'},
             status=status.HTTP_400_BAD_REQUEST
         )
     
-    # Get default user group (Người dùng cộng đồng)
     try:
         user_group = NhomQuyen.objects.get(ten_nhom='CONG_DONG')
     except NhomQuyen.DoesNotExist:
         user_group = None
     
-    # Hash password
-    password_hash = hash_password(password)
+    password_hash = make_password(password)
     token = generate_token()
     
     user = NguoiDung.objects.create(
@@ -125,7 +122,6 @@ def register(request):
 
 @api_view(['GET'])
 def get_current_user(request):
-    """Get current user info"""
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
     
     if not token:

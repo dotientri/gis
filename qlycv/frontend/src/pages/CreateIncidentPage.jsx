@@ -14,6 +14,8 @@ export default function CreateIncidentPage() {
   const [images, setImages] = useState([]);
   const [location, setLocation] = useState(null);
   const [gettingLocation, setGettingLocation] = useState(false);
+  const [nearestPark, setNearestPark] = useState(null);
+  const [address, setAddress] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -22,16 +24,19 @@ export default function CreateIncidentPage() {
           parksAPI.getList({ limit: 100 }),
           incidentsAPI.getCategories()
         ]);
-        setParks(parksRes.data.results || parksRes.data);
-        setCategories(catsRes.data.results || catsRes.data);
+        setParks(parksRes.data.results || parksRes.data || []);
+        const categoriesData = catsRes.data?.results || catsRes.data || [];
+        console.log('Categories loaded:', categoriesData);
+        setCategories(categoriesData);
       } catch (error) {
         console.error("Lỗi tải dữ liệu:", error);
+        showNotification('Lỗi tải dữ liệu. Vui lòng thử lại.', 'error');
       } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, []);
+  }, [showNotification]);
 
   // Hàm lấy vị trí hiện tại
   const handleGetLocation = () => {
@@ -43,10 +48,45 @@ export default function CreateIncidentPage() {
     setGettingLocation(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        });
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        setLocation({ lat, lng });
+        
+        // Tìm công viên gần nhất
+        if (parks.length > 0) {
+          let nearestParkData = null;
+          let minDistance = Infinity;
+          
+          parks.forEach(park => {
+            if (park.toa_do_trung_tam && Array.isArray(park.toa_do_trung_tam) && park.toa_do_trung_tam.length >= 2) {
+              const parkLat = park.toa_do_trung_tam[0];
+              const parkLng = park.toa_do_trung_tam[1];
+              
+              // Công thức Haversine để tính khoảng cách
+              const R = 6371; // km
+              const dLat = (parkLat - lat) * Math.PI / 180;
+              const dLng = (parkLng - lng) * Math.PI / 180;
+              const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                        Math.cos(lat * Math.PI / 180) * Math.cos(parkLat * Math.PI / 180) *
+                        Math.sin(dLng/2) * Math.sin(dLng/2);
+              const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+              const distance = R * c;
+              
+              if (distance < minDistance) {
+                minDistance = distance;
+                nearestParkData = park;
+              }
+            }
+          });
+          
+          if (nearestParkData) {
+            setNearestPark(nearestParkData);
+            setAddress(nearestParkData.dia_chi || 'Chưa có thông tin địa chỉ');
+          } else {
+            setAddress('Không tìm thấy công viên gần nhất');
+          }
+        }
+        
         setGettingLocation(false);
         showNotification('Đã lấy được vị trí hiện tại', 'success');
       },
@@ -98,12 +138,20 @@ export default function CreateIncidentPage() {
           // Backend mong đợi JSON array [lat, lng] cho field vi_tri
           formData.append('vi_tri', JSON.stringify([location.lat, location.lng]));
         }
+        
+        // Thêm địa chỉ
+        if (address) {
+          formData.append('dia_chi', address);
+        }
 
         await incidentsAPI.create(formData);
         showNotification('Gửi báo cáo thành công!', 'success');
         navigate('/incidents');
       } catch (err) {
-        showNotification('Lỗi khi gửi báo cáo', 'error');
+        console.error("Lỗi khi gửi báo cáo:", err);
+        // Hiển thị chi tiết lỗi từ server nếu có để dễ debug
+        const message = err.response?.data?.detail || err.response?.data?.error || 'Lỗi khi gửi báo cáo. Vui lòng thử lại.';
+        showNotification(message, 'error');
       }
     }
   );
@@ -112,6 +160,46 @@ export default function CreateIncidentPage() {
 
   return (
     <div className="park-form-page">
+      {/* LIGHT THEME FORCE STYLE */}
+      <style>{`
+        :root { color-scheme: light; }
+        html, body, #root, .app-container { background-color: #f3f4f6 !important; color: #111827 !important; height: 100%; }
+        
+        /* FIX BACKGROUND */
+        .park-form-page { 
+            background-color: #f3f4f6 !important; 
+            background: #f3f4f6 !important;
+            background-image: none !important;
+            min-height: 100vh; 
+        }
+        
+        /* SIDEBAR FIX */
+        .sidebar, aside, nav, .left-menu, .nav-menu, .main-sidebar, [class*="sidebar"], [class*="Sidebar"], [class*="Sider"], .pro-sidebar-inner {
+            background-color: #ffffff !important;
+            background: #ffffff !important;
+            border-right: 1px solid #e5e7eb !important;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05) !important;
+        }
+        .sidebar *, aside *, nav *, [class*="sidebar"] * {
+            color: #111827 !important;
+            text-shadow: none !important;
+        }
+        .sidebar a:hover, aside a:hover, .nav-link:hover, .pro-menu-item:hover { 
+            background-color: #eff6ff !important;
+            color: #2563eb !important;
+        }
+
+        /* ACTIVE STATE */
+        .sidebar .active, .sidebar .selected, .sidebar .current, .sidebar .is-active, .sidebar .router-link-active,
+        aside .active, aside .selected, aside .current, aside .is-active, aside .router-link-active,
+        .nav-link.active, li.active > a, a[aria-current="page"], .pro-menu-item.active {
+            background-color: #e5e7eb !important;
+            color: #000000 !important;
+            font-weight: 700 !important;
+            box-shadow: inset 4px 0 0 #3b82f6 !important;
+        }
+        .sidebar .active *, .sidebar .selected *, [aria-current="page"] * { color: #000000 !important; }
+      `}</style>
       <div className="form-header">
         <h1>Báo Cáo Sự Cố</h1>
         <p>Gửi thông tin sự cố để ban quản lý xử lý kịp thời</p>
@@ -139,9 +227,15 @@ export default function CreateIncidentPage() {
               <label>Loại Sự Cố *</label>
               <select name="ma_danh_muc" value={values.ma_danh_muc} onChange={handleChange} required>
                 <option value="">-- Chọn loại sự cố --</option>
-                {categories.map(c => (
-                  <option key={c.ma_danh_muc} value={c.ma_danh_muc}>{c.ten_danh_muc}</option>
-                ))}
+                {categories && categories.length > 0 ? (
+                  categories.map(c => (
+                    <option key={c.ma_danh_muc || c.id} value={c.ma_danh_muc || c.id}>
+                      {c.ten_danh_muc || c.name || 'Không xác định'}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>Đang tải loại sự cố...</option>
+                )}
               </select>
             </div>
           </div>
@@ -181,6 +275,23 @@ export default function CreateIncidentPage() {
             <small style={{color: '#666', marginTop: '5px', display: 'block'}}>
               Việc cung cấp vị trí chính xác giúp nhân viên dễ dàng tìm thấy sự cố hơn.
             </small>
+          </div>
+
+          <div className="form-group">
+            <label>Địa Chỉ (Tự động từ công viên gần nhất)</label>
+            <input 
+              type="text" 
+              value={address} 
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Địa chỉ sẽ tự động cập nhật khi bạn lấy vị trí"
+              style={{lineHeight: '1.5', borderColor: address ? '#22c55e' : '#d1d5db'}}
+              disabled={!location}
+            />
+            {nearestPark && (
+              <small style={{color: '#16a34a', marginTop: '5px', display: 'block'}}>
+                📍 Công viên gần nhất: <strong>{nearestPark.ten_cong_vien}</strong>
+              </small>
+            )}
           </div>
         </div>
 

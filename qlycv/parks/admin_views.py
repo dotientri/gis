@@ -1,8 +1,3 @@
-"""
-Admin API Views - Chỉ dành cho quản trị viên
-Số lượng: ~550+ dòng
-"""
-
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
@@ -16,12 +11,10 @@ from .models import (
 )
 from .serializers import NguoiDungSerializer, NguoiDungCreateSerializer
 from .permissions import IsAdmin
+from django.contrib.auth.hashers import make_password
 
-
-# ========== QUẢN LÝ NGƯỜI DÙNG ==========
 
 class AdminUsersViewSet(viewsets.ModelViewSet):
-    """API quản lý người dùng - Chỉ dành cho admin"""
     queryset = NguoiDung.objects.select_related('ma_nhom_quyen')
     serializer_class = NguoiDungSerializer
     permission_classes = [IsAdmin]
@@ -31,7 +24,6 @@ class AdminUsersViewSet(viewsets.ModelViewSet):
     ordering_fields = ['-ngay_cap_nhat', 'ho_ten', 'ten_dang_nhap']
     
     def create(self, request, *args, **kwargs):
-        """Tạo người dùng mới"""
         serializer = NguoiDungCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
@@ -39,7 +31,6 @@ class AdminUsersViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def disable(self, request, pk=None):
-        """Khóa tài khoản người dùng"""
         user = self.get_object()
         user.dang_hoat_dong = False
         user.save()
@@ -50,7 +41,6 @@ class AdminUsersViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def enable(self, request, pk=None):
-        """Kích hoạt tài khoản người dùng"""
         user = self.get_object()
         user.dang_hoat_dong = True
         user.save()
@@ -61,7 +51,6 @@ class AdminUsersViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def change_role(self, request, pk=None):
-        """Thay đổi vai trò người dùng"""
         user = self.get_object()
         role_id = request.data.get('role_id')
         
@@ -81,11 +70,10 @@ class AdminUsersViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def statistics(self, request):
-        """Thống kê người dùng"""
         return Response({
             'total_users': NguoiDung.objects.count(),
-            'active_users': NguoiDung.objects.filter(dang_hoat_động=True).count(),
-            'disabled_users': NguoiDung.objects.filter(dang_hoat_động=False).count(),
+            'active_users': NguoiDung.objects.filter(dang_hoat_dong=True).count(),
+            'disabled_users': NguoiDung.objects.filter(dang_hoat_dong=False).count(),
             'by_role': list(
                 NhomQuyen.objects.annotate(count=Count('nguoi_dung')).values('ten_nhom', 'count')
             ),
@@ -98,14 +86,12 @@ class AdminUsersViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['post'])
     def reset_password(self, request):
-        """Reset mật khẩu người dùng (tạo password mới tạm thời)"""
         user_id = request.data.get('user_id')
         new_password = request.data.get('password')
         
         try:
             user = NguoiDung.objects.get(ma_nguoi_dung=user_id)
-            import hashlib
-            user.mat_khau_hash = hashlib.sha256(new_password.encode()).hexdigest()
+            user.mat_khau_hash = make_password(new_password)
             user.save()
             return Response({
                 'message': f'Đã reset mật khẩu cho người dùng {user.ten_dang_nhap}',
@@ -118,10 +104,7 @@ class AdminUsersViewSet(viewsets.ModelViewSet):
             )
 
 
-# ========== DUYỆT NỘI DUNG ==========
-
 class AdminRatingsViewSet(viewsets.ReadOnlyModelViewSet):
-    """API duyệt đánh giá - Chỉ dành cho admin"""
     queryset = DanhGiaCongVien.objects.select_related('ma_cong_vien', 'ma_nguoi_dung')
     permission_classes = [IsAdmin]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
@@ -130,7 +113,6 @@ class AdminRatingsViewSet(viewsets.ReadOnlyModelViewSet):
     
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
-        """Phê duyệt đánh giá"""
         rating = self.get_object()
         rating.da_duyet = True
         rating.save()
@@ -138,14 +120,12 @@ class AdminRatingsViewSet(viewsets.ReadOnlyModelViewSet):
     
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
-        """Từ chối đánh giá"""
         rating = self.get_object()
         rating.delete()
         return Response({'message': f'Đã xóa đánh giá ID {pk}'})
     
     @action(detail=False, methods=['get'])
     def pending(self, request):
-        """Lấy danh sách đánh giá đang chờ duyệt"""
         pending_ratings = self.get_queryset().filter(da_duyet=False)
         page = self.paginate_queryset(pending_ratings)
         if page is not None:
@@ -160,7 +140,6 @@ class AdminRatingsViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class AdminEventsViewSet(viewsets.ReadOnlyModelViewSet):
-    """API duyệt sự kiện - Chỉ dành cho admin"""
     queryset = SuKienCongVien.objects.select_related('ma_cong_vien')
     permission_classes = [IsAdmin]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
@@ -169,7 +148,6 @@ class AdminEventsViewSet(viewsets.ReadOnlyModelViewSet):
     
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
-        """Phê duyệt sự kiện"""
         event = self.get_object()
         event.da_duyet = True
         event.save()
@@ -177,14 +155,12 @@ class AdminEventsViewSet(viewsets.ReadOnlyModelViewSet):
     
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
-        """Từ chối sự kiện"""
         event = self.get_object()
         event.delete()
         return Response({'message': f'Đã xóa sự kiện ID {pk}'})
     
     @action(detail=False, methods=['get'])
     def pending(self, request):
-        """Lấy danh sách sự kiện đang chờ duyệt"""
         pending_events = self.get_queryset().filter(da_duyet=False)
         return Response({
             'count': pending_events.count(),
@@ -196,7 +172,6 @@ class AdminEventsViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class AdminIncidentsViewSet(viewsets.ReadOnlyModelViewSet):
-    """API quản lý báo cáo sự cố - Chỉ dành cho admin"""
     queryset = BaoCaoSuCo.objects.select_related('ma_cong_vien', 'ma_nguoi_dung')
     permission_classes = [IsAdmin]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
@@ -205,7 +180,6 @@ class AdminIncidentsViewSet(viewsets.ReadOnlyModelViewSet):
     
     @action(detail=True, methods=['post'])
     def mark_resolved(self, request, pk=None):
-        """Đánh dấu sự cố là đã xử lý"""
         incident = self.get_object()
         incident.trang_thai = 'da_xu_ly'
         incident.ghi_chu = request.data.get('note', '')
@@ -214,7 +188,6 @@ class AdminIncidentsViewSet(viewsets.ReadOnlyModelViewSet):
     
     @action(detail=False, methods=['get'])
     def pending(self, request):
-        """Lấy danh sách báo cáo đang chờ xử lý"""
         pending = self.get_queryset().filter(trang_thai='cho_xu_ly')
         return Response({
             'count': pending.count(),
@@ -227,7 +200,6 @@ class AdminIncidentsViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class AdminImagesViewSet(viewsets.ReadOnlyModelViewSet):
-    """API duyệt hình ảnh - Chỉ dành cho admin"""
     queryset = HinhAnhCongVien.objects.select_related('ma_cong_vien', 'ma_nguoi_dung')
     permission_classes = [IsAdmin]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
@@ -236,7 +208,6 @@ class AdminImagesViewSet(viewsets.ReadOnlyModelViewSet):
     
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
-        """Phê duyệt hình ảnh"""
         image = self.get_object()
         image.da_duyet = True
         image.save()
@@ -244,14 +215,12 @@ class AdminImagesViewSet(viewsets.ReadOnlyModelViewSet):
     
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
-        """Từ chối hình ảnh"""
         image = self.get_object()
         image.delete()
         return Response({'message': f'Đã xóa hình ảnh ID {pk}'})
     
     @action(detail=False, methods=['get'])
     def pending(self, request):
-        """Lấy danh sách hình ảnh đang chờ duyệt"""
         pending_images = self.get_queryset().filter(da_duyet=False)
         return Response({
             'count': pending_images.count(),
@@ -262,12 +231,8 @@ class AdminImagesViewSet(viewsets.ReadOnlyModelViewSet):
         })
 
 
-# ========== DASHBOARD ADMIN ==========
-
 @api_view(['GET'])
 def admin_dashboard(request):
-    """Dashboard cho quản trị viên"""
-    # Kiểm tra quyền Admin
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
     if token:
         try:
@@ -312,12 +277,8 @@ def admin_dashboard(request):
 @api_view(['POST'])
 @permission_classes([IsAdmin])
 def admin_system_log(request):
-    """Ghi nhật ký hành động admin"""
     action = request.data.get('action')
     details = request.data.get('details')
-    
-    # Log admin action to database
-    # This would store in a new AdminLog model
     return Response({
         'message': 'Hành động đã được ghi nhận',
         'timestamp': timezone.now()
@@ -327,7 +288,6 @@ def admin_system_log(request):
 @api_view(['GET'])
 @permission_classes([IsAdmin])
 def system_settings(request):
-    """Cài đặt hệ thống"""
     if request.method == 'GET':
         return Response({
             'system': {

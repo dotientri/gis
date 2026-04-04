@@ -189,9 +189,7 @@ class Migration(migrations.Migration):
                     models.CharField(
                         choices=[
                             ("QUAN_TRI", "Quản trị viên"),
-                            ("QUAN_LY_CV", "Quản lý công viên"),
-                            ("KIEM_TRA", "Nhân viên kiểm tra"),
-                            ("BIEN_TAP_GIS", "Biên tập viên GIS"),
+
                             ("CONG_DONG", "Người dùng cộng đồng"),
                         ],
                         max_length=100,

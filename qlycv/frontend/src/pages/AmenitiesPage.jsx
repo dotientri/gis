@@ -20,11 +20,8 @@ export default function AmenitiesPage() {
   const parks = parksData?.results || [];
   const types = typesData?.results || typesData || [];
 
-  // Kiểm tra quyền quản lý
-  const canManage = user && (
-    user.ten_dang_nhap === 'admin' || 
-    ['QUAN_TRI', 'QUAN_LY_CV', 'BIEN_TAP_GIS'].includes(user.nhom_quyen_code)
-  );
+  // Kiểm tra quyền quản lý (Admin)
+  const canManage = user && user.nhom_quyen_code === 'QUAN_TRI';
 
   useEffect(() => {
     fetchParks({ limit: 100 });
@@ -60,6 +57,72 @@ export default function AmenitiesPage() {
 
   return (
     <div className="park-list-page">
+      {/* LIGHT THEME FORCE STYLE: Giao diện sáng cho quản lý tiện ích */}
+      <style>{`
+        :root { color-scheme: light; }
+        html, body, #root, .app-container { background-color: #f3f4f6 !important; color: #111827 !important; height: 100%; }
+        
+        /* SIDEBAR FIX */
+        .sidebar, aside, nav, .left-menu, .nav-menu, .main-sidebar, [class*="sidebar"], [class*="Sidebar"], [class*="Sider"], .pro-sidebar-inner {
+            background-color: #ffffff !important;
+            background: #ffffff !important;
+            border-right: 1px solid #e5e7eb !important;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05) !important;
+        }
+        .sidebar *, aside *, nav *, [class*="sidebar"] * {
+            color: #111827 !important;
+            text-shadow: none !important;
+        }
+        .sidebar a:hover, aside a:hover, .nav-link:hover, .pro-menu-item:hover { 
+            background-color: #eff6ff !important;
+            color: #2563eb !important;
+        }
+        
+        /* ACTIVE STATE */
+        .sidebar .active, .sidebar .selected, .sidebar .current, .sidebar .is-active, .sidebar .router-link-active,
+        aside .active, aside .selected, aside .current, aside .is-active, aside .router-link-active,
+        .nav-link.active, li.active > a, a[aria-current="page"], .pro-menu-item.active {
+            background-color: #e5e7eb !important;
+            color: #000000 !important;
+            font-weight: 700 !important;
+            box-shadow: inset 4px 0 0 #3b82f6 !important;
+        }
+        .sidebar .active *, .sidebar .selected *, [aria-current="page"] * { color: #000000 !important; }
+
+        /* FIX INPUTS: Đảm bảo nền trắng sáng cho dropdown và input */
+        input, select, textarea, .form-select {
+            background-color: #ffffff !important;
+            color: #111827 !important;
+            border: 1px solid #d1d5db !important;
+        }
+
+        /* FIX BACKGROUND CHÍNH: Xóa gradient tối */
+        .park-list-page { 
+            background-color: #f3f4f6 !important; 
+            background: #f3f4f6 !important;
+            background-image: none !important;
+            padding: 20px; 
+            min-height: 100vh; 
+        }
+        
+        /* FIX CÁC KHỐI CON: Ép nền trắng */
+        .filters-section, .table-responsive, .pagination-section, .empty-state, .loading-container {
+            background-color: #ffffff !important;
+            background: #ffffff !important;
+            color: #111827 !important;
+        }
+        
+        .parks-table { background-color: #ffffff !important; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb; }
+        .parks-table thead tr { background-color: #e5e7eb !important; }
+        .parks-table th { color: #111827 !important; font-weight: 700 !important; text-transform: uppercase; font-size: 0.85rem; padding: 16px !important; }
+        
+        .parks-table tbody tr { opacity: 1 !important; background-color: #ffffff !important; border-bottom: 1px solid #e5e7eb !important; }
+        .parks-table tbody tr:hover { background-color: #f9fafb !important; }
+        .parks-table td { color: #374151 !important; vertical-align: middle !important; padding: 16px !important; font-weight: 500; }
+        
+        .page-header h1 { color: #111827 !important; }
+        .page-header .subtitle { color: #6b7280 !important; }
+      `}</style>
       <div className="page-header">
         <div className="header-content">
           <div>

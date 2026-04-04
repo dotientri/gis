@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from '../hooks';
-import { parksAPI, districtsAPI, parkTypesAPI, amenitiesAPI, imagesAPI } from '../api';
+import { parksAPI, districtsAPI, parkTypesAPI, amenitiesAPI, imagesAPI, treesAPI } from '../api';
 import { useUIStore, useAuthStore } from '../store';
+import { MAP_CONFIG } from '../constants';
 import '../styles/pages/ParkFormPage.css';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap, FeatureGroup, Polygon } from 'react-leaflet';
 import { EditControl } from 'react-leaflet-draw';
@@ -44,6 +45,20 @@ function RecenterMap({ lat, lng }) {
   return null;
 }
 
+// FIX: Định nghĩa tạm API status tại đây
+const parkStatusesAPI = {
+  getList: async () => {
+    try {
+      const response = await fetch('http://localhost:8000/api/trang-thai-cong-vien/');
+      const data = await response.json();
+      return { data };
+    } catch (e) {
+      console.error("Lỗi tải status:", e);
+      return { data: [] };
+    }
+  }
+};
+
 export default function EditParkPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -52,22 +67,27 @@ export default function EditParkPage() {
   const [park, setPark] = useState(null);
   const [districts, setDistricts] = useState([]);
   const [parkTypes, setParkTypes] = useState([]);
+  const [parkStatuses, setParkStatuses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [amenityTypes, setAmenityTypes] = useState([]);
+  const [treeTypes, setTreeTypes] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
   const [newImages, setNewImages] = useState([]);
   const [boundary, setBoundary] = useState(null); // State lưu ranh giới (GeoJSON)
   
   // State động
   const [amenities, setAmenities] = useState({});
+  const [trees, setTrees] = useState([]); // State cho danh sách cây
 
   const { values, errors, touched, isSubmitting, handleChange, handleBlur, handleSubmit, setFieldValue } = useForm(
     {
       tens: '',
       mo_ta: '',
       dien_tich_m2: '',
+      ma_trang_thai: '',
       ma_loai: '',
       ma_quan_huyen: '',
+      dia_chi: '',
       toa_do_trung_tam_lat: '',
       toa_do_trung_tam_lng: '',
     },
@@ -77,8 +97,10 @@ export default function EditParkPage() {
           ten_cong_vien: values.tens, // Sửa tên trường cho khớp backend
           mo_ta: values.mo_ta,
           dien_tich_m2: parseFloat(values.dien_tich_m2),
+          ma_trang_thai: values.ma_trang_thai,
           ma_loai: values.ma_loai,
           ma_quan_huyen: values.ma_quan_huyen,
+          dia_chi: values.dia_chi,
           toa_do_trung_tam: [
             parseFloat(values.toa_do_trung_tam_lat),
             parseFloat(values.toa_do_trung_tam_lng),
@@ -135,6 +157,35 @@ export default function EditParkPage() {
           }
         }
 
+        // 4. Cập nhật danh sách cây
+        for (const tree of trees) {
+          if (tree.ma_loai_cay) {
+            const treeData = {
+              ma_cong_vien: id,
+              ma_loai_cay: tree.ma_loai_cay,
+              ma_so_cay: tree.ma_so_cay || null,
+              chieu_cao_m: tree.chieu_cao_m ? parseFloat(tree.chieu_cao_m) : null,
+              duong_kinh_cm: tree.duong_kinh_cm ? parseFloat(tree.duong_kinh_cm) : null,
+              ban_kinh_tan_m: tree.ban_kinh_tan_m ? parseFloat(tree.ban_kinh_tan_m) : null,
+              tinh_trang: tree.tinh_trang || 'tot',
+              ngay_trong: tree.ngay_trong || null,
+              ngay_cat_tia_cuoi: tree.ngay_cat_tia_cuoi || null,
+            };
+
+            try {
+              if (tree.ma_cay) {
+                // Update existing tree
+                await treesAPI.update(tree.ma_cay, treeData);
+              } else {
+                // Create new tree
+                await treesAPI.create(treeData);
+              }
+            } catch (e) {
+              console.error("Lỗi cập nhật/tạo cây:", e);
+            }
+          }
+        }
+
         showNotification('Cập nhật công viên thành công!', 'success');
         navigate(`/parks/${id}`);
       } catch (err) {
@@ -173,34 +224,52 @@ export default function EditParkPage() {
     const fetchPark = async () => {
       try {
         // Tải dữ liệu công viên VÀ danh mục cùng lúc
-        const [response, districtsRes, typesRes, amenitiesRes, parkAmenitiesRes] = await Promise.all([
+        // FIX: Thêm parkStatusesAPI.getList() vào danh sách Promise
+        const [response, districtsRes, typesRes, amenitiesRes, parkAmenitiesRes, statusesRes, treeTypesRes, parkTreesRes] = await Promise.all([
           parksAPI.getDetail(id),
           districtsAPI.getList({ limit: 100 }),
           parkTypesAPI.getList(),
           amenitiesAPI.getTypes(),
-          amenitiesAPI.getList({ ma_cong_vien: id })
+          amenitiesAPI.getList({ ma_cong_vien: id }),
+          parkStatusesAPI.getList(),
+          treesAPI.getTypes(),
+          treesAPI.getList({ ma_cong_vien: id })
         ]);
 
         setPark(response.data);
         setDistricts(districtsRes.data.results || districtsRes.data);
         setParkTypes(typesRes.data.results || typesRes.data);
+        setParkStatuses(statusesRes.data.results || statusesRes.data || []);
+        setTreeTypes(treeTypesRes.data.results || treeTypesRes.data || []);
         setExistingImages(response.data.hinh_anh || []);
+        
+        // Load danh sách cây hiện có
+        const parkTreesList = parkTreesRes.data.results || parkTreesRes.data || [];
+        setTrees(parkTreesList.map(tree => ({
+          ma_cay: tree.ma_cay,
+          ma_loai_cay: tree.ma_loai_cay,
+          ma_so_cay: tree.ma_so_cay || '',
+          chieu_cao_m: tree.chieu_cao_m || '',
+          duong_kinh_cm: tree.duong_kinh_cm || '',
+          ban_kinh_tan_m: tree.ban_kinh_tan_m || '',
+          tinh_trang: tree.tinh_trang || 'tot',
+          ngay_trong: tree.ngay_trong || '',
+          ngay_cat_tia_cuoi: tree.ngay_cat_tia_cuoi || ''
+        })));
         
         // Pre-fill form
         setFieldValue('tens', response.data.ten_cong_vien || response.data.tens);
         setFieldValue('mo_ta', response.data.mo_ta || '');
         setFieldValue('dien_tich_m2', response.data.dien_tich_m2);
+        setFieldValue('dia_chi', response.data.dia_chi || '');
         
         // FIX: Lấy ID nếu API trả về object, hoặc lấy giá trị trực tiếp nếu là ID
-        const maLoai = response.data.ma_loai && typeof response.data.ma_loai === 'object' 
-          ? response.data.ma_loai.ma_loai 
-          : response.data.ma_loai;
-        setFieldValue('ma_loai', maLoai || '');
+        // Đơn giản hóa logic: API trả về ID, chỉ cần gán trực tiếp
+        setFieldValue('ma_loai', response.data.ma_loai || '');
 
-        const maQuanHuyen = response.data.ma_quan_huyen && typeof response.data.ma_quan_huyen === 'object' 
-          ? response.data.ma_quan_huyen.ma_quan_huyen 
-          : response.data.ma_quan_huyen;
-        setFieldValue('ma_quan_huyen', maQuanHuyen || '');
+        // FIX: Thêm logic còn thiếu để gán giá trị cho Trạng thái và Quận Huyện
+        setFieldValue('ma_quan_huyen', response.data.ma_quan_huyen || '');
+        setFieldValue('ma_trang_thai', response.data.ma_trang_thai || '');
         
         if (response.data.toa_do_trung_tam) {
           setFieldValue('toa_do_trung_tam_lat', response.data.toa_do_trung_tam[0]);
@@ -301,6 +370,45 @@ export default function EditParkPage() {
     setNewImages(prev => prev.filter((_, i) => i !== index));
   };
 
+  // Handlers cho cây
+  const handleAddTree = () => {
+    setTrees(prev => [...prev, {
+      ma_loai_cay: '',
+      ma_so_cay: '',
+      chieu_cao_m: '',
+      duong_kinh_cm: '',
+      ban_kinh_tan_m: '',
+      tinh_trang: 'tot',
+      ngay_trong: '',
+      ngay_cat_tia_cuoi: ''
+    }]);
+  };
+
+  const handleTreeChange = (index, field, value) => {
+    setTrees(prev => {
+      const newTrees = [...prev];
+      newTrees[index] = { ...newTrees[index], [field]: value };
+      return newTrees;
+    });
+  };
+
+  const handleRemoveTree = (index) => {
+    const tree = trees[index];
+    if (tree.ma_cay) {
+      // Xóa dari server nếu là tree cũ
+      if (window.confirm('Bạn có chắc chắn muốn xóa cây này?')) {
+        try {
+          // Backend không có delete endpoint tường minh,  chỉ cần update
+          setTrees(prev => prev.filter((_, i) => i !== index));
+        } catch (e) {
+          showNotification('Lỗi khi xóa cây', 'error');
+        }
+      }
+    } else {
+      setTrees(prev => prev.filter((_, i) => i !== index));
+    }
+  };
+
   const handleDeleteExistingImage = async (imageId) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa ảnh này?')) {
       try {
@@ -343,6 +451,38 @@ export default function EditParkPage() {
 
   return (
     <div className="park-form-page">
+      {/* LIGHT THEME FORCE STYLE */}
+      <style>{`
+        :root { color-scheme: light; }
+        html, body, #root, .app-container { background-color: #f3f4f6 !important; color: #111827 !important; height: 100%; }
+        
+        /* SIDEBAR FIX */
+        .sidebar, aside, nav, .left-menu, .nav-menu, .main-sidebar, [class*="sidebar"], [class*="Sidebar"], [class*="Sider"], .pro-sidebar-inner {
+            background-color: #ffffff !important;
+            background: #ffffff !important;
+            border-right: 1px solid #e5e7eb !important;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05) !important;
+        }
+        .sidebar *, aside *, nav *, [class*="sidebar"] * {
+            color: #111827 !important;
+            text-shadow: none !important;
+        }
+        .sidebar a:hover, aside a:hover, .nav-link:hover, .pro-menu-item:hover { 
+            background-color: #eff6ff !important;
+            color: #2563eb !important;
+        }
+
+        /* ACTIVE STATE */
+        .sidebar .active, .sidebar .selected, .sidebar .current, .sidebar .is-active, .sidebar .router-link-active,
+        aside .active, aside .selected, aside .current, aside .is-active, aside .router-link-active,
+        .nav-link.active, li.active > a, a[aria-current="page"], .pro-menu-item.active {
+            background-color: #e5e7eb !important;
+            color: #000000 !important;
+            font-weight: 700 !important;
+            box-shadow: inset 4px 0 0 #3b82f6 !important;
+        }
+        .sidebar .active *, .sidebar .selected *, [aria-current="page"] * { color: #000000 !important; }
+      `}</style>
       <div className="form-header">
         <h1>Chỉnh Sửa</h1>
         <p>{park?.tens}</p>
@@ -378,6 +518,20 @@ export default function EditParkPage() {
               placeholder="Mô tả chi tiết về công viên"
               rows={4}
             />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="dia_chi">Địa Chỉ Chi Tiết *</label>
+            <textarea
+              id="dia_chi"
+              name="dia_chi"
+              value={values.dia_chi}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              placeholder="Vd: Tố Hữu, Quận 4, TP. Hồ Chí Minh"
+              rows={2}
+            />
+            {touched.dia_chi && errors.dia_chi && <span className="error">{errors.dia_chi}</span>}
           </div>
 
           <div className="form-row">
@@ -416,6 +570,25 @@ export default function EditParkPage() {
                 ))}
               </select>
             </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="ma_trang_thai">Trạng Thái (Chọn 'Hoạt động' để hiện trên bản đồ) *</label>
+            <select
+              id="ma_trang_thai"
+              name="ma_trang_thai"
+              value={values.ma_trang_thai}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              required
+            >
+              <option value="">-- Chọn Trạng Thái --</option>
+              {parkStatuses.map((s) => (
+                <option key={s.ma_trang_thai} value={s.ma_trang_thai}>
+                  {s.mo_ta || s.ten_trang_thai}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="form-group">
@@ -477,7 +650,7 @@ export default function EditParkPage() {
               zoom={13} 
               style={{ height: '100%', width: '100%' }}
             >
-              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap contributors' />
+              <TileLayer url={MAP_CONFIG.TILE_LAYER} attribution={MAP_CONFIG.ATTRIBUTION} />
               <LocationMarker setFieldValue={setFieldValue} />
               <RecenterMap lat={parseFloat(values.toa_do_trung_tam_lat)} lng={parseFloat(values.toa_do_trung_tam_lng)} />
               <Marker position={[parseFloat(values.toa_do_trung_tam_lat) || 10.8231, parseFloat(values.toa_do_trung_tam_lng) || 106.6797]} />
@@ -654,6 +827,138 @@ export default function EditParkPage() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Phần Cây Xanh */}
+        <div className="form-section">
+          <h2>Cây Xanh (Tùy Chọn)</h2>
+
+          {trees.map((tree, idx) => (
+            <div key={idx} style={{marginBottom: '20px', padding: '15px', border: '1px solid #eee', borderRadius: '8px', backgroundColor: '#f9f9f9'}}>
+              <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px'}}>
+                <h3 style={{margin: 0}}>Cây thứ {idx + 1}</h3>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveTree(idx)}
+                  style={{background: '#ef4444', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer'}}
+                >
+                  Xóa cây này
+                </button>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Loại Cây *</label>
+                  <select
+                    value={tree.ma_loai_cay}
+                    onChange={(e) => handleTreeChange(idx, 'ma_loai_cay', e.target.value)}
+                    required
+                  >
+                    <option value="">-- Chọn Loại Cây --</option>
+                    {treeTypes.map((t) => (
+                      <option key={t.ma_loai_cay} value={t.ma_loai_cay}>
+                        {t.ten_loai_cay}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor={`ma_so_cay_${idx}`}>Mã Số Cây</label>
+                  <input
+                    id={`ma_so_cay_${idx}`}
+                    type="text"
+                    value={tree.ma_so_cay}
+                    onChange={(e) => handleTreeChange(idx, 'ma_so_cay', e.target.value)}
+                    placeholder="VD: C001, C002"
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor={`chieu_cao_${idx}`}>Chiều Cao (mét)</label>
+                  <input
+                    id={`chieu_cao_${idx}`}
+                    type="number"
+                    step="0.1"
+                    value={tree.chieu_cao_m}
+                    onChange={(e) => handleTreeChange(idx, 'chieu_cao_m', e.target.value)}
+                    placeholder="VD: 5.5"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor={`duong_kinh_${idx}`}>Đường Kính (cm)</label>
+                  <input
+                    id={`duong_kinh_${idx}`}
+                    type="number"
+                    step="0.1"
+                    value={tree.duong_kinh_cm}
+                    onChange={(e) => handleTreeChange(idx, 'duong_kinh_cm', e.target.value)}
+                    placeholder="VD: 30.5"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor={`ban_kinh_${idx}`}>Bán Kính Tán (mét)</label>
+                  <input
+                    id={`ban_kinh_${idx}`}
+                    type="number"
+                    step="0.1"
+                    value={tree.ban_kinh_tan_m}
+                    onChange={(e) => handleTreeChange(idx, 'ban_kinh_tan_m', e.target.value)}
+                    placeholder="VD: 4.2"
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor={`tinh_trang_${idx}`}>Tình Trạng</label>
+                  <select
+                    id={`tinh_trang_${idx}`}
+                    value={tree.tinh_trang}
+                    onChange={(e) => handleTreeChange(idx, 'tinh_trang', e.target.value)}
+                  >
+                    <option value="tot">Tốt</option>
+                    <option value="kha">Khá</option>
+                    <option value="trung_binh">Trung Bình</option>
+                    <option value="kem">Kém</option>
+                    <option value="chet">Chết</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor={`ngay_trong_${idx}`}>Ngày Trồng</label>
+                  <input
+                    id={`ngay_trong_${idx}`}
+                    type="date"
+                    value={tree.ngay_trong}
+                    onChange={(e) => handleTreeChange(idx, 'ngay_trong', e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor={`ngay_cat_tia_${idx}`}>Ngày Cắt Tỉa Cuối</label>
+                  <input
+                    id={`ngay_cat_tia_${idx}`}
+                    type="date"
+                    value={tree.ngay_cat_tia_cuoi}
+                    onChange={(e) => handleTreeChange(idx, 'ngay_cat_tia_cuoi', e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+
+          <button
+            type="button"
+            onClick={handleAddTree}
+            style={{background: '#4CAF50', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer', marginTop: '10px'}}
+          >
+            + Thêm Cây
+          </button>
         </div>
 
         <div className="form-actions">

@@ -1,7 +1,3 @@
-"""
-Endpoint debug để kiểm tra dữ liệu công viên và test API tìm kiếm gần nhất
-"""
-
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import CongVien
@@ -9,7 +5,6 @@ import math
 
 @api_view(['GET'])
 def debug_parks_coordinates(request):
-    """Debug endpoint - Liệt kê tất cả công viên và tọa độ"""
     parks = CongVien.objects.all()
     
     parks_data = []
@@ -42,7 +37,6 @@ def debug_parks_coordinates(request):
 
 @api_view(['POST'])
 def debug_nearest_parks(request):
-    """Debug endpoint - Test tính toán khoảng cách"""
     try:
         lat = float(request.data.get('latitude'))
         lng = float(request.data.get('longitude'))
@@ -82,10 +76,7 @@ def debug_nearest_parks(request):
             except (ValueError, TypeError):
                 continue
     
-    # Sắp xếp theo khoảng cách
     results.sort(key=lambda x: x['distance_km'])
-    
-    # Lọc theo bán kính
     nearby = [p for p in results if p['within_radius']]
     
     return Response({
@@ -94,5 +85,5 @@ def debug_nearest_parks(request):
         'total_parks_checked': len(results),
         'parks_within_radius': len(nearby),
         'nearby_parks': nearby[:20],
-        'all_parks_distances': results[:20]  # Top 20 closest
+        'all_parks_distances': results[:20]
     })

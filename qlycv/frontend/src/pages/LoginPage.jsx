@@ -7,7 +7,7 @@ import '../styles/pages/AuthPages.css';
 export default function LoginPage() {
   const navigate = useNavigate();
   const { setToken, setUser } = useAuthStore();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,7 +18,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await authAPI.login({ email, password });
+      const response = await authAPI.login({ email: identifier, password });
       if (response.data.token) {
         setToken(response.data.token);
         if (response.data.user) {
@@ -30,7 +30,7 @@ export default function LoginPage() {
       setError(
         err.response?.data?.detail ||
         err.response?.data?.error ||
-        'Đăng nhập thất bại. Vui lòng kiểm tra email và mật khẩu.'
+        'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.'
       );
     } finally {
       setLoading(false);
@@ -39,6 +39,11 @@ export default function LoginPage() {
 
   return (
     <div className="auth-form-container">
+      {/* LIGHT THEME FORCE STYLE */}
+      <style>{`
+        :root { color-scheme: light; }
+        html, body, #root, .app-container { background-color: #f3f4f6 !important; color: #111827 !important; min-height: 100vh; }
+      `}</style>
       <h1>Đăng Nhập</h1>
       <p className="auth-subtitle">Hệ thống quản lý công viên Thành phố Hồ Chí Minh</p>
 
@@ -46,13 +51,13 @@ export default function LoginPage() {
 
       <form onSubmit={handleSubmit} className="auth-form">
         <div className="form-group">
-          <label htmlFor="email">Email</label>
+          <label htmlFor="identifier">Tên đăng nhập hoặc Email</label>
           <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="your@email.com"
+            id="identifier"
+            type="text"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
+            placeholder="admin / admin@gispark.com"
             required
             disabled={loading}
           />

@@ -999,7 +999,7 @@ def list():
 @click.option('--email', '-e', prompt='Email', help='Địa chỉ email')
 @click.option('--password', '-p', prompt='Mật khẩu', hide_input=True, confirmation_prompt=True)
 @click.option('--fullname', '-n', default='', help='Họ và tên')
-@click.option('--role', '-r', type=click.Choice(['QUAN_TRI', 'QUAN_LY_CV', 'KIEM_TRA', 'BIEN_TAP_GIS', 'CONG_DONG']), 
+@click.option('--role', '-r', type=click.Choice(['QUAN_TRI', '
               default='CONG_DONG', help='Vai trò người dùng')
 def create(username, email, password, fullname, role):
     """Tạo người dùng mới"""
@@ -1045,7 +1045,7 @@ def create(username, email, password, fullname, role):
 @click.option('--fullname', '-n', help='Cập nhật họ tên')
 @click.option('--email', '-e', help='Cập nhật email')
 @click.option('--password', '-p', help='Cập nhật mật khẩu', hide_input=True)
-@click.option('--role', '-r', type=click.Choice(['QUAN_TRI', 'QUAN_LY_CV', 'KIEM_TRA', 'BIEN_TAP_GIS', 'CONG_DONG']), 
+@click.option('--role', '-r', type=click.Choice(['QUAN_TRI', 'CONG_DONG']), 
               help='Thay đổi vai trò')
 def edit(user_id, fullname, email, password, role):
     """Chỉnh sửa thông tin người dùng"""

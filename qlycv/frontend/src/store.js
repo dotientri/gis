@@ -157,6 +157,7 @@ export const useUIStore = create((set) => ({
   notification: null,
   isModalOpen: false,
   modalContent: null,
+  isSidebarOpen: true,
 
   showNotification: (message, type = 'success') =>
     set({
@@ -167,6 +168,9 @@ export const useUIStore = create((set) => ({
 
   openModal: (content) => set({ isModalOpen: true, modalContent: content }),
   closeModal: () => set({ isModalOpen: false, modalContent: null }),
+
+  toggleSidebar: () =>
+    set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
 }));
 
 // Dashboard Store

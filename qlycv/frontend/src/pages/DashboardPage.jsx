@@ -11,8 +11,9 @@ export default function DashboardPage() {
   const { data: incidents } = useApi(incidentsAPI.getList, false);
 
   useEffect(() => {
+    console.log('Dashboard: Fetching statistics...');
     fetchStats();
-  }, []);
+  }, [fetchStats]);
 
   useEffect(() => {
     if (statsData) {
@@ -24,31 +25,95 @@ export default function DashboardPage() {
   const parkList = parks?.results || [];
   const incidentList = incidents?.results || [];
 
+  // Log for debugging
+  useEffect(() => {
+    console.log('Dashboard statistics:', { statistics, statsData, parkList, incidentList });
+  }, [statistics, statsData, parkList, incidentList]);
+
   const statCards = [
     {
       title: 'Tổng Công Viên',
-      value: statistics?.total_parks || parkList.length || 0,
+      value: statistics?.total_parks !== undefined ? statistics.total_parks : (parkList?.length || 0),
       color: 'bg-blue-500',
     },
     {
       title: 'Lượng Khách Hôm Nay',
-      value: statistics?.visitors_today || 0,
+      value: statistics?.visitors_today !== undefined ? statistics.visitors_today : 0,
       color: 'bg-green-500',
     },
     {
       title: 'Sự Cố Chờ Xử Lý',
-      value: statistics?.pending_incidents || incidentList.filter(i => i.trang_thai === 'cho_xu_ly').length || 0,
+      value: statistics?.pending_incidents !== undefined ? statistics.pending_incidents : (incidentList?.filter(i => i.trang_thai === 'cho_xu_ly')?.length || 0),
       color: 'bg-amber-500',
     },
     {
       title: 'Đánh Giá Chờ Duyệt',
-      value: statistics?.pending_ratings || 0,
+      value: statistics?.pending_ratings !== undefined ? statistics.pending_ratings : 0,
       color: 'bg-red-500',
     },
   ];
 
   return (
     <div className="dashboard-page">
+      {/* LIGHT THEME STYLES */}
+      <style>{`
+        :root { color-scheme: light; }
+        html, body, #root, .app-container { background-color: #f3f4f6 !important; color: #111827 !important; height: 100%; }
+        
+        /* SIDEBAR FIX */
+        .sidebar, aside, nav, .left-menu, .nav-menu, .main-sidebar, [class*="sidebar"], [class*="Sidebar"], [class*="Sider"], .pro-sidebar-inner {
+             background-color: #ffffff !important;
+             background: #ffffff !important;
+             border-right: 1px solid #e5e7eb !important;
+             box-shadow: 2px 0 10px rgba(0,0,0,0.05) !important;
+        }
+        
+        .sidebar *, aside *, nav *, [class*="sidebar"] * {
+             color: #111827 !important; /* Chữ đen */
+             text-shadow: none !important;
+        }
+        
+        /* HOVER */
+        .sidebar a:hover, aside a:hover, .nav-link:hover, .pro-menu-item:hover { 
+             background-color: #eff6ff !important;
+             color: #2563eb !important;
+        }
+        .sidebar a:hover * { color: #2563eb !important; }
+        
+        /* ACTIVE STATE: XÁM NHẠT + CHỮ ĐEN */
+        .sidebar .active, .sidebar .selected, .sidebar .current, .sidebar .is-active, .sidebar .router-link-active,
+        aside .active, aside .selected, aside .current, aside .is-active, aside .router-link-active,
+        .nav-link.active, li.active > a, a[aria-current="page"], .pro-menu-item.active {
+            background-color: #e5e7eb !important;
+            color: #000000 !important;
+            font-weight: 700 !important;
+            box-shadow: inset 4px 0 0 #3b82f6 !important;
+        }
+        .sidebar .active *, .sidebar .selected *, [aria-current="page"] * { color: #000000 !important; }
+
+        /* Dashboard specific */
+        .dashboard-page { background-color: #f3f4f6; padding: 24px; min-height: 100vh; }
+        .page-header h1 { color: #111827; font-weight: 800; }
+        .page-header p { color: #6b7280; }
+        
+        .stat-card { background: #ffffff !important; border: 1px solid #e5e7eb !important; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-radius: 12px; }
+        .stat-label { color: #4b5563 !important; font-weight: 600; }
+        .stat-value { color: #111827 !important; font-weight: 800; }
+        
+        .dashboard-section { background: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e5e7eb; margin-bottom: 24px; }
+        .dashboard-section h2 { color: #111827; border-bottom: 2px solid #f3f4f6; padding-bottom: 10px; margin-bottom: 15px; }
+        
+        .activity-item { border-bottom: 1px solid #f3f4f6; padding: 10px 0; }
+        .activity-title { color: #111827; font-weight: 600; }
+        .activity-time { color: #6b7280; }
+        
+        .task-item { background: #f9fafb; border: 1px solid #e5e7eb; margin-bottom: 8px; border-radius: 6px; padding: 10px; color: #374151; }
+        .system-info .info-label { color: #4b5563; font-weight: 500; }
+        .system-info .info-value { color: #111827; font-weight: 600; }
+        
+        /* Smooth Hover Effects */
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); transition: all 0.3s ease; }
+      `}</style>
       <div className="page-header">
         <h1>Bảng Điều Khiển</h1>
         <p>Tổng quan hệ thống quản lý công viên</p>
@@ -123,12 +188,6 @@ export default function DashboardPage() {
           <div className="info-row">
             <span className="info-label">Phiên bản hệ thống:</span>
             <span className="info-value">1.0.0</span>
-          </div>
-          <div className="info-row">
-            <span className="info-label">Ngày cập nhật cuối cùng:</span>
-            <span className="info-value">
-              {new Date().toLocaleDateString('vi-VN')}
-            </span>
           </div>
         </div>
       </div>

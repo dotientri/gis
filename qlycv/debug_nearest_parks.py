@@ -71,10 +71,10 @@ if filtered_parks:
         print(f"   Khoảng cách: {park['distance']:.2f} km")
         print(f"   Trạng thái: {park['status']}")
 else:
-    print("\n❌ Không tìm thấy công viên nào!")
-    print("\n🔍 Tất cả công viên có tọa độ:")
+    print(f"\n❌ Không tìm thấy công viên nào trong bán kính {radius_km}km.")
+    print("\n🔍 Hiển thị 10 công viên gần nhất (dù nằm ngoài bán kính):")
     print("-" * 80)
-    for park in nearby_parks[:10]:
-        print(f"{park['name']}: {park['distance']:.2f} km away")
+    for i, park in enumerate(nearby_parks[:10], 1):
+        print(f"{i}. {park['name']}: {park['distance']:.2f} km")
 
 print("\n" + "=" * 80)

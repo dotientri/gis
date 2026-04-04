@@ -1,8 +1,3 @@
-"""
-Django Admin Configuration cho hệ thống GIS Công Viên
-Cung cấp giao diện quản lý cho tất cả 20 bảng dữ liệu
-"""
-
 from django.contrib import admin
 from .models import (
     QuanHuyen, PhuongXa, LoaiCongVien, TrangThaiCongVien, CongVien,
@@ -12,8 +7,6 @@ from .models import (
     LoaiCay, CayXanh, SuKienCongVien, NhatKyThayDoi, ThongKetruyenCap
 )
 
-
-# ==================== ĐỊA LÝ HÀNH CHÍNH ====================
 
 @admin.register(QuanHuyen)
 class QuanHuyenAdmin(admin.ModelAdmin):
@@ -49,8 +42,6 @@ class PhuongXaAdmin(admin.ModelAdmin):
         }),
     )
 
-
-# ==================== CÔNG VIÊN ====================
 
 @admin.register(LoaiCongVien)
 class LoaiCongVienAdmin(admin.ModelAdmin):
@@ -118,8 +109,6 @@ class CongVienAdmin(admin.ModelAdmin):
     )
 
 
-# ==================== TIỆN ÍCH & NỘI DUNG ====================
-
 @admin.register(LoaiTienIch)
 class LoaiTienIchAdmin(admin.ModelAdmin):
     list_display = ('ten_loai', 'ma_code')
@@ -139,8 +128,6 @@ class HinhAnhCongVienAdmin(admin.ModelAdmin):
     list_filter = ('la_anh_chinh', 'ngay_chup')
     search_fields = ('ma_cong_vien__ten_cong_vien', 'mo_ta')
 
-
-# ==================== NGƯỜI DÙNG & PHÂN QUYỀN ====================
 
 @admin.register(NhomQuyen)
 class NhomQuyenAdmin(admin.ModelAdmin):
@@ -174,8 +161,6 @@ class NguoiDungAdmin(admin.ModelAdmin):
         }),
     )
 
-
-# ==================== NGHIỆP VỤ ====================
 
 @admin.register(DanhGiaCongVien)
 class DanhGiaCongVienAdmin(admin.ModelAdmin):
@@ -288,8 +273,6 @@ class BaoCaoSuCoAdmin(admin.ModelAdmin):
         self.message_user(request, f'{updated} báo cáo chuyển trạng thái "Đã xử lý".')
     cap_nhat_da_xu_ly.short_description = 'Chuyển sang "Đã xử lý"'
 
-
-# ==================== SINH THÁI & HỆ THỐNG ====================
 
 @admin.register(LoaiCay)
 class LoaiCayAdmin(admin.ModelAdmin):

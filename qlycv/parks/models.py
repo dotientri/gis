@@ -6,10 +6,7 @@ import json
 import uuid
 
 
-# ==================== NHÓM 1: ĐỊA LÝ HÀNH CHÍNH (2 bảng) ====================
-
 class QuanHuyen(models.Model):
-    """Quận / Huyện - Tỉnh phần hành chính cấp quận"""
     LOAI_CHOICES = [
         ('quan', 'Quận'),
         ('huyen', 'Huyện'),
@@ -22,7 +19,6 @@ class QuanHuyen(models.Model):
     loai = models.CharField(max_length=50, choices=LOAI_CHOICES, null=True, blank=True)
     dien_tich_km2 = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True)
     dan_so = models.IntegerField(null=True, blank=True)
-    # Changed from gis_models.MultiPolygonField to JSONField (no GDAL dependency)
     hinh_hoc = models.JSONField(null=True, blank=True, default=dict)
     ngay_tao = models.DateTimeField(auto_now_add=True)
     ngay_cap_nhat = models.DateTimeField(auto_now=True)
@@ -36,7 +32,6 @@ class QuanHuyen(models.Model):
 
 
 class PhuongXa(models.Model):
-    """Phường / Xã / Thị trấn - Đơn vị hành chính cấp phường"""
     LOAI_CHOICES = [
         ('phuong', 'Phường'),
         ('xa', 'Xã'),
@@ -49,7 +44,6 @@ class PhuongXa(models.Model):
     ma_code = models.CharField(max_length=20, unique=True)
     loai = models.CharField(max_length=50, choices=LOAI_CHOICES, null=True, blank=True)
     dien_tich_km2 = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True)
-    # Changed from gis_models.MultiPolygonField to JSONField (no GDAL dependency)
     hinh_hoc = models.JSONField(null=True, blank=True, default=dict)
     
     class Meta:
@@ -61,16 +55,13 @@ class PhuongXa(models.Model):
         return f"{self.ten_phuong_xa}, {self.ma_quan_huyen.ten_quan_huyen}"
 
 
-# ==================== NHÓM 2: CÔNG VIÊN (4 bảng) ====================
-
 class LoaiCongVien(models.Model):
-    """Loại công viên - Danh mục phân loại"""
     ma_loai = models.AutoField(primary_key=True)
     ten_loai = models.CharField(max_length=100, unique=True)
     ma_code = models.CharField(max_length=30, unique=True)
     mo_ta = models.TextField(null=True, blank=True)
     icon_url = models.CharField(max_length=255, null=True, blank=True)
-    mau_sac = models.CharField(max_length=10, null=True, blank=True, help_text="Mã màu HEX (#RRGGBB)")
+    mau_sac = models.CharField(max_length=10, null=True, blank=True)
     
     class Meta:
         db_table = 'loai_cong_vien'
@@ -81,7 +72,6 @@ class LoaiCongVien(models.Model):
 
 
 class TrangThaiCongVien(models.Model):
-    """Trạng thái công viên - Định nghĩa vòng đời"""
     TRANG_THAI_CHOICES = [
         ('quy_hoach', 'Quy hoạch'),
         ('dang_xay_dung', 'Đang xây dựng'),
@@ -106,7 +96,6 @@ class TrangThaiCongVien(models.Model):
 
 
 class CongVien(models.Model):
-    """Công viên - Bảng trung tâm của hệ thống"""
     ma_cong_vien = models.AutoField(primary_key=True)
     ten_cong_vien = models.CharField(max_length=200)
     ma_code = models.CharField(max_length=50, null=True, blank=True, unique=True)
@@ -118,11 +107,8 @@ class CongVien(models.Model):
     dien_tich_m2 = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
     dien_tich_cay_xanh = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
     dien_tich_mat_nuoc = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
-    # Changed from gis_models.PointField - now stored as [lat, lng] JSON array
     toa_do_trung_tam = models.JSONField(null=True, blank=True, default=list)
-    # Changed from gis_models.MultiPolygonField - now stored as GeoJSON format
     ranh_gioi = models.JSONField(null=True, blank=True, default=dict)
-    # Changed from gis_models.MultiPointField - now stored as GeoJSON format
     vi_tri_cong_vao = models.JSONField(null=True, blank=True, default=list)
     don_vi_quan_ly = models.CharField(max_length=200, null=True, blank=True)
     so_dien_thoai = models.CharField(max_length=20, null=True, blank=True)
@@ -153,12 +139,34 @@ class CongVien(models.Model):
     
     def __str__(self):
         return self.ten_cong_vien
+    
+    def delete(self, *args, **kwargs):
+        """Validation khi xóa công viên"""
+        from django.core.exceptions import ValidationError
+        
+        # Kiểm tra có dữ liệu liên quan không
+        if self.danh_gia.exists():
+            raise ValidationError(f"Không thể xóa '{self.ten_cong_vien}' - còn có {self.danh_gia.count()} đánh giá")
+        
+        if self.bao_cao_su_co.exists():
+            raise ValidationError(f"Không thể xóa '{self.ten_cong_vien}' - còn có {self.bao_cao_su_co.count()} báo cáo sự cố")
+        
+        if self.kiem_tra.exists():
+            raise ValidationError(f"Không thể xóa '{self.ten_cong_vien}' - còn có {self.kiem_tra.count()} bản kiểm tra")
+        
+        if self.tien_ich.exists():
+            raise ValidationError(f"Không thể xóa '{self.ten_cong_vien}' - còn có {self.tien_ich.count()} tiện ích")
+        
+        if self.su_kien.exists():
+            raise ValidationError(f"Không thể xóa '{self.ten_cong_vien}' - còn có {self.su_kien.count()} sự kiện")
+        
+        if self.cay_xanh.exists():
+            raise ValidationError(f"Không thể xóa '{self.ten_cong_vien}' - còn có {self.cay_xanh.count()} cây xanh")
+        
+        super().delete(*args, **kwargs)
 
-
-# ==================== NHÓM 3: TIỆN ÍCH & NỘI DUNG (3 bảng) ====================
 
 class LoaiTienIch(models.Model):
-    """Loại tiện ích - Danh mục các tiện ích công viên"""
     ma_loai_tien_ich = models.AutoField(primary_key=True)
     ten_loai = models.CharField(max_length=100, unique=True)
     ma_code = models.CharField(max_length=50, unique=True)
@@ -174,7 +182,6 @@ class LoaiTienIch(models.Model):
 
 
 class TienIchCongVien(models.Model):
-    """Tiện ích công viên - Tiện ích cụ thể tại mỗi công viên"""
     TINH_TRANG_CHOICES = [
         ('tot', 'Tốt'),
         ('kha', 'Khá'),
@@ -188,12 +195,10 @@ class TienIchCongVien(models.Model):
     so_luong = models.IntegerField(validators=[MinValueValidator(1)])
     tinh_trang = models.CharField(max_length=50, choices=TINH_TRANG_CHOICES)
     mo_ta = models.TextField(null=True, blank=True)
-    # Changed from gis_models.PointField - now stored as [lat, lng] JSON array
     vi_tri = models.JSONField(null=True, blank=True, default=list)
     dang_su_dung = models.BooleanField(default=True)
     ngay_kiem_tra = models.DateField(null=True, blank=True)
-    # Thêm trường hình ảnh cho tiện ích (lưu mảng URL ảnh)
-    hinh_anh = models.JSONField(default=list, blank=True, help_text="Danh sách URL ảnh minh họa")
+    hinh_anh = models.JSONField(default=list, blank=True)
     
     class Meta:
         db_table = 'tien_ich_cong_vien'
@@ -204,11 +209,10 @@ class TienIchCongVien(models.Model):
 
 
 class HinhAnhCongVien(models.Model):
-    """Hình ảnh công viên - Lưu trữ các ảnh và mô tả"""
     ma_hinh_anh = models.AutoField(primary_key=True)
     ma_cong_vien = models.ForeignKey(CongVien, on_delete=models.CASCADE, related_name='hinh_anh')
     url_anh = models.CharField(max_length=500)
-    mo_ta = models.TextField(null=True, blank=True) # Đổi sang TextField để chứa mô tả siêu dài
+    mo_ta = models.TextField(null=True, blank=True)
     la_anh_chinh = models.BooleanField(default=False)
     ngay_chup = models.DateField(null=True, blank=True)
     
@@ -220,16 +224,12 @@ class HinhAnhCongVien(models.Model):
         return f"Ảnh - {self.ma_cong_vien.ten_cong_vien}"
 
 
-# ==================== NHÓM 4: NGƯỜI DÙNG & PHÂN QUYỀN (2 bảng) ====================
-
 class NhomQuyen(models.Model):
-    """Nhóm quyền - Định nghĩa 5 nhóm quyền trong hệ thống"""
     MA_NHUOM_CHOICES = [
-        ('QUAN_TRI', 'Quản trị viên'),
-        ('QUAN_LY_CV', 'Quản lý công viên'),
-        ('KIEM_TRA', 'Nhân viên kiểm tra'),
-        ('BIEN_TAP_GIS', 'Biên tập viên GIS'),
+        ('KHACH', 'Khách'),
         ('CONG_DONG', 'Người dùng cộng đồng'),
+        ('QUAN_LY', 'Quản lý công viên'),
+        ('QUAN_TRI', 'Quản trị viên'),
     ]
     
     ma_nhom_quyen = models.AutoField(primary_key=True)
@@ -245,9 +245,9 @@ class NhomQuyen(models.Model):
 
 
 class NguoiDung(models.Model):
-    """Người dùng - Quản lý tài khoản người dùng"""
     ma_nguoi_dung = models.AutoField(primary_key=True)
     ma_nhom_quyen = models.ForeignKey(NhomQuyen, on_delete=models.SET_NULL, null=True, related_name='nguoi_dung')
+    ma_cong_vien = models.ForeignKey(CongVien, on_delete=models.SET_NULL, null=True, blank=True, related_name='quan_ly_cong_vien', help_text='Công viên được quản lý (chỉ dùng cho Manager)')
     ten_dang_nhap = models.CharField(max_length=50, unique=True)
     email = models.EmailField(unique=True)
     mat_khau_hash = models.CharField(max_length=255)
@@ -272,10 +272,7 @@ class NguoiDung(models.Model):
         return f"{self.ho_ten} ({self.ten_dang_nhap})"
 
 
-# ==================== NHÓM 5: NGHIỆP VỤ (3 bảng) ====================
-
 class DanhGiaCongVien(models.Model):
-    """Đánh giá công viên - Lưu trữ đánh giá của người dùng"""
     ma_danh_gia = models.AutoField(primary_key=True)
     ma_cong_vien = models.ForeignKey(CongVien, on_delete=models.CASCADE, related_name='danh_gia')
     ma_nguoi_dung = models.ForeignKey(NguoiDung, on_delete=models.SET_NULL, null=True, blank=True, related_name='danh_gia')
@@ -286,7 +283,6 @@ class DanhGiaCongVien(models.Model):
     diem_tieu_can_thi = models.SmallIntegerField(null=True, blank=True, validators=[MinValueValidator(1), MaxValueValidator(5)])
     noi_dung = models.TextField(null=True, blank=True)
     da_duyet = models.BooleanField(default=False)
-    # Changed from gis_models.PointField - now stored as [lat, lng] JSON array
     vi_tri = models.JSONField(null=True, blank=True, default=list)
     ngay_tao = models.DateTimeField(auto_now_add=True)
     ngay_cap_nhat = models.DateTimeField(auto_now=True)
@@ -303,7 +299,6 @@ class DanhGiaCongVien(models.Model):
 
 
 class LoaiKiemTra(models.Model):
-    """Loại kiểm tra - Danh mục loại kiểm tra"""
     ma_loai_kiem_tra = models.AutoField(primary_key=True)
     ten_loai = models.CharField(max_length=100, unique=True)
     mo_ta = models.TextField(null=True, blank=True)
@@ -317,7 +312,6 @@ class LoaiKiemTra(models.Model):
 
 
 class KiemTraCongVien(models.Model):
-    """Kiểm tra công viên - Biên bản kiểm tra thực địa"""
     KET_QUA_CHOICES = [
         ('dat', 'Đạt'),
         ('khong_dat', 'Không đạt'),
@@ -352,7 +346,6 @@ class KiemTraCongVien(models.Model):
 
 
 class DanhMucSuCo(models.Model):
-    """Danh mục sự cố - Phân loại các loại sự cố"""
     ma_danh_muc = models.AutoField(primary_key=True)
     ten_danh_muc = models.CharField(max_length=100, unique=True)
     mo_ta = models.TextField(null=True, blank=True)
@@ -366,7 +359,6 @@ class DanhMucSuCo(models.Model):
 
 
 class BaoCaoSuCo(models.Model):
-    """Báo cáo sự cố - Phản ánh sự cố từ người dân"""
     TRANG_THAI_CHOICES = [
         ('cho_xu_ly', 'Chờ xử lý'),
         ('dang_xu_ly', 'Đang xử lý'),
@@ -384,16 +376,18 @@ class BaoCaoSuCo(models.Model):
     ma_danh_muc = models.ForeignKey(DanhMucSuCo, on_delete=models.SET_NULL, null=True, blank=True)
     tieu_de = models.CharField(max_length=200)
     noi_dung_mo_ta = models.TextField()
-    url_hinh_anh = models.JSONField(default=list, blank=True, help_text="Mảng JSON URL ảnh")
+    url_hinh_anh = models.JSONField(default=list, blank=True)
     trang_thai = models.CharField(max_length=30, choices=TRANG_THAI_CHOICES, default='cho_xu_ly')
     muc_do_uu_tien = models.CharField(max_length=20, choices=MUC_DO_CHOICES, default='trung_binh')
     ma_nguoi_phu_trach = models.ForeignKey(NguoiDung, on_delete=models.SET_NULL, null=True, blank=True, related_name='bao_cao_phu_trach')
     ma_nguoi_bao_cao = models.ForeignKey(NguoiDung, on_delete=models.SET_NULL, null=True, blank=True, related_name='bao_cao_da_tao')
-    # Changed from gis_models.PointField - now stored as [lat, lng] JSON array
     vi_tri = models.JSONField(null=True, blank=True, default=list)
+    dia_chi = models.TextField(null=True, blank=True, help_text="Địa chỉ dựa trên công viên gần nhất")
     so_nguoi_xac_nhan = models.IntegerField(default=0)
     ngay_tao = models.DateTimeField(auto_now_add=True)
     ngay_cap_nhat = models.DateTimeField(auto_now=True)
+    is_archived = models.BooleanField(default=False, help_text="Sự cố đã được xử lý và chuyển sang lịch sử")
+    ngay_luu_tru = models.DateTimeField(null=True, blank=True, help_text="Ngày chuyển sang lịch sử")
     
     class Meta:
         db_table = 'bao_cao_su_co'
@@ -401,16 +395,14 @@ class BaoCaoSuCo(models.Model):
         indexes = [
             models.Index(fields=['ma_cong_vien', 'trang_thai']),
             models.Index(fields=['muc_do_uu_tien']),
+            models.Index(fields=['is_archived', 'ngay_luu_tru']),
         ]
     
     def __str__(self):
         return f"{self.tieu_de} - {self.ma_cong_vien.ten_cong_vien}"
 
 
-# ==================== NHÓM 6: SINH THÁI & HỆ THỐNG (4 bảng) ====================
-
 class LoaiCay(models.Model):
-    """Loại cây - Danh mục các loài cây"""
     ma_loai_cay = models.AutoField(primary_key=True)
     ten_loai = models.CharField(max_length=100, unique=True)
     ten_khoa_hoc = models.CharField(max_length=150, null=True, blank=True)
@@ -425,7 +417,6 @@ class LoaiCay(models.Model):
 
 
 class CayXanh(models.Model):
-    """Cây xanh - Quản lý cây cụ thể trong công viên"""
     TINH_TRANG_CHOICES = [
         ('tot', 'Tốt'),
         ('kha', 'Khá'),
@@ -438,7 +429,6 @@ class CayXanh(models.Model):
     ma_cong_vien = models.ForeignKey(CongVien, on_delete=models.CASCADE, related_name='cay_xanh')
     ma_loai_cay = models.ForeignKey(LoaiCay, on_delete=models.SET_NULL, null=True, blank=True)
     ma_so_cay = models.CharField(max_length=50, null=True, blank=True)
-    # Changed from gis_models.PointField - now stored as [lat, lng] JSON array
     vi_tri = models.JSONField(default=list)
     chieu_cao_m = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
     duong_kinh_cm = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
@@ -462,7 +452,6 @@ class CayXanh(models.Model):
 
 
 class SuKienCongVien(models.Model):
-    """Sự kiện công viên - Quản lý sự kiện tại công viên"""
     LOAI_CHOICES = [
         ('le_hoi', 'Lễ hội'),
         ('the_thao', 'Thể thao'),
@@ -503,7 +492,6 @@ class SuKienCongVien(models.Model):
 
 
 class NhatKyThayDoi(models.Model):
-    """Nhật ký thay đổi - Ghi lại lịch sử thay đổi dữ liệu"""
     LOAI_THAY_DOI_CHOICES = [
         ('tao_moi', 'Tạo mới'),
         ('cap_nhat', 'Cập nhật'),
@@ -513,8 +501,8 @@ class NhatKyThayDoi(models.Model):
     
     ma_nhat_ky = models.AutoField(primary_key=True)
     loai_thay_doi = models.CharField(max_length=50, choices=LOAI_THAY_DOI_CHOICES)
-    bang_du_lieu = models.CharField(max_length=100)  # Tên bảng bị thay đổi
-    id_ban_ghi = models.IntegerField()  # ID của bản ghi trong bảng
+    bang_du_lieu = models.CharField(max_length=100)
+    id_ban_ghi = models.IntegerField()
     ma_nguoi_dung = models.ForeignKey(NguoiDung, on_delete=models.SET_NULL, null=True, blank=True)
     du_lieu_truoc = models.JSONField(null=True, blank=True)
     du_lieu_sau = models.JSONField(null=True, blank=True)
@@ -533,7 +521,6 @@ class NhatKyThayDoi(models.Model):
 
 
 class ThongKetruyenCap(models.Model):
-    """Thống kê truy cập - Ghi lại số liệu sử dụng hệ thống"""
     ma_thong_ke = models.AutoField(primary_key=True)
     ngay = models.DateField(auto_now_add=True)
     so_lan_truy_cap = models.IntegerField(default=0)

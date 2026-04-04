@@ -69,6 +69,11 @@ export default function RegisterPage() {
 
   return (
     <div className="auth-form-container">
+      {/* LIGHT THEME FORCE STYLE */}
+      <style>{`
+        :root { color-scheme: light; }
+        html, body, #root, .app-container { background-color: #f3f4f6 !important; color: #111827 !important; min-height: 100vh; }
+      `}</style>
       <h1>Đăng Ký</h1>
       <p className="auth-subtitle">Tạo tài khoản mới</p>
 

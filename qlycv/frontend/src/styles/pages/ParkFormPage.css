@@ -79,7 +79,7 @@
 .form-group textarea {
   resize: vertical;
   min-height: 120px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Roboto', 'Segoe UI', 'Helvetica Neue', 'Arial', sans-serif;
 }
 
 .form-group .error {

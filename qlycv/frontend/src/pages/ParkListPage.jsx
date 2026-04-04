@@ -17,11 +17,8 @@ export default function ParkListPage() {
   const totalCount = responseData?.count || 0;
   const totalPages = Math.ceil(totalCount / 20) || 1;
 
-  // Kiểm tra quyền quản lý công viên
-  const canManageParks = user && (
-    user.ten_dang_nhap === 'admin' || // Admin luôn có quyền
-    ['QUAN_TRI', 'QUAN_LY_CV', 'BIEN_TAP_GIS'].includes(user.nhom_quyen_code)
-  );
+  // Kiểm tra quyền quản lý công viên (Admin)
+  const canManageParks = user && user.nhom_quyen_code === 'QUAN_TRI';
 
   const { search, maLoai, maTrangThai } = filters;
 
@@ -39,6 +36,16 @@ export default function ParkListPage() {
 
   useEffect(() => {
     loadData();
+  }, [loadData]);
+
+  // Tự động tải lại dữ liệu khi người dùng quay lại tab/trang này
+  useEffect(() => {
+    const refetchData = () => loadData();
+    window.addEventListener('focus', refetchData);
+    // Clean up
+    return () => {
+      window.removeEventListener('focus', refetchData);
+    };
   }, [loadData]);
 
   const handleSort = (field) => {
@@ -106,6 +113,77 @@ export default function ParkListPage() {
 
   return (
     <div className="park-list-page">
+      {/* NUCLEAR LIGHT THEME: Ép sáng toàn bộ hệ thống */}
+      <style>{`
+        :root { color-scheme: light; }
+        html, body, #root, .app-container { background-color: #f3f4f6 !important; color: #111827 !important; height: 100%; }
+        
+        /* SIDEBAR FIX */
+        .sidebar, aside, nav, .left-menu, .nav-menu, .main-sidebar, [class*="sidebar"], [class*="Sidebar"], [class*="Sider"], .pro-sidebar-inner {
+            background-color: #ffffff !important;
+            background: #ffffff !important;
+            border-right: 1px solid #e5e7eb !important;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05) !important;
+        }
+        .sidebar *, aside *, nav *, [class*="sidebar"] * {
+            color: #111827 !important; /* Chữ đen */
+            text-shadow: none !important;
+        }
+        .sidebar a:hover, aside a:hover, .nav-link:hover, .pro-menu-item:hover { 
+            background-color: #eff6ff !important;
+            color: #2563eb !important;
+        }
+        
+        /* ACTIVE STATE: Xám nhạt + Chữ đen */
+        .sidebar .active, .sidebar .selected, .sidebar .current, .sidebar .is-active, .sidebar .router-link-active,
+        aside .active, aside .selected, aside .current, aside .is-active, aside .router-link-active,
+        .nav-link.active, li.active > a, a[aria-current="page"], .pro-menu-item.active {
+            background-color: #e5e7eb !important;
+            color: #000000 !important;
+            font-weight: 700 !important;
+            box-shadow: inset 4px 0 0 #3b82f6 !important;
+        }
+        .sidebar .active *, .sidebar .selected *, [aria-current="page"] * { color: #000000 !important; }
+
+        /* FIX INPUTS: Đảm bảo mọi ô nhập liệu đều sáng sủa */
+        input, select, textarea, .search-input {
+            background-color: #ffffff !important;
+            color: #111827 !important;
+            border: 1px solid #d1d5db !important;
+        }
+
+        /* MAIN CONTENT */
+        .park-list-page { 
+            background-color: #f3f4f6 !important; 
+            background: #f3f4f6 !important; 
+            background-image: none !important; /* Xóa gradient tối */
+            padding: 20px; 
+            min-height: 100vh; 
+        }
+        
+        /* RESET CÁC KHỐI CON (Bộ lọc, bảng...) để không bị đen */
+        .filters-section, .table-responsive, .pagination-section, .empty-state, .loading-container {
+            background-color: #ffffff !important;
+            background: #ffffff !important;
+            color: #111827 !important;
+        }
+
+        .parks-table { background-color: #ffffff !important; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; }
+        .parks-table thead tr { background-color: #e5e7eb !important; }
+        .parks-table th { color: #111827 !important; font-weight: 700 !important; text-transform: uppercase; font-size: 0.85rem; padding: 16px !important; }
+        
+        .park-row { opacity: 1 !important; background-color: #ffffff !important; border-bottom: 1px solid #e5e7eb !important; transition: background-color 0.2s; }
+        .park-row:hover { background-color: #f9fafb !important; }
+        .park-row td { color: #374151 !important; vertical-align: middle !important; padding: 16px !important; }
+        
+        .park-title { color: #111827 !important; font-weight: 700 !important; font-size: 1rem !important; }
+        .park-address { color: #6b7280 !important; font-size: 0.875rem !important; }
+        .park-thumbnail { border-radius: 6px; border: 1px solid #e5e7eb; width: 60px; height: 60px; object-fit: cover; }
+        
+        .page-header h1 { color: #111827 !important; }
+        .page-header .subtitle { color: #4b5563 !important; }
+        .badge { font-weight: 600 !important; border: 1px solid transparent; }
+      `}</style>
       <div className="page-header">
         <div className="header-content">
           <div>
@@ -176,6 +254,7 @@ export default function ParkListPage() {
                   <th>Quận Huyện</th>
                   <th>Loại</th>
                   <th>Số Cây</th>
+                  <th>Số Tiện Ích</th>
                   <th>Trạng Thái</th>
                   <th className="text-center">Đánh Giá</th>
                   <th>Hành Động</th>
@@ -183,7 +262,12 @@ export default function ParkListPage() {
               </thead>
               <tbody>
                 {parks.map((park) => (
-                  <tr key={park.ma_cong_vien || park.id} className="park-row">
+                  <tr 
+                    key={park.ma_cong_vien || park.id} 
+                    className="park-row"
+                    // FIX: Ép độ trong suốt 100% để sửa lỗi mờ văn bản (Low Contrast) ngay tại thẻ dòng (tr)
+                    style={{ opacity: 1, backgroundColor: '#ffffff' }}
+                  >
                     <td className="park-name-cell">
                       <div className="park-name-wrapper">
                         {park.anh_dai_dien && (
@@ -197,12 +281,16 @@ export default function ParkListPage() {
                           />
                         )}
                         <div>
-                          <strong className="park-title">{park.ten_cong_vien || park.tens || 'Chưa xác định'}</strong>
+                          {/* FIX: Màu chữ đen tuyệt đối và đậm để dễ nhìn */}
+                          <strong className="park-title" style={{ color: '#111827', opacity: 1, fontWeight: '700' }}>
+                            {park.ten_cong_vien || park.tens || 'Chưa xác định'}
+                          </strong>
                           {park.dia_chi && <small className="park-address">{park.dia_chi}</small>}
                         </div>
                       </div>
                     </td>
-                    <td className="numeric">
+                    {/* FIX: Hiển thị diện tích rõ ràng */}
+                    <td className="numeric" style={{ color: '#111827', opacity: 1, fontWeight: '500' }}>
                       {park.dien_tich_m2 ? `${(park.dien_tich_m2 / 10000).toFixed(2)} ha` : '—'}
                     </td>
                     <td>
@@ -215,6 +303,9 @@ export default function ParkListPage() {
                     </td>
                     <td className="text-center">
                       {park.cay_so_luong || 0}
+                    </td>
+                    <td className="text-center">
+                      {park.tien_ich_so_luong || 0}
                     </td>
                     <td>
                       <span className={`badge badge-status badge-${getTrangThaiCode(park.ma_trang_thai)}`}>
@@ -287,7 +378,6 @@ export default function ParkListPage() {
         </>
       ) : (
         <div className="empty-state">
-          <div className="empty-icon"></div>
           <h2>Chưa có công viên nào</h2>
           <p>Hãy tạo công viên đầu tiên để bắt đầu</p>
           {canManageParks && (
