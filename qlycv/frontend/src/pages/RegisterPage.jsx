@@ -1,168 +1,75 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../store';
+﻿import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { authAPI } from '../api';
-import '../styles/pages/AuthPages.css';
+import { useAuthStore } from '../store';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
   const { setToken, setUser } = useAuthStore();
-  const [formData, setFormData] = useState({
-    ten_dang_nhap: '',
-    email: '',
-    password: '',
-    password_confirm: '',
-    ho_ten: '',
-  });
-  const [error, setError] = useState('');
+  const [form, setForm] = useState({ ho_ten: '', ten_dang_nhap: '', email: '', password: '', password_confirm: '' });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-
-    if (formData.password !== formData.password_confirm) {
-      setError('Mật khẩu không khớp');
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (form.password !== form.password_confirm) {
+      setError('Mật khẩu xác nhận không khớp');
       return;
     }
-
-    if (formData.password.length < 8) {
-      setError('Mật khẩu phải có ít nhất 8 ký tự');
-      return;
-    }
-
     setLoading(true);
-
+    setError('');
     try {
       const response = await authAPI.register({
-        ten_dang_nhap: formData.ten_dang_nhap,
-        email: formData.email,
-        password: formData.password,
-        ho_ten: formData.ho_ten,
+        ho_ten: form.ho_ten,
+        ten_dang_nhap: form.ten_dang_nhap,
+        email: form.email,
+        password: form.password,
       });
-
-      if (response.data.token) {
-        setToken(response.data.token);
-        if (response.data.user) {
-          setUser(response.data.user);
-        }
-        navigate('/dashboard', { replace: true });
-      }
+      setToken(response.data.token);
+      setUser(response.data.user);
+      navigate('/profile', { replace: true });
     } catch (err) {
-      setError(
-        err.response?.data?.detail ||
-        err.response?.data?.error ||
-        'Đăng ký thất bại. Vui lòng kiểm tra thông tin.'
-      );
+      setError(err.response?.data?.error || 'Đăng ký thất bại');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="auth-form-container">
-      {/* LIGHT THEME FORCE STYLE */}
-      <style>{`
-        :root { color-scheme: light; }
-        html, body, #root, .app-container { background-color: #f3f4f6 !important; color: #111827 !important; min-height: 100vh; }
-      `}</style>
-      <h1>Đăng Ký</h1>
-      <p className="auth-subtitle">Tạo tài khoản mới</p>
-
-      {error && <div className="alert alert-error">{error}</div>}
-
-      <form onSubmit={handleSubmit} className="auth-form">
-        <div className="form-group">
-          <label htmlFor="ho_ten">Họ và tên</label>
-          <input
-            id="ho_ten"
-            name="ho_ten"
-            type="text"
-            value={formData.ho_ten}
-            onChange={handleChange}
-            placeholder="Nguyễn Văn A"
-            required
-            disabled={loading}
-          />
+    <div className="page-shell auth-page">
+      <div className="auth-card card section-card" style={{ maxWidth: 620 }}>
+        <div className="hero-banner" style={{ marginBottom: 20 }}>
+          <h1 style={{ marginTop: 0 }}>Tạo tài khoản mới</h1>
+          <p style={{ marginBottom: 0 }}>Tài khoản đăng ký mới mặc định là người dùng cộng đồng để xem thông tin và gửi báo sự cố.</p>
         </div>
-
-        <div className="form-group">
-          <label htmlFor="ten_dang_nhap">Tên đăng nhập</label>
-          <input
-            id="ten_dang_nhap"
-            name="ten_dang_nhap"
-            type="text"
-            value={formData.ten_dang_nhap}
-            onChange={handleChange}
-            placeholder="username"
-            required
-            disabled={loading}
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="email">Email</label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-            placeholder="your@email.com"
-            required
-            disabled={loading}
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="password">Mật khẩu</label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            value={formData.password}
-            onChange={handleChange}
-            placeholder="••••••••"
-            required
-            disabled={loading}
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="password_confirm">Xác nhận mật khẩu</label>
-          <input
-            id="password_confirm"
-            name="password_confirm"
-            type="password"
-            value={formData.password_confirm}
-            onChange={handleChange}
-            placeholder="••••••••"
-            required
-            disabled={loading}
-          />
-        </div>
-
-        <button
-          type="submit"
-          className="btn btn-primary btn-full"
-          disabled={loading}
-        >
-          {loading ? 'Đang đăng ký...' : 'Đăng Ký'}
-        </button>
-      </form>
-
-      <p className="auth-link">
-        Đã có tài khoản?{' '}
-        <a href="/login">Đăng nhập tại đây</a>
-      </p>
+        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 16 }}>
+          <div className="form-grid">
+            <div className="form-group">
+              <label>Họ tên</label>
+              <input required value={form.ho_ten} onChange={(event) => setForm((current) => ({ ...current, ho_ten: event.target.value }))} />
+            </div>
+            <div className="form-group">
+              <label>Tên đăng nhập</label>
+              <input required value={form.ten_dang_nhap} onChange={(event) => setForm((current) => ({ ...current, ten_dang_nhap: event.target.value }))} />
+            </div>
+            <div className="form-group">
+              <label>Email</label>
+              <input required type="email" value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} />
+            </div>
+            <div className="form-group">
+              <label>Mật khẩu</label>
+              <input required type="password" value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} />
+            </div>
+            <div className="form-group">
+              <label>Xác nhận mật khẩu</label>
+              <input required type="password" value={form.password_confirm} onChange={(event) => setForm((current) => ({ ...current, password_confirm: event.target.value }))} />
+            </div>
+          </div>
+          {error && <div className="notice" style={{ color: 'var(--danger)' }}>{error}</div>}
+          <button type="submit" className="btn btn-primary btn-full" disabled={loading}>{loading ? 'Đang đăng ký...' : 'Đăng ký'}</button>
+        </form>
+        <p style={{ color: 'var(--muted)', marginTop: 16 }}>Đã có tài khoản? <Link to="/login" style={{ color: 'var(--primary)', fontWeight: 700 }}>Đăng nhập</Link></p>
+      </div>
     </div>
   );
 }

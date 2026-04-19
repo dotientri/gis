@@ -1,180 +1,169 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { eventsAPI, parksAPI } from '../api';
+import { hasAnyRole, PERMISSION_GROUPS } from '../constants';
 import { useAuthStore, useUIStore } from '../store';
-import NotFoundPage from './NotFoundPage';
-import '../styles/pages/ParkFormPage.css';
 
 export default function EventFormPage() {
   const { id } = useParams();
-  const isEditMode = !!id;
   const navigate = useNavigate();
-  const { user, token } = useAuthStore();
+  const { user } = useAuthStore();
   const { showNotification } = useUIStore();
-  
-  const [loading, setLoading] = useState(false);
   const [parks, setParks] = useState([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const isAdmin = user?.nhom_quyen_code === 'QUAN_TRI';
-
-  const [formData, setFormData] = useState({
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState({
     ten_su_kien: '',
-    ma_cong_vien: '',
+    ma_cong_vien: user?.ma_cong_vien || '',
     loai_su_kien: 'van_hoa',
     thoi_gian_bat_dau: '',
     thoi_gian_ket_thuc: '',
-    mo_ta: '',
     suc_chua_toi_da: '',
     mien_phi: true,
-    trang_thai: 'sap_dien_ra'
+    trang_thai: 'sap_dien_ra',
+    mo_ta: '',
   });
 
-  // Tải danh sách công viên để làm dropdown
+  const isEdit = Boolean(id);
+  const isAdmin = hasAnyRole(user, [PERMISSION_GROUPS.ADMIN]);
+  const isManager = hasAnyRole(user, [PERMISSION_GROUPS.MANAGER]);
+  const managedParkId = user?.ma_cong_vien ? String(user.ma_cong_vien) : '';
+
   useEffect(() => {
-    const fetchParks = async () => {
+    const load = async () => {
       try {
-        const res = await fetch('/api/cong-vien/?limit=100', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
-        setParks(data.results || data);
-      } catch (e) {
-        console.error(e);
+        const tasks = [parksAPI.getList({ limit: 100 })];
+        if (isEdit) tasks.push(eventsAPI.getDetail(id));
+        const [parksResponse, eventResponse] = await Promise.all(tasks);
+        const parkList = parksResponse.data?.results || parksResponse.data || [];
+        setParks(isManager ? parkList.filter((park) => String(park.ma_cong_vien) === managedParkId) : parkList);
+        if (eventResponse) {
+          const event = eventResponse.data;
+          if (isManager && String(event.ma_cong_vien || '') !== managedParkId) {
+            showNotification('Manager chi duoc quan ly su kien cua cong vien duoc giao', 'error');
+            navigate('/events', { replace: true });
+            return;
+          }
+          setForm({
+            ten_su_kien: event.ten_su_kien || '',
+            ma_cong_vien: event.ma_cong_vien || '',
+            loai_su_kien: event.loai_su_kien || 'van_hoa',
+            thoi_gian_bat_dau: event.thoi_gian_bat_dau?.slice(0, 16) || '',
+            thoi_gian_ket_thuc: event.thoi_gian_ket_thuc?.slice(0, 16) || '',
+            suc_chua_toi_da: event.suc_chua_toi_da || '',
+            mien_phi: event.mien_phi ?? true,
+            trang_thai: event.trang_thai || 'sap_dien_ra',
+            mo_ta: event.mo_ta || '',
+          });
+        }
+      } catch {
+        showNotification('Khong the tai form su kien', 'error');
+      } finally {
+        setLoading(false);
       }
     };
-    if (token) fetchParks();
-  }, [token]);
+    load();
+  }, [id, isEdit, isManager, managedParkId, navigate, showNotification]);
 
-  // Tải dữ liệu sự kiện nếu ở chế độ sửa
-  useEffect(() => {
-    if (isEditMode && isAdmin) {
-      setLoading(true);
-      const fetchEvent = async () => {
-        try {
-          const res = await fetch(`/api/su-kien-cong-vien/${id}/`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          if (!res.ok) throw new Error('Không tìm thấy sự kiện');
-          const data = await res.json();
-          
-          // Format chuỗi thời gian thành giá trị tương thích cho input type="datetime-local"
-          const formatDateTime = (dtStr) => {
-            if (!dtStr) return '';
-            const dt = new Date(dtStr);
-            const tzOffset = dt.getTimezoneOffset() * 60000;
-            return new Date(dt.getTime() - tzOffset).toISOString().slice(0, 16);
-          };
-
-          setFormData({
-            ten_su_kien: data.ten_su_kien || '',
-            ma_cong_vien: data.ma_cong_vien || '',
-            loai_su_kien: data.loai_su_kien || 'van_hoa',
-            thoi_gian_bat_dau: formatDateTime(data.thoi_gian_bat_dau),
-            thoi_gian_ket_thuc: formatDateTime(data.thoi_gian_ket_thuc),
-            mo_ta: data.mo_ta || '',
-            suc_chua_toi_da: data.suc_chua_toi_da || '',
-            mien_phi: data.mien_phi ?? true,
-            trang_thai: data.trang_thai || 'sap_dien_ra'
-          });
-        } catch (e) {
-          showNotification('Lỗi tải sự kiện', 'error');
-          navigate('/events');
-        } finally {
-          setLoading(false);
-        }
-      };
-      if (token) fetchEvent();
-    }
-  }, [id, isEditMode, isAdmin, token, navigate, showNotification]);
-
-  // YÊU CẦU CỐT LÕI: Dẫn nó đến 404 nếu đang sửa mà không phải Admin!
-  if (isEditMode && !isAdmin) {
-    return <NotFoundPage />;
-  }
-
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setSubmitting(true);
     try {
-      const url = isEditMode ? `/api/su-kien-cong-vien/${id}/` : '/api/su-kien-cong-vien/';
-      const method = isEditMode ? 'PATCH' : 'POST';
-      
-      const payload = { ...formData };
-      if (!payload.thoi_gian_ket_thuc) delete payload.thoi_gian_ket_thuc;
-      if (!payload.suc_chua_toi_da) delete payload.suc_chua_toi_da;
-
-      const res = await fetch(url, {
-        method,
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.detail || Object.values(errorData).join(', ') || 'Có lỗi xảy ra');
+      const payload = {
+        ...form,
+        ma_cong_vien: isManager ? managedParkId : form.ma_cong_vien,
+        suc_chua_toi_da: form.suc_chua_toi_da || null,
+        thoi_gian_ket_thuc: form.thoi_gian_ket_thuc || null,
+      };
+      if (isEdit) {
+        await eventsAPI.update(id, payload);
+      } else {
+        await eventsAPI.create(payload);
       }
-
-      showNotification(isEditMode ? 'Cập nhật thành công!' : 'Tạo sự kiện thành công (Đang chờ duyệt)!', 'success');
+      showNotification(isEdit ? 'Da cap nhat su kien' : 'Da tao su kien', 'success');
       navigate('/events');
-    } catch (err) {
-      showNotification(err.message, 'error');
+    } catch (error) {
+      showNotification(error.response?.data?.error || 'Khong the luu su kien', 'error');
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
   };
-
-  if (loading) return <div className="spinner">Đang tải...</div>;
 
   return (
-    <div className="park-form-page">
-      <style>{`
-        :root { color-scheme: light; }
-        html, body, #root, .app-container { background-color: #f3f4f6 !important; color: #111827 !important; height: 100%; }
-        .park-form-page { background-color: #f3f4f6 !important; min-height: 100vh; padding: 24px; }
-        .sidebar, aside, nav, .left-menu, .nav-menu, .main-sidebar { background-color: #ffffff !important; border-right: 1px solid #e5e7eb !important; }
-        .sidebar * { color: #111827 !important; text-shadow: none !important; }
-        .sidebar .active { background-color: #e5e7eb !important; color: #000000 !important; font-weight: 700 !important; box-shadow: inset 4px 0 0 #3b82f6 !important; }
-      `}</style>
-      <div className="form-header">
-        <h1>{isEditMode ? 'Chỉnh Sửa Sự Kiện' : 'Tạo Sự Kiện Mới'}</h1>
+    <div className="page-shell">
+      <div className="page-header">
+        <div>
+          <div className="page-title">{isEdit ? 'Cap nhat su kien' : 'Tao su kien moi'}</div>
+          <p className="page-subtitle">Manager va admin dung chung mot form, nhung chi admin moi duyet va sua trang thai toan bo.</p>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="park-form">
-        <div className="form-section">
-          <div className="form-group"><label>Tên Sự Kiện *</label><input type="text" name="ten_su_kien" value={formData.ten_su_kien} onChange={handleChange} required /></div>
-          <div className="form-group"><label>Công Viên *</label><select name="ma_cong_vien" value={formData.ma_cong_vien} onChange={handleChange} required><option value="">-- Chọn công viên --</option>{parks.map(p => <option key={p.ma_cong_vien} value={p.ma_cong_vien}>{p.ten_cong_vien}</option>)}</select></div>
-          <div className="form-row">
-            <div className="form-group"><label>Loại Sự Kiện</label><select name="loai_su_kien" value={formData.loai_su_kien} onChange={handleChange}><option value="van_hoa">Văn hóa</option><option value="the_thao">Thể thao</option><option value="le_hoi">Lễ hội</option><option value="am_nhac">Âm nhạc</option></select></div>
-            {isAdmin && isEditMode && (
-              <div className="form-group"><label>Trạng Thái</label><select name="trang_thai" value={formData.trang_thai} onChange={handleChange}><option value="sap_dien_ra">Sắp diễn ra</option><option value="dang_dien_ra">Đang diễn ra</option><option value="da_ket_thuc">Đã kết thúc</option><option value="huy_bo">Hủy bỏ</option></select></div>
-            )}
-          </div>
-          <div className="form-row">
-            <div className="form-group"><label>Thời Gian Bắt Đầu *</label><input type="datetime-local" name="thoi_gian_bat_dau" value={formData.thoi_gian_bat_dau} onChange={handleChange} required /></div>
-            <div className="form-group"><label>Thời Gian Kết Thúc</label><input type="datetime-local" name="thoi_gian_ket_thuc" value={formData.thoi_gian_ket_thuc} onChange={handleChange} /></div>
-          </div>
-          <div className="form-group"><label>Mô Tả</label><textarea name="mo_ta" value={formData.mo_ta} onChange={handleChange} rows="4"></textarea></div>
-          <div className="form-row">
-            <div className="form-group"><label>Sức Chứa Tối Đa (Người)</label><input type="number" name="suc_chua_toi_da" value={formData.suc_chua_toi_da} onChange={handleChange} min="1" /></div>
-            <div className="form-group checkbox-group" style={{marginTop: '30px'}}><label style={{display: 'flex', alignItems: 'center', cursor: 'pointer', fontWeight: 'bold'}}><input type="checkbox" name="mien_phi" checked={formData.mien_phi} onChange={handleChange} style={{width: '20px', height: '20px', marginRight: '10px'}} />Miễn phí tham gia</label></div>
-          </div>
-        </div>
-        <div className="form-actions">
-          <button type="button" onClick={() => navigate('/events')} className="btn btn-ghost btn-large">Hủy</button>
-          <button type="submit" className="btn btn-primary btn-large" disabled={isSubmitting}>{isSubmitting ? 'Đang lưu...' : (isEditMode ? 'Cập Nhật' : 'Tạo Sự Kiện')}</button>
-        </div>
-      </form>
+      <section className="card section-card">
+        {loading ? (
+          <div className="loading-container"><div className="spinner" /></div>
+        ) : (
+          <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 18 }}>
+            <div className="form-grid">
+              <div className="form-group">
+                <label>Ten su kien</label>
+                <input required value={form.ten_su_kien} onChange={(event) => setForm((current) => ({ ...current, ten_su_kien: event.target.value }))} />
+              </div>
+              <div className="form-group">
+                <label>Cong vien</label>
+                <select required value={form.ma_cong_vien} onChange={(event) => setForm((current) => ({ ...current, ma_cong_vien: event.target.value }))} disabled={isManager}>
+                  <option value="">Chon cong vien</option>
+                  {parks.map((park) => <option key={park.ma_cong_vien} value={park.ma_cong_vien}>{park.ten_cong_vien}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Loai su kien</label>
+                <select value={form.loai_su_kien} onChange={(event) => setForm((current) => ({ ...current, loai_su_kien: event.target.value }))}>
+                  <option value="van_hoa">Van hoa</option>
+                  <option value="the_thao">The thao</option>
+                  <option value="le_hoi">Le hoi</option>
+                  <option value="am_nhac">Am nhac</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Trang thai</label>
+                <select value={form.trang_thai} onChange={(event) => setForm((current) => ({ ...current, trang_thai: event.target.value }))} disabled={!isAdmin}>
+                  <option value="sap_dien_ra">Sap dien ra</option>
+                  <option value="dang_dien_ra">Dang dien ra</option>
+                  <option value="da_ket_thuc">Da ket thuc</option>
+                  <option value="huy_bo">Huy bo</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Bat dau</label>
+                <input type="datetime-local" required value={form.thoi_gian_bat_dau} onChange={(event) => setForm((current) => ({ ...current, thoi_gian_bat_dau: event.target.value }))} />
+              </div>
+              <div className="form-group">
+                <label>Ket thuc</label>
+                <input type="datetime-local" value={form.thoi_gian_ket_thuc} onChange={(event) => setForm((current) => ({ ...current, thoi_gian_ket_thuc: event.target.value }))} />
+              </div>
+              <div className="form-group">
+                <label>Suc chua toi da</label>
+                <input type="number" min="1" value={form.suc_chua_toi_da} onChange={(event) => setForm((current) => ({ ...current, suc_chua_toi_da: event.target.value }))} />
+              </div>
+              <div className="form-group">
+                <label>Phi tham gia</label>
+                <select value={String(form.mien_phi)} onChange={(event) => setForm((current) => ({ ...current, mien_phi: event.target.value === 'true' }))}>
+                  <option value="true">Mien phi</option>
+                  <option value="false">Co thu phi</option>
+                </select>
+              </div>
+            </div>
+            <div className="form-group">
+              <label>Mo ta</label>
+              <textarea rows="5" value={form.mo_ta} onChange={(event) => setForm((current) => ({ ...current, mo_ta: event.target.value }))} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+              <button type="button" className="btn btn-ghost" onClick={() => navigate('/events')}>Huy</button>
+              <button type="submit" className="btn btn-primary" disabled={submitting}>{submitting ? 'Dang luu...' : 'Luu su kien'}</button>
+            </div>
+          </form>
+        )}
+      </section>
     </div>
   );
 }

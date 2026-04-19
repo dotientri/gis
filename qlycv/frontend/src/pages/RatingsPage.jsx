@@ -1,49 +1,99 @@
-import { Link } from 'react-router-dom';
-import '../styles/pages/PlaceholderPage.css';
+import { useEffect, useMemo, useState } from 'react';
+import { ratingsAPI } from '../api';
+import { formatDateTime, formatRating, safeArray } from '../constants';
+import { useAuthStore, useUIStore } from '../store';
 
 export default function RatingsPage() {
-  return (
-    <div className="placeholder-page">
-      {/* LIGHT THEME FORCE STYLE */}
-      <style>{`
-        :root { color-scheme: light; }
-        html, body, #root, .app-container { background-color: #f3f4f6 !important; color: #111827 !important; height: 100%; }
-        
-        /* SIDEBAR FIX */
-        .sidebar, aside, nav, .left-menu, .nav-menu, .main-sidebar, [class*="sidebar"], [class*="Sidebar"], [class*="Sider"], .pro-sidebar-inner {
-            background-color: #ffffff !important;
-            background: #ffffff !important;
-            border-right: 1px solid #e5e7eb !important;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.05) !important;
-        }
-        .sidebar *, aside *, nav *, [class*="sidebar"] * {
-            color: #111827 !important;
-            text-shadow: none !important;
-        }
-        .sidebar a:hover, aside a:hover, .nav-link:hover, .pro-menu-item:hover { 
-            background-color: #eff6ff !important;
-            color: #2563eb !important;
-        }
+  const { user } = useAuthStore();
+  const { showNotification } = useUIStore();
+  const [ratings, setRatings] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-        /* ACTIVE STATE */
-        .sidebar .active, .sidebar .selected, .sidebar .current, .sidebar .is-active, .sidebar .router-link-active,
-        aside .active, aside .selected, aside .current, aside .is-active, aside .router-link-active,
-        .nav-link.active, li.active > a, a[aria-current="page"], .pro-menu-item.active {
-            background-color: #e5e7eb !important;
-            color: #000000 !important;
-            font-weight: 700 !important;
-            box-shadow: inset 4px 0 0 #3b82f6 !important;
-        }
-        .sidebar .active *, .sidebar .selected *, [aria-current="page"] * { color: #000000 !important; }
-      `}</style>
-      <div className="placeholder-header">
-        <h1>Đánh Giá Công Viên</h1>
-        <Link to="/" className="btn btn-primary">+ Thêm Đánh Giá</Link>
+  const isAdmin = user?.nhom_quyen_code === 'QUAN_TRI';
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const response = await ratingsAPI.getList({ ordering: '-ngay_tao' });
+      setRatings(safeArray(response.data));
+    } catch {
+      showNotification('Khong the tai danh gia', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const stats = useMemo(() => ({
+    average: ratings.length ? ratings.reduce((sum, item) => sum + Number(item.diem_tong_quat || 0), 0) / ratings.length : 0,
+    pending: ratings.filter((item) => !item.da_duyet).length,
+  }), [ratings]);
+
+  const handleModeration = async (id, approved) => {
+    try {
+      if (approved) await ratingsAPI.approve(id);
+      else await ratingsAPI.reject(id);
+      showNotification('Da cap nhat trang thai danh gia', 'success');
+      load();
+    } catch {
+      showNotification('Khong the cap nhat danh gia', 'error');
+    }
+  };
+
+  return (
+    <div className="page-shell">
+      <div className="page-header">
+        <div>
+          <div className="page-title">Danh gia cong dong</div>
+          <p className="page-subtitle">Khong con la trang placeholder. Day la bang kiem duyet va tong hop chat luong dich vu tai cong vien.</p>
+        </div>
       </div>
-      <div className="placeholder-content">
-        <p>Trang quản lý đánh giá từ cộng đồng</p>
-        <p>Xem, duyệt, quản lý các đánh giá và nhận xét.</p>
+
+      <div className="grid-2" style={{ marginBottom: 24 }}>
+        <div className="card stat-card"><div className="stat-label">Diem trung binh</div><div className="stat-value">{formatRating(stats.average)}</div><div className="stat-meta">Theo tat ca phan hoi dang co</div></div>
+        <div className="card stat-card"><div className="stat-label">Cho duyet</div><div className="stat-value">{stats.pending}</div><div className="stat-meta">Chi admin moi co quyen kiem duyet</div></div>
       </div>
+
+      <section className="card section-card">
+        {loading ? <div className="loading-container"><div className="spinner" /></div> : (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Cong vien</th>
+                  <th>Nguoi gui</th>
+                  <th>Diem tong quat</th>
+                  <th>Noi dung</th>
+                  <th>Ngay tao</th>
+                  <th>Duyet</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ratings.map((rating) => (
+                  <tr key={rating.ma_danh_gia}>
+                    <td>{rating.cong_vien_ten}</td>
+                    <td>{rating.nguoi_dung_ten || 'Nguoi dung'}</td>
+                    <td>{rating.diem_tong_quat || '-'}</td>
+                    <td style={{ whiteSpace: 'normal' }}>{rating.noi_dung || 'Khong co nhan xet'}</td>
+                    <td>{formatDateTime(rating.ngay_tao)}</td>
+                    <td>
+                      {isAdmin ? (
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button type="button" className="btn btn-primary btn-sm" onClick={() => handleModeration(rating.ma_danh_gia, true)}>Duyet</button>
+                          <button type="button" className="btn btn-ghost btn-sm" onClick={() => handleModeration(rating.ma_danh_gia, false)}>Tu choi</button>
+                        </div>
+                      ) : (rating.da_duyet ? 'Da duyet' : 'Cho duyet')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useForm } from '../hooks';
 import { parksAPI, districtsAPI, parkTypesAPI, amenitiesAPI, imagesAPI, treesAPI } from '../api';
 import { useUIStore, useAuthStore } from '../store';
 import { MAP_CONFIG } from '../constants';
+import RichTextEditor from '../components/Form/RichTextEditor';
 import '../styles/pages/ParkFormPage.css';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap, FeatureGroup, Polygon } from 'react-leaflet';
 import { EditControl } from 'react-leaflet-draw';
@@ -63,7 +64,7 @@ export default function EditParkPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { showNotification } = useUIStore();
-  const { token } = useAuthStore();
+  const { user } = useAuthStore();
   const [park, setPark] = useState(null);
   const [districts, setDistricts] = useState([]);
   const [parkTypes, setParkTypes] = useState([]);
@@ -79,15 +80,22 @@ export default function EditParkPage() {
   const [amenities, setAmenities] = useState({});
   const [trees, setTrees] = useState([]); // State cho danh sách cây
 
+  const isAdmin = user?.nhom_quyen_code === 'QUAN_TRI';
+  const isManagerOwnPark = user?.nhom_quyen_code === 'QUAN_LY' && String(user?.ma_cong_vien) === String(id);
+
   const { values, errors, touched, isSubmitting, handleChange, handleBlur, handleSubmit, setFieldValue } = useForm(
     {
       tens: '',
       mo_ta: '',
+      lich_su: '',
       dien_tich_m2: '',
       ma_trang_thai: '',
       ma_loai: '',
       ma_quan_huyen: '',
       dia_chi: '',
+      gio_mo_cua: '',
+      gio_dong_cua: '',
+      mo_cua_24_7: false,
       toa_do_trung_tam_lat: '',
       toa_do_trung_tam_lng: '',
     },
@@ -96,17 +104,24 @@ export default function EditParkPage() {
         const parkData = {
           ten_cong_vien: values.tens, // Sửa tên trường cho khớp backend
           mo_ta: values.mo_ta,
+          lich_su: values.lich_su,
           dien_tich_m2: parseFloat(values.dien_tich_m2),
-          ma_trang_thai: values.ma_trang_thai,
-          ma_loai: values.ma_loai,
           ma_quan_huyen: values.ma_quan_huyen,
           dia_chi: values.dia_chi,
+          mo_cua_24_7: Boolean(values.mo_cua_24_7),
+          gio_mo_cua: values.mo_cua_24_7 ? null : (values.gio_mo_cua || null),
+          gio_dong_cua: values.mo_cua_24_7 ? null : (values.gio_dong_cua || null),
           toa_do_trung_tam: [
             parseFloat(values.toa_do_trung_tam_lat),
             parseFloat(values.toa_do_trung_tam_lng),
           ],
           ranh_gioi: boundary // Gửi ranh giới về backend
         };
+
+        if (isAdmin) {
+          parkData.ma_trang_thai = values.ma_trang_thai;
+          parkData.ma_loai = values.ma_loai;
+        }
 
         const response = await parksAPI.update(id, parkData);
 
@@ -223,6 +238,11 @@ export default function EditParkPage() {
   useEffect(() => {
     const fetchPark = async () => {
       try {
+        if (!isAdmin && user?.nhom_quyen_code === 'QUAN_LY' && !isManagerOwnPark) {
+          showNotification('Manager chi duoc chinh sua cong vien duoc gan cho minh', 'error');
+          navigate(user?.ma_cong_vien ? `/parks/${user.ma_cong_vien}` : '/parks-list');
+          return;
+        }
         // Tải dữ liệu công viên VÀ danh mục cùng lúc
         // FIX: Thêm parkStatusesAPI.getList() vào danh sách Promise
         const [response, districtsRes, typesRes, amenitiesRes, parkAmenitiesRes, statusesRes, treeTypesRes, parkTreesRes] = await Promise.all([
@@ -260,8 +280,12 @@ export default function EditParkPage() {
         // Pre-fill form
         setFieldValue('tens', response.data.ten_cong_vien || response.data.tens);
         setFieldValue('mo_ta', response.data.mo_ta || '');
+        setFieldValue('lich_su', response.data.lich_su || '');
         setFieldValue('dien_tich_m2', response.data.dien_tich_m2);
         setFieldValue('dia_chi', response.data.dia_chi || '');
+        setFieldValue('gio_mo_cua', response.data.gio_mo_cua || '');
+        setFieldValue('gio_dong_cua', response.data.gio_dong_cua || '');
+        setFieldValue('mo_cua_24_7', Boolean(response.data.mo_cua_24_7));
         
         // FIX: Lấy ID nếu API trả về object, hoặc lấy giá trị trực tiếp nếu là ID
         // Đơn giản hóa logic: API trả về ID, chỉ cần gán trực tiếp
@@ -326,7 +350,7 @@ export default function EditParkPage() {
     if (id) {
       fetchPark();
     }
-  }, [id]);
+  }, [id, navigate, showNotification, user?.ma_cong_vien, user?.nhom_quyen_code]);
 
   // Handlers cho tiện ích
   const handleAmenityCheck = (key) => {
@@ -508,15 +532,28 @@ export default function EditParkPage() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="mo_ta">Mô Tả</label>
-            <textarea
-              id="mo_ta"
+            <RichTextEditor
               name="mo_ta"
+              label="Mô Tả Bài Viết"
               value={values.mo_ta}
-              onChange={handleChange}
+              onChange={(nextValue) => setFieldValue('mo_ta', nextValue)}
               onBlur={handleBlur}
               placeholder="Mô tả chi tiết về công viên"
-              rows={4}
+              helperText="Đoạn này dùng làm nội dung chính của bài viết công viên."
+              minLength={250}
+              error={touched.mo_ta && errors.mo_ta ? errors.mo_ta : ''}
+            />
+          </div>
+
+          <div className="form-group">
+            <RichTextEditor
+              name="lich_su"
+              label="Lịch Sử Và Bối Cảnh"
+              value={values.lich_su}
+              onChange={(nextValue) => setFieldValue('lich_su', nextValue)}
+              onBlur={handleBlur}
+              placeholder="Bổ sung lịch sử hình thành, các giai đoạn mở rộng hoặc dấu mốc nổi bật."
+              helperText="Phần này sẽ hiển thị ở mục lịch sử trong trang bài viết."
             />
           </div>
 
@@ -580,6 +617,7 @@ export default function EditParkPage() {
               value={values.ma_trang_thai}
               onChange={handleChange}
               onBlur={handleBlur}
+              disabled={!isAdmin}
               required
             >
               <option value="">-- Chọn Trạng Thái --</option>
@@ -589,6 +627,7 @@ export default function EditParkPage() {
                 </option>
               ))}
             </select>
+            {!isAdmin && <small style={{ display: 'block', marginTop: '10px', color: '#666' }}>Manager khong duoc doi trang thai cong vien.</small>}
           </div>
 
           <div className="form-group">
@@ -599,6 +638,7 @@ export default function EditParkPage() {
               value={values.ma_loai}
               onChange={handleChange}
               onBlur={handleBlur}
+              disabled={!isAdmin}
               required
             >
               <option value="">-- Chọn Loại Công Viên --</option>
@@ -608,6 +648,54 @@ export default function EditParkPage() {
                 </option>
               ))}
             </select>
+            {!isAdmin && <small style={{ display: 'block', marginTop: '10px', color: '#666' }}>Manager khong duoc doi loai cong vien.</small>}
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <input
+              name="mo_cua_24_7"
+              type="checkbox"
+              checked={Boolean(values.mo_cua_24_7)}
+              onChange={(event) => {
+                const checked = event.target.checked;
+                setFieldValue('mo_cua_24_7', checked);
+                if (checked) {
+                  setFieldValue('gio_mo_cua', '');
+                  setFieldValue('gio_dong_cua', '');
+                }
+              }}
+            />
+            <span>Mo cua 24/7</span>
+          </label>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label htmlFor="gio_mo_cua">Gio mo cua</label>
+            <input
+              id="gio_mo_cua"
+              name="gio_mo_cua"
+              type="time"
+              value={values.gio_mo_cua}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              disabled={Boolean(values.mo_cua_24_7)}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="gio_dong_cua">Gio dong cua</label>
+            <input
+              id="gio_dong_cua"
+              name="gio_dong_cua"
+              type="time"
+              value={values.gio_dong_cua}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              disabled={Boolean(values.mo_cua_24_7)}
+            />
           </div>
         </div>
 
@@ -857,7 +945,7 @@ export default function EditParkPage() {
                     <option value="">-- Chọn Loại Cây --</option>
                     {treeTypes.map((t) => (
                       <option key={t.ma_loai_cay} value={t.ma_loai_cay}>
-                        {t.ten_loai_cay}
+                        {t.ten_loai}
                       </option>
                     ))}
                   </select>
@@ -952,13 +1040,13 @@ export default function EditParkPage() {
             </div>
           ))}
 
-          <button
+          {isAdmin && <button
             type="button"
             onClick={handleAddTree}
             style={{background: '#4CAF50', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer', marginTop: '10px'}}
           >
             + Thêm Cây
-          </button>
+          </button>}
         </div>
 
         <div className="form-actions">
@@ -966,6 +1054,7 @@ export default function EditParkPage() {
             type="button"
             onClick={handleDelete}
             className="btn btn-large"
+            hidden={!isAdmin}
             style={{ marginRight: 'auto', backgroundColor: '#ef4444', color: 'white', border: 'none' }}
           >
             Xóa Công Viên

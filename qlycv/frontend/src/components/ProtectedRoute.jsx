@@ -1,4 +1,5 @@
 import { Navigate, Outlet } from 'react-router-dom';
+import { resolveRoleCode } from '../constants';
 import { useAuthStore } from '../store';
 
 export default function ProtectedRoute({ roles }) {
@@ -8,8 +9,12 @@ export default function ProtectedRoute({ roles }) {
     return <Navigate to="/login" replace />;
   }
 
-  if (roles && roles.length > 0 && user) {
-    const userRole = user?.nhom_quyen_code || user?.ma_nhom_quyen?.ten_nhom;
+  if (roles?.length) {
+    if (!user) {
+      return null;
+    }
+
+    const userRole = resolveRoleCode(user);
     if (!roles.includes(userRole)) {
       return <Navigate to="/" replace />;
     }

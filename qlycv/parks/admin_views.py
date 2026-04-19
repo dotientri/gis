@@ -9,7 +9,7 @@ from .models import (
     NguoiDung, NhomQuyen, DanhGiaCongVien, SuKienCongVien, 
     BaoCaoSuCo, HinhAnhCongVien, CongVien
 )
-from .serializers import NguoiDungSerializer, NguoiDungCreateSerializer
+from .serializers import NguoiDungSerializer, NguoiDungCreateSerializer, NguoiDungAdminUpdateSerializer
 from .permissions import IsAdmin
 from django.contrib.auth.hashers import make_password
 
@@ -22,6 +22,13 @@ class AdminUsersViewSet(viewsets.ModelViewSet):
     search_fields = ['ten_dang_nhap', 'email', 'ho_ten']
     filterset_fields = ['ma_nhom_quyen', 'dang_hoat_dong']
     ordering_fields = ['-ngay_cap_nhat', 'ho_ten', 'ten_dang_nhap']
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return NguoiDungCreateSerializer
+        if self.action in ['update', 'partial_update']:
+            return NguoiDungAdminUpdateSerializer
+        return NguoiDungSerializer
     
     def create(self, request, *args, **kwargs):
         serializer = NguoiDungCreateSerializer(data=request.data)

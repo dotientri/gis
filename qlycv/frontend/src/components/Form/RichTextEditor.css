@@ -1,0 +1,88 @@
+.rich-text-field {
+  min-width: 0;
+}
+
+.rich-text-editor-shell {
+  min-width: 0;
+}
+
+.rich-text-field .ck.ck-editor {
+  width: 100%;
+}
+
+.rich-text-field .ck.ck-toolbar {
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.rich-text-field .ck.ck-content.ck-editor__editable {
+  min-height: 280px;
+  max-height: 560px;
+  border: 1px solid var(--line);
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--text);
+  box-shadow: none;
+}
+
+.rich-text-field .ck.ck-content.ck-focused {
+  border-color: rgba(23, 114, 69, 0.6);
+  box-shadow: inset 0 0 0 1px rgba(23, 114, 69, 0.6);
+}
+
+.rich-text-field .ck-content {
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.rich-text-field .ck-content img {
+  max-width: 100%;
+  height: auto;
+}
+
+.rich-text-field .ck-content > :first-child {
+  margin-top: 0;
+}
+
+.rich-text-field .ck-content > :last-child {
+  margin-bottom: 0;
+}
+
+.rich-text-field-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  font-size: 0.84rem;
+}
+
+.rich-text-field-helper {
+  color: var(--muted);
+  min-width: 0;
+}
+
+.rich-text-field-count {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.rich-text-field-count.is-success {
+  color: #15803d;
+}
+
+.rich-text-field-count.is-warning {
+  color: #b45309;
+}
+
+@media (max-width: 640px) {
+  .rich-text-field-meta {
+    flex-direction: column;
+  }
+
+  .rich-text-field-count {
+    white-space: normal;
+  }
+}

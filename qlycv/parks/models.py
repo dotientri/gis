@@ -1,9 +1,6 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
-from django.utils import timezone
 from django.core.validators import MinValueValidator, MaxValueValidator
-import json
-import uuid
+from django.utils import timezone
 
 
 class QuanHuyen(models.Model):
@@ -257,6 +254,8 @@ class NguoiDung(models.Model):
     so_lan_dang_nhap = models.IntegerField(default=0)
     lan_dang_nhap_cuoi = models.DateTimeField(null=True, blank=True)
     token = models.CharField(max_length=255, null=True, blank=True, unique=True)
+    reset_password_token = models.CharField(max_length=255, null=True, blank=True, unique=True)
+    reset_password_expires_at = models.DateTimeField(null=True, blank=True)
     ngay_tao = models.DateTimeField(auto_now_add=True)
     ngay_cap_nhat = models.DateTimeField(auto_now=True)
     
@@ -400,6 +399,16 @@ class BaoCaoSuCo(models.Model):
     
     def __str__(self):
         return f"{self.tieu_de} - {self.ma_cong_vien.ten_cong_vien}"
+
+    def save(self, *args, **kwargs):
+        if self.trang_thai == 'da_xu_ly':
+            self.is_archived = True
+            if not self.ngay_luu_tru:
+                self.ngay_luu_tru = timezone.now()
+        elif not self.is_archived:
+            self.ngay_luu_tru = None
+
+        super().save(*args, **kwargs)
 
 
 class LoaiCay(models.Model):

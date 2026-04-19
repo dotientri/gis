@@ -1,274 +1,157 @@
-import { useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useApi } from '../hooks';
-import { parksAPI, ratingsAPI, amenitiesAPI } from '../api';
-import { useAuthStore } from '../store';
-import { formatDate } from '../constants';
-import '../styles/pages/ParkDetailPage.css';
+﻿import { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { amenitiesAPI, parksAPI, ratingsAPI } from '../api';
+import { formatArea, formatDateTime, formatRating, formatTime, getStatusColor, safeArray } from '../constants';
+import RichTextContent from '../components/RichTextContent';
+import { useAuthStore, useUIStore } from '../store';
 
 export default function ParkDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const { data: park, loading: parkLoading, error: parkError, execute: fetchPark } = useApi(parksAPI.getDetail, false);
-  const { data: ratings, loading: ratingsLoading, execute: fetchRatings } = useApi(ratingsAPI.getList, false);
-  const { data: amenities, loading: amenitiesLoading, execute: fetchAmenities } = useApi(amenitiesAPI.getList, false);
+  const { showNotification } = useUIStore();
+  const [park, setPark] = useState(null);
+  const [ratings, setRatings] = useState([]);
+  const [amenities, setAmenities] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const isAdmin = user?.nhom_quyen_code === 'QUAN_TRI';
+  const isManagerOwnPark = user?.nhom_quyen_code === 'QUAN_LY' && String(user?.ma_cong_vien) === String(id);
+  const canEditPark = isAdmin || isManagerOwnPark;
 
   useEffect(() => {
-    if (id) {
-      fetchPark(id); // Sửa lỗi: Truyền ID trực tiếp, không truyền object
-      fetchRatings({ ma_cong_vien: id }); // Tải đánh giá
-      fetchAmenities({ ma_cong_vien: id }); // Tải tiện ích
-    }
-  }, [id]);
+    const load = async () => {
+      setLoading(true);
+      try {
+        const [parkResponse, ratingsResponse, amenitiesResponse] = await Promise.all([
+          parksAPI.getDetail(id),
+          ratingsAPI.getList({ ma_cong_vien: id }),
+          amenitiesAPI.getList({ ma_cong_vien: id }),
+        ]);
+        setPark(parkResponse.data);
+        setRatings(safeArray(ratingsResponse.data));
+        setAmenities(safeArray(amenitiesResponse.data));
+      } catch (error) {
+        showNotification('Không thể tải chi tiết công viên', 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Kiểm tra quyền quản lý công viên (Admin)
-  const canManageParks = user && user.nhom_quyen_code === 'QUAN_TRI';
+    load();
+  }, [id, showNotification]);
+
+  const reviewStats = useMemo(() => ({
+    total: ratings.length,
+    approved: ratings.filter((item) => item.da_duyet).length,
+  }), [ratings]);
 
   const handleDelete = async () => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa công viên này?')) {
-      try {
-        await parksAPI.delete(id);
-        navigate('/parks-list');
-      } catch (err) {
-        alert('Lỗi khi xóa: ' + err.message);
-      }
+    if (!window.confirm('Xóa công viên này?')) return;
+    try {
+      await parksAPI.delete(id);
+      showNotification('Đã xóa công viên', 'success');
+      navigate('/parks-list');
+    } catch (error) {
+      showNotification(error.response?.data?.error || 'Không thể xóa công viên', 'error');
     }
   };
 
-  if (parkLoading) {
-    return <div className="spinner">Đang tải...</div>;
+  if (loading) {
+    return <div className="page-shell"><div className="card loading-container"><div className="spinner" /></div></div>;
   }
 
-  if (parkError || !park) {
-    return (
-      <div className="error-container">
-        <div className="alert alert-error">
-          {parkError || 'Không tìm thấy công viên'}
-        </div>
-        <Link to="/parks-list" className="btn btn-primary">
-          ← Quay lại
-        </Link>
-      </div>
-    );
+  if (!park) {
+    return <div className="page-shell"><div className="card empty-state"><p>Không tìm thấy công viên.</p></div></div>;
   }
-
-  // Xử lý dữ liệu phân trang cho đánh giá và tiện ích
-  const ratingsList = ratings?.results || [];
-  const parkRatings = ratingsList.filter(r => r.ma_cong_vien === parseInt(id)) || [];
-  const avgRating = parkRatings.length > 0
-    ? (parkRatings.reduce((sum, r) => sum + (r.diem || 0), 0) / parkRatings.length).toFixed(1)
-    : 'N/A';
-
-  const amenitiesList = amenities?.results || [];
-  const parkAmenities = amenitiesList.filter(a => a.ma_cong_vien === parseInt(id)) || [];
 
   return (
-    <div className="park-detail-page">
-      {/* LIGHT THEME INJECTION */}
-      <style>{`
-        :root { color-scheme: light; }
-        html, body, #root, .app-container { background-color: #f3f4f6 !important; color: #111827 !important; height: 100%; }
-        
-        /* SIDEBAR FIX */
-        .sidebar, aside, nav, .left-menu, .nav-menu, .main-sidebar, [class*="sidebar"], [class*="Sidebar"], [class*="Sider"], .pro-sidebar-inner {
-            background-color: #ffffff !important;
-            background: #ffffff !important;
-            border-right: 1px solid #e5e7eb !important;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.05) !important;
-        }
-        .sidebar *, aside *, nav *, [class*="sidebar"] * {
-            color: #111827 !important;
-            text-shadow: none !important;
-        }
-        .sidebar a:hover, aside a:hover, .nav-link:hover, .pro-menu-item:hover { 
-            background-color: #eff6ff !important;
-            color: #2563eb !important;
-        }
-        
-        /* ACTIVE STATE */
-        .sidebar .active, .sidebar .selected, .sidebar .current, .sidebar .is-active, .sidebar .router-link-active,
-        aside .active, aside .selected, aside .current, aside .is-active, aside .router-link-active,
-        .nav-link.active, li.active > a, a[aria-current="page"], .pro-menu-item.active {
-            background-color: #e5e7eb !important;
-            color: #000000 !important;
-            font-weight: 700 !important;
-            box-shadow: inset 4px 0 0 #3b82f6 !important;
-        }
-        .sidebar .active *, .sidebar .selected *, [aria-current="page"] * { color: #000000 !important; }
-        
-        .park-detail-page { background-color: #f3f4f6; padding: 20px; min-height: 100vh; }
-        .detail-card, .sidebar-card { background: #ffffff !important; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e5e7eb; padding: 24px; margin-bottom: 24px; }
-        h1, h2, h3 { color: #111827 !important; }
-        .label { color: #6b7280 !important; font-weight: 600; }
-        .value { color: #111827 !important; font-weight: 500; }
-        p { color: #374151 !important; line-height: 1.6; }
-        .amenity-card { background: #f9fafb !important; border: 1px solid #e5e7eb !important; }
-        .amenity-name { color: #111827 !important; font-weight: 700; }
-        .rating-author { color: #111827 !important; font-weight: 700; }
-      `}</style>
-      <div className="detail-header">
-        <Link to="/parks-list" className="btn btn-ghost">
-          ← Quay lại
-        </Link>
-        {canManageParks && (
-          <div className="header-actions">
-            <Link to={`/parks/${id}/edit`} className="btn btn-primary">
-              Chỉnh sửa
-            </Link>
-            <button onClick={handleDelete} className="btn btn-danger">
-              Xóa
-            </button>
-          </div>
-        )}
+    <div className="page-shell">
+      <div className="page-header">
+        <div>
+          <div className="page-title">{park.ten_cong_vien}</div>
+          <p className="page-subtitle">{park.dia_chi || 'Chưa cập nhật địa chỉ chi tiết'} • {park.quan_huyen_ten || 'N/A'}</p>
+        </div>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <Link className="btn btn-ghost" to="/parks-list">Quay lại</Link>
+          {park.google_maps_url && <a className="btn btn-primary" href={park.google_maps_url} target="_blank" rel="noreferrer">Chỉ đường</a>}
+          {canEditPark && <Link className="btn btn-primary" to={`/parks/${id}/edit`}>Chỉnh sửa</Link>}
+          {isAdmin && <button type="button" className="btn btn-danger" onClick={handleDelete}>Xóa</button>}
+        </div>
       </div>
 
-      <div className="detail-container">
-        <div className="detail-main">
-          <div className="detail-card">
-            <h1>{park.ten_cong_vien || park.tens}</h1>
-            <div className="detail-meta">
-              <div className="meta-item">
-                <span className="label">Loại:</span>
-                <span className="value">
-                  {park.loai_ten || (park.ma_loai && typeof park.ma_loai === 'object' ? park.ma_loai.ten_loai : park.ma_loai) || 'Chưa xác định'}
-                </span>
-              </div>
-              <div className="meta-item">
-                <span className="label">Quận Huyện:</span>
-                <span className="value">
-                  {park.quan_huyen_ten || (park.ma_quan_huyen && typeof park.ma_quan_huyen === 'object' ? park.ma_quan_huyen.ten_quan_huyen : park.ma_quan_huyen) || 'Chưa xác định'}
-                </span>
-              </div>
-              <div className="meta-item">
-                <span className="label">Trạng Thái:</span>
-                <span className={`badge badge-${park.ma_trang_thai && typeof park.ma_trang_thai === 'object' ? (park.ma_trang_thai.ten_trang_thai || 'unknown') : (park.ma_trang_thai || 'unknown')}`}>
-                  {park.trang_thai_ten || (park.ma_trang_thai && typeof park.ma_trang_thai === 'object' ? park.ma_trang_thai.ten_trang_thai : park.ma_trang_thai) || 'Chưa xác định'}
-                </span>
-              </div>
-              <div className="meta-item">
-                <span className="label">Đánh Giá:</span>
-                <span className="value">{avgRating} / 5</span>
-              </div>
-            </div>
+      <div className="grid-3" style={{ marginBottom: 24 }}>
+        <div className="card stat-card"><div className="stat-label">Trạng thái</div><div className="stat-value" style={{ fontSize: '1.7rem' }}>{park.trang_thai_ten || 'N/A'}</div><div className="stat-meta"><span className="badge"><span className="badge-dot" style={{ backgroundColor: getStatusColor(park.trang_thai_ten, 'park') }} />Mã công viên {park.ma_cong_vien}</span></div></div>
+        <div className="card stat-card"><div className="stat-label">Diện tích</div><div className="stat-value">{formatArea(park.dien_tich_m2)}</div><div className="stat-meta">{park.cay_so_luong || 0} cây xanh • {park.tien_ich_so_luong || 0} tiện ích</div></div>
+        <div className="card stat-card"><div className="stat-label">Đánh giá</div><div className="stat-value">{formatRating(park.diem_trung_binh)}</div><div className="stat-meta">{park.so_luot_danh_gia || 0} lượt • {reviewStats.approved}/{reviewStats.total} đã duyệt</div></div>
+      </div>
 
-            <div className="description-section">
-              <h2>Mô Tả</h2>
-              <p>{park.mo_ta || 'Chưa có mô tả'}</p>
-            </div>
-
-            <div className="info-grid">
-              <div className="info-item">
-                <span className="label">Diện Tích:</span>
-                <span className="value">{(park.dien_tich_m2 / 10000).toFixed(2)} hecta</span>
-              </div>
-              <div className="info-item">
-                <span className="label">Số Lượng Cây Xanh:</span>
-                <span className="value">{park.cay_so_luong || 0} cây</span>
-              </div>
-              <div className="info-item">
-                <span className="label">Tọa Độ:</span>
-                <span className="value">
-                  {park.toa_do_trung_tam
-                    ? `${park.toa_do_trung_tam[0].toFixed(4)}, ${park.toa_do_trung_tam[1].toFixed(4)}`
-                    : 'N/A'}
-                </span>
-              </div>
-              <div className="info-item">
-                <span className="label">Ngày Tạo:</span>
-                <span className="value">{formatDate(park.ngay_tao)}</span>
-              </div>
-              <div className="info-item">
-                <span className="label">Ngày Cập Nhật:</span>
-                <span className="value">{formatDate(park.ngay_cap_nhat)}</span>
-              </div>
-            </div>
+      <div className="grid-2">
+        <section className="card section-card">
+          <h2 style={{ marginTop: 0, fontFamily: 'Space Grotesk, sans-serif' }}>Tổng quan</h2>
+          <div className="info-list">
+            <div className="info-row"><span>Loại công viên</span><strong>{park.loai_ten || 'N/A'}</strong></div>
+            <div className="info-row"><span>Quận huyện</span><strong>{park.quan_huyen_ten || 'N/A'}</strong></div>
+            <div className="info-row"><span>Đơn vị quản lý</span><strong>{park.don_vi_quan_ly || 'N/A'}</strong></div>
+            <div className="info-row"><span>Trạng thái vận hành</span><strong>{park.trang_thai_van_hanh_label || 'Chưa rõ'}</strong></div>
+            <div className="info-row"><span>Giờ mở cửa</span><strong>{park.mo_cua_24_7 ? '24/7' : `${formatTime(park.gio_mo_cua)} - ${formatTime(park.gio_dong_cua)}`}</strong></div>
+            <div className="info-row"><span>Phí vào cổng</span><strong>{park.mien_phi_vao_cua ? 'Miễn phí' : `${park.gia_ve || 0} VND`}</strong></div>
+            <div className="info-row"><span>Cập nhật lần cuối</span><strong>{formatDateTime(park.ngay_cap_nhat)}</strong></div>
           </div>
-
-          <div className="detail-card">
-            <h2>Tiện Ích ({parkAmenities.length})</h2>
-            {amenitiesLoading ? (
-              <div className="spinner-small">Đang tải...</div>
-            ) : parkAmenities.length > 0 ? (
-              <div className="amenities-grid">
-                {parkAmenities.map((amenity) => (
-                  // FIX: Sử dụng đúng primary key (ma_tien_ich) thay vì id
-                  <div key={amenity.ma_tien_ich || amenity.id} className="amenity-card">
-                    <div className="amenity-name">{amenity.ten_tien_ich}</div>
-                    <div className="amenity-details">
-                      <p>Loại: {amenity.loai_tien_ich_ten || amenity.ma_loai_tien_ich}</p>
-                      <p>Số lượng: {amenity.so_luong || 1}</p>
-                      <p className={`condition condition-${amenity.tinh_trang}`}>
-                        Tình trạng: {amenity.tinh_trang}
-                      </p>
-                      {amenity.mo_ta && <p className="amenity-note">Ghi chú: {amenity.mo_ta}</p>}
-                    </div>
-                  </div>
+          <div className="notice" style={{ marginTop: 18 }}>
+            <RichTextContent html={park.mo_ta} emptyText="Chưa có mô tả cho công viên này." />
+          </div>
+          {park.loai_cay_noi_bat?.length > 0 && (
+            <div className="notice" style={{ marginTop: 18 }}>
+              <div style={{ fontWeight: 700, marginBottom: 10 }}>Loại cây có trong công viên</div>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                {park.loai_cay_noi_bat.map((treeType) => (
+                  <span key={`${park.ma_cong_vien}-${treeType.ten_loai}`} className="badge">
+                    {treeType.ten_loai} ({treeType.so_luong})
+                  </span>
                 ))}
               </div>
-            ) : (
-              <p className="no-data">Chưa có tiện ích nào</p>
-            )}
-          </div>
+            </div>
+          )}
+        </section>
 
-          <div className="detail-card">
-            <h2>Đánh Giá ({parkRatings.length})</h2>
-            {ratingsLoading ? (
-              <div className="spinner-small">Đang tải...</div>
-            ) : parkRatings.length > 0 ? (
-              <div className="ratings-list">
-                {parkRatings.slice(0, 5).map((rating) => (
-                  // FIX: Sử dụng đúng primary key (ma_danh_gia) thay vì id
-                  <div key={rating.ma_danh_gia || rating.id} className="rating-item">
-                    <div className="rating-header">
-                      <span className="rating-author">{rating.nguoi_danh_gia_ho_ten || 'Ẩn danh'}</span>
-                      <span className="rating-score">{rating.diem}/5</span>
-                    </div>
-                    <p className="rating-comment">{rating.nhan_xet}</p>
-                    <p className="rating-date">{formatDate(rating.ngay_danh_gia)}</p>
-                  </div>
-                ))}
+        <section className="card section-card">
+          <h2 style={{ marginTop: 0, fontFamily: 'Space Grotesk, sans-serif' }}>Tiện ích trong công viên</h2>
+          <div className="info-list">
+            {amenities.length > 0 ? amenities.map((item) => (
+              <div key={item.ma_tien_ich} className="notice">
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                  <strong>{item.loai_tien_ich_ten}</strong>
+                  <span className="badge">SL {item.so_luong}</span>
+                </div>
+                <div style={{ color: 'var(--muted)', marginTop: 6 }}>{item.tinh_trang} • {item.dang_su_dung ? 'Đang sử dụng' : 'Tạm ngưng'}</div>
+                {item.mo_ta && <div style={{ marginTop: 8 }}>{item.mo_ta}</div>}
               </div>
-            ) : (
-              <p className="no-data">Chưa có đánh giá nào</p>
-            )}
-            <Link to={`/ratings?park=${id}`} className="btn btn-sm btn-primary">
-              Xem tất cả đánh giá
-            </Link>
+            )) : <div className="empty-state"><p>Chưa có tiện ích được cập nhật.</p></div>}
+          </div>
+        </section>
+      </div>
+
+      <section className="card section-card" style={{ marginTop: 24 }}>
+        <div className="page-header" style={{ marginBottom: 16 }}>
+          <div>
+            <h2 style={{ margin: 0, fontFamily: 'Space Grotesk, sans-serif' }}>Đánh giá cộng đồng</h2>
+            <p className="page-subtitle">Tổng hợp phản hồi để theo dõi chất lượng công viên.</p>
           </div>
         </div>
-
-        <aside className="detail-sidebar">
-          <div className="sidebar-card">
-            <h3>Thông Tin Nhanh</h3>
-            <div className="quick-info">
-              <p><strong>ID:</strong> {park.ma_cong_vien || park.id}</p>
-              <p><strong>Mã:</strong> {park.ma_cong_vien}</p>
-              <p><strong>Lượt xem:</strong> {park.luot_xem || 0}</p>
-            </div>
-          </div>
-
-          <div className="sidebar-card">
-            <h3>Hành Động</h3>
-            {canManageParks && (
-              <div className="action-buttons">
-                <Link to={`/parks/${id}/edit`} className="btn btn-primary btn-full">
-                  Chỉnh Sửa
-                </Link>
-                <a
-                  href={`/parks?center=${park.toa_do_trung_tam?.[0]},${park.toa_do_trung_tam?.[1]}`}
-                  className="btn btn-ghost btn-full"
-                >
-                  Xem Bản Đồ
-                </a>
-                <button onClick={handleDelete} className="btn btn-danger btn-full">
-                  Xóa
-                </button>
+        <div className="grid-2">
+          {ratings.length > 0 ? ratings.slice(0, 6).map((rating) => (
+            <div key={rating.ma_danh_gia} className="notice">
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                <strong>{rating.nguoi_dung_ten || 'Người dùng cộng đồng'}</strong>
+                <span className="badge">{rating.diem_tong_quat || '-'} / 5</span>
               </div>
-            )}
-          </div>
-        </aside>
-      </div>
+              <div style={{ color: 'var(--muted)', fontSize: '0.88rem', marginTop: 6 }}>{formatDateTime(rating.ngay_tao)}</div>
+              <div style={{ marginTop: 10 }}>{rating.noi_dung || 'Không có nội dung chi tiết.'}</div>
+            </div>
+          )) : <div className="empty-state"><p>Chưa có đánh giá nào.</p></div>}
+        </div>
+      </section>
     </div>
   );
 }

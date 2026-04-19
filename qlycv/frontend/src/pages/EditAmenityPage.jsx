@@ -2,16 +2,18 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from '../hooks';
 import { amenitiesAPI, parksAPI } from '../api';
-import { useUIStore } from '../store';
+import { useAuthStore, useUIStore } from '../store';
 import '../styles/pages/ParkFormPage.css';
 
 export default function EditAmenityPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const { showNotification } = useUIStore();
   const [parks, setParks] = useState([]);
   const [types, setTypes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const isManager = user?.nhom_quyen_code === 'QUAN_LY';
 
   const { values, setValues, handleChange, handleSubmit, isSubmitting } = useForm(
     {
@@ -57,6 +59,12 @@ export default function EditAmenityPage() {
           dang_su_dung: amenity.dang_su_dung
         });
 
+        if (isManager && user?.ma_cong_vien && String(amenity.ma_cong_vien) !== String(user.ma_cong_vien)) {
+          showNotification('Ban chi duoc sua tien ich cua cong vien duoc giao', 'error');
+          navigate('/amenities');
+          return;
+        }
+
         setParks(parksRes.data.results || parksRes.data);
         setTypes(typesRes.data.results || typesRes.data);
       } catch (error) {
@@ -68,7 +76,7 @@ export default function EditAmenityPage() {
       }
     };
     fetchData();
-  }, [id]);
+  }, [id, isManager, navigate, showNotification, user?.ma_cong_vien]);
 
   if (loading) return <div className="spinner">Đang tải...</div>;
 
@@ -114,7 +122,7 @@ export default function EditAmenityPage() {
         <div className="form-section">
           <div className="form-group">
             <label>Công Viên *</label>
-            <select name="ma_cong_vien" value={values.ma_cong_vien} onChange={handleChange} required>
+            <select name="ma_cong_vien" value={values.ma_cong_vien} onChange={handleChange} required disabled={isManager}>
               <option value="">-- Chọn công viên --</option>
               {parks.map(p => (
                 <option key={p.ma_cong_vien} value={p.ma_cong_vien}>{p.ten_cong_vien}</option>

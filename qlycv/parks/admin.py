@@ -269,7 +269,11 @@ class BaoCaoSuCoAdmin(admin.ModelAdmin):
     cap_nhat_dang_xu_ly.short_description = 'Chuyển sang "Đang xử lý"'
 
     def cap_nhat_da_xu_ly(self, request, queryset):
-        updated = queryset.update(trang_thai='da_xu_ly')
+        updated = 0
+        for incident in queryset:
+            incident.trang_thai = 'da_xu_ly'
+            incident.save()
+            updated += 1
         self.message_user(request, f'{updated} báo cáo chuyển trạng thái "Đã xử lý".')
     cap_nhat_da_xu_ly.short_description = 'Chuyển sang "Đã xử lý"'
 

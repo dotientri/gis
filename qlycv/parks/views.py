@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status, filters
+from rest_framework import viewsets, status, filters, serializers
 from rest_framework.decorators import action, api_view
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -143,6 +143,22 @@ class CongVienViewSet(viewsets.ModelViewSet):
             return CongVienListSerializer
         return CongVienDetailSerializer
 
+    def _get_request_user(self):
+        user = getattr(self.request, 'user', None)
+        if getattr(user, 'ma_nguoi_dung', None):
+            return user
+
+        token = self.request.headers.get('Authorization', '').replace('Bearer ', '').strip()
+        if not token:
+            return None
+
+        try:
+            user = NguoiDung.objects.select_related('ma_nhom_quyen', 'ma_cong_vien').get(token=token)
+            self.request.user = user
+            return user
+        except NguoiDung.DoesNotExist:
+            return None
+
     def get_queryset(self):
         queryset = super().get_queryset()
         if self.action == 'list':
@@ -256,6 +272,16 @@ class CongVienViewSet(viewsets.ModelViewSet):
             if manager.ma_cong_vien and manager.ma_cong_vien != park:
                 return Response(
                     {'error': f'Manager "{manager.ten_dang_nhap}" đã được gán cho công viên khác: {manager.ma_cong_vien.ten_cong_vien}'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            existing_manager = NguoiDung.objects.filter(
+                ma_cong_vien=park,
+                ma_nhom_quyen__ten_nhom='QUAN_LY'
+            ).exclude(ma_nguoi_dung=manager.ma_nguoi_dung).first()
+            if existing_manager:
+                return Response(
+                    {'error': f'Công viên "{park.ten_cong_vien}" đã có manager "{existing_manager.ten_dang_nhap}" phụ trách'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
@@ -544,17 +570,61 @@ class TienIchCongVienViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.request.method == 'GET':
             return [AllowAny()]
-        if self.request.method in ['POST', 'PUT', 'PATCH']:
+        if self.request.method in ['POST', 'PUT', 'PATCH', 'DELETE']:
             return [CanManageAmenities()]
-        if self.request.method == 'DELETE':
-            return [IsAdmin()]
         return [IsAdmin()]
+
+    def _get_request_user(self):
+        user = getattr(self.request, 'user', None)
+        if getattr(user, 'ma_nguoi_dung', None):
+            return user
+
+        token = self.request.headers.get('Authorization', '').replace('Bearer ', '').strip()
+        if not token:
+            return None
+
+        try:
+            user = NguoiDung.objects.select_related('ma_nhom_quyen', 'ma_cong_vien').get(token=token)
+            self.request.user = user
+            return user
+        except NguoiDung.DoesNotExist:
+            return None
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        request_user = self._get_request_user()
+        if request_user and hasattr(request_user, 'ma_nhom_quyen') and request_user.ma_nhom_quyen.ten_nhom == 'QUAN_LY':
+            return queryset.filter(ma_cong_vien=request_user.ma_cong_vien)
+
+        return queryset
+
+    def _validate_manager_scope(self, data, instance=None):
+        user = getattr(self.request, 'user', None)
+        if not user or not hasattr(user, 'ma_nhom_quyen'):
+            return None
+        if user.ma_nhom_quyen.ten_nhom != 'QUAN_LY':
+            return None
+
+        target_park_id = data.get('ma_cong_vien')
+        if target_park_id is None and instance is not None:
+            target_park_id = instance.ma_cong_vien_id
+
+        if not user.ma_cong_vien_id:
+            return Response({'error': 'Manager chưa được gán công viên quản lý.'}, status=status.HTTP_403_FORBIDDEN)
+
+        if str(target_park_id) != str(user.ma_cong_vien_id):
+            return Response({'error': 'Bạn chỉ được thao tác tiện ích của công viên được gán.'}, status=status.HTTP_403_FORBIDDEN)
+        return None
     
     def create(self, request, *args, **kwargs):
         if hasattr(request.data, 'dict'):
             data = request.data.dict()
         else:
             data = request.data.copy()
+
+        manager_scope_error = self._validate_manager_scope(data)
+        if manager_scope_error:
+            return manager_scope_error
         
         images = request.FILES.getlist('hinh_anh_files')
         image_urls = []
@@ -582,6 +652,10 @@ class TienIchCongVienViewSet(viewsets.ModelViewSet):
             data = request.data.dict()
         else:
             data = request.data.copy()
+
+        manager_scope_error = self._validate_manager_scope(data, instance=instance)
+        if manager_scope_error:
+            return manager_scope_error
         
         images = request.FILES.getlist('hinh_anh_files')
         
@@ -599,6 +673,13 @@ class TienIchCongVienViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        manager_scope_error = self._validate_manager_scope({}, instance=instance)
+        if manager_scope_error:
+            return manager_scope_error
+        return super().destroy(request, *args, **kwargs)
 
 
 class HinhAnhCongVienViewSet(viewsets.ModelViewSet):
@@ -720,11 +801,27 @@ class BaoCaoSuCoViewSet(viewsets.ModelViewSet):
     """
     queryset = BaoCaoSuCo.objects.select_related(
         'ma_cong_vien', 'ma_danh_muc', 'ma_nguoi_phu_trach', 'ma_nguoi_bao_cao'
-    ).filter(is_archived=False)  # Default: show only active incidents
+    )
     serializer_class = BaoCaoSuCoSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['ma_cong_vien', 'trang_thai', 'muc_do_uu_tien', 'is_archived']
     ordering_fields = ['-muc_do_uu_tien', '-ngay_tao']
+
+    def _get_request_user(self):
+        user = getattr(self.request, 'user', None)
+        if getattr(user, 'ma_nguoi_dung', None):
+            return user
+
+        token = self.request.headers.get('Authorization', '').replace('Bearer ', '').strip()
+        if not token:
+            return None
+
+        try:
+            user = NguoiDung.objects.select_related('ma_nhom_quyen', 'ma_cong_vien').get(token=token)
+            self.request.user = user
+            return user
+        except NguoiDung.DoesNotExist:
+            return None
     
     def get_permissions(self):
         if self.request.method == 'GET':
@@ -740,10 +837,13 @@ class BaoCaoSuCoViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Manager chỉ thấy sự cố của công viên mình"""
         queryset = super().get_queryset()
-        
-        if hasattr(self.request.user, 'ma_nhom_quyen') and self.request.user.ma_nhom_quyen.ten_nhom == 'QUAN_LY':
+        is_archived = self.request.query_params.get('is_archived', 'false').lower() == 'true'
+        queryset = queryset.filter(is_archived=is_archived)
+
+        request_user = self._get_request_user()
+        if request_user and hasattr(request_user, 'ma_nhom_quyen') and request_user.ma_nhom_quyen.ten_nhom == 'QUAN_LY':
             # Manager chỉ thấy sự cố của công viên mình
-            return queryset.filter(ma_cong_vien=self.request.user.ma_cong_vien)
+            return queryset.filter(ma_cong_vien=request_user.ma_cong_vien)
         
         return queryset
     
@@ -788,12 +888,16 @@ class BaoCaoSuCoViewSet(viewsets.ModelViewSet):
         
         # Tạo data dict để có thể modify
         data = dict(request.data)
+
+        if hasattr(request.user, 'ma_nhom_quyen') and request.user.ma_nhom_quyen.ten_nhom == 'QUAN_LY':
+            disallowed_fields = set(data.keys()) - {'trang_thai'}
+            if disallowed_fields:
+                return Response(
+                    {'error': 'Manager chi duoc cap nhat trang thai su co cua cong vien duoc giao.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
         
         # Nếu update status thành "da_xu_ly" → archive
-        if data.get('trang_thai') == 'da_xu_ly':
-            data['is_archived'] = True
-            data['ngay_luu_tru'] = timezone.now().isoformat()
-        
         serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
@@ -811,10 +915,6 @@ class BaoCaoSuCoViewSet(viewsets.ModelViewSet):
             bao_cao.trang_thai = trang_thai
             
             # Auto-archive khi xử lý xong
-            if trang_thai == 'da_xu_ly':
-                bao_cao.is_archived = True
-                bao_cao.ngay_luu_tru = timezone.now()
-            
             bao_cao.save()
             return Response({'message': 'Cập nhật trạng thái thành công'})
         return Response({'error': 'trang_thai là bắt buộc'}, status=status.HTTP_400_BAD_REQUEST)
@@ -845,21 +945,18 @@ class BaoCaoSuCoViewSet(viewsets.ModelViewSet):
             if hasattr(request.user, 'ma_nhom_quyen') and request.user.ma_nhom_quyen.ten_nhom == 'QUAN_LY':
                 queryset = queryset.filter(ma_cong_vien=request.user.ma_cong_vien)
             
-            # If date specified, filter by that day
+            # If date specified, filter by the relevant date field for the selected group.
             if date_str:
                 try:
                     from datetime import datetime
                     filter_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-                    queryset = queryset.filter(ngay_tao__date=filter_date)
+                    date_field = 'ngay_luu_tru__date' if is_archived else 'ngay_tao__date'
+                    queryset = queryset.filter(**{date_field: filter_date})
                 except:
                     return Response(
                         {'error': 'Invalid date format. Use YYYY-MM-DD'},
                         status=status.HTTP_400_BAD_REQUEST
                     )
-            else:
-                # Default: today
-                from datetime import date
-                queryset = queryset.filter(ngay_tao__date=date.today())
             
             # Remove duplicates: keep only incidents with unique titles per park per day
             seen = set()
@@ -956,11 +1053,37 @@ class LoaiCayViewSet(viewsets.ModelViewSet):
     serializer_class = LoaiCaySerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['ten_loai', 'ten_khoa_hoc']
+
+    DEFAULT_TREE_TYPES = [
+        {'ten_loai': 'Cay sao den', 'ten_khoa_hoc': 'Hopea odorata', 'mo_ta': 'Loai cay bong mat pho bien tai cong vien va duong pho.'},
+        {'ten_loai': 'Cay dau ray', 'ten_khoa_hoc': 'Dipterocarpus alatus', 'mo_ta': 'Cay go lon, tan rong, thuong duoc trong tao canh quan xanh.'},
+        {'ten_loai': 'Cay bang lang', 'ten_khoa_hoc': 'Lagerstroemia speciosa', 'mo_ta': 'Loai cay cho hoa tim, phu hop canh quan do thi.'},
+        {'ten_loai': 'Cay phuong vi', 'ten_khoa_hoc': 'Delonix regia', 'mo_ta': 'Loai cay hoa do, tao diem nhan mua he cho cong vien.'},
+        {'ten_loai': 'Cay lim xet', 'ten_khoa_hoc': 'Peltophorum pterocarpum', 'mo_ta': 'Loai cay bong mat co hoa vang, phat trien nhanh.'},
+        {'ten_loai': 'Cay me tay', 'ten_khoa_hoc': 'Samanea saman', 'mo_ta': 'Loai cay co tan rat rong, tao bong mat lon.'},
+    ]
+
+    def _ensure_default_tree_types(self):
+        if LoaiCay.objects.exists():
+            return
+
+        for item in self.DEFAULT_TREE_TYPES:
+            LoaiCay.objects.get_or_create(
+                ten_loai=item['ten_loai'],
+                defaults={
+                    'ten_khoa_hoc': item['ten_khoa_hoc'],
+                    'mo_ta': item['mo_ta'],
+                }
+            )
     
     def get_permissions(self):
         if self.request.method == 'GET':
             return [AllowAny()]
         return [IsAdmin()]
+
+    def get_queryset(self):
+        self._ensure_default_tree_types()
+        return super().get_queryset()
 
 
 class CayXanhViewSet(viewsets.ModelViewSet):
@@ -997,18 +1120,99 @@ class SuKienCongVienViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['ma_cong_vien', 'trang_thai', 'loai_su_kien']
     ordering_fields = ['thoi_gian_bat_dau']
+
+    def _get_request_user(self):
+        user = getattr(self.request, 'user', None)
+        if getattr(user, 'ma_nguoi_dung', None):
+            return user
+
+        token = self.request.headers.get('Authorization', '').replace('Bearer ', '').strip()
+        if not token:
+            return None
+
+        try:
+            user = NguoiDung.objects.select_related('ma_nhom_quyen', 'ma_cong_vien').get(token=token)
+            self.request.user = user
+            return user
+        except NguoiDung.DoesNotExist:
+            return None
     
     def get_permissions(self):
         if self.request.method == 'GET':
             return [AllowAny()]
-        if self.request.method == 'POST':
-            return [CanCreateEvent()]  # Manager/Admin tạo sự kiện
+        if self.request.method in ['POST', 'PUT', 'PATCH', 'DELETE']:
+            return [CanCreateEvent()]  # Manager/Admin thao tac su kien
         if self.request.method in ['PUT', 'PATCH']:
-            return [IsAdmin()]  # Chỉ Admin duyệt sự kiện
+            return [IsAdmin()]  # Chi Admin duyet su kien
         if self.request.method == 'DELETE':
             return [IsAdmin()]
         return [IsAdmin()]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        request_user = self._get_request_user()
+        if request_user and hasattr(request_user, 'ma_nhom_quyen') and request_user.ma_nhom_quyen.ten_nhom == 'QUAN_LY':
+            return queryset.filter(ma_cong_vien=request_user.ma_cong_vien)
+
+        return queryset
+
+    def create(self, request, *args, **kwargs):
+        data = request.data.copy()
+        user = getattr(request, 'user', None)
+
+        if user and hasattr(user, 'ma_nhom_quyen') and user.ma_nhom_quyen.ten_nhom == 'QUAN_LY':
+            if not user.ma_cong_vien_id:
+                return Response({'error': 'Manager chưa được gán công viên quản lý.'}, status=status.HTTP_403_FORBIDDEN)
+            if str(data.get('ma_cong_vien')) != str(user.ma_cong_vien_id):
+                return Response({'error': 'Manager chỉ được tạo sự kiện cho công viên được gán.'}, status=status.HTTP_403_FORBIDDEN)
+
+        return super().create(request, *args, **kwargs)
     
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        user = self._get_request_user()
+
+        if user and hasattr(user, 'ma_nhom_quyen') and user.ma_nhom_quyen.ten_nhom == 'QUAN_LY':
+            if not user.ma_cong_vien_id or instance.ma_cong_vien_id != user.ma_cong_vien_id:
+                return Response(
+                    {'error': 'Manager chi duoc cap nhat su kien cua cong vien duoc giao.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            if 'da_duyet' in request.data:
+                return Response(
+                    {'error': 'Manager khong co quyen duyet su kien.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            data = request.data.copy()
+            data['ma_cong_vien'] = user.ma_cong_vien_id
+            partial = kwargs.pop('partial', False)
+            serializer = self.get_serializer(instance, data=data, partial=partial)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+
+            if getattr(instance, '_prefetched_objects_cache', None):
+                instance._prefetched_objects_cache = {}
+
+            return Response(serializer.data)
+
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        user = self._get_request_user()
+
+        if user and hasattr(user, 'ma_nhom_quyen') and user.ma_nhom_quyen.ten_nhom == 'QUAN_LY':
+            if not user.ma_cong_vien_id or instance.ma_cong_vien_id != user.ma_cong_vien_id:
+                return Response(
+                    {'error': 'Manager chi duoc xoa su kien cua cong vien duoc giao.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+        return super().destroy(request, *args, **kwargs)
     @action(detail=False, methods=['get'])
     def su_kien_sap_toi(self, request):
         """Lấy danh sách sự kiện sắp tới (trong 7 ngày)."""

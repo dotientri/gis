@@ -5,14 +5,14 @@ from parks.models import BaoCaoSuCo
 
 
 class Command(BaseCommand):
-    help = 'Auto-archive handled incidents and delete archived incidents older than 7 days'
+    help = 'Auto-archive handled incidents and delete archived incidents older than 30 days'
 
     def add_arguments(self, parser):
         parser.add_argument(
             '--days',
             type=int,
-            default=7,
-            help='Number of days to keep archived incidents (default: 7)'
+            default=30,
+            help='Number of days to keep archived incidents (default: 30)'
         )
 
     def handle(self, *args, **options):

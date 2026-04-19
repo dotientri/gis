@@ -1,162 +1,125 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../../store';
+import { FiAlertTriangle, FiCalendar, FiGrid, FiHome, FiLayers, FiLogIn, FiLogOut, FiMap, FiShield, FiStar, FiTarget, FiUser, FiUsers } from 'react-icons/fi';
 import { authAPI } from '../../api';
+import { getInitials, PERMISSION_GROUPS } from '../../constants';
+import { useAuthStore } from '../../store';
 import './Sidebar.css';
 
-export default function Sidebar() {
-  const { user, logout } = useAuthStore();
-  const navigate = useNavigate();
+function NavItem({ to, icon, label }) {
+  return (
+    <NavLink to={to} className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}>
+      <span className="sidebar-link-icon">{icon}</span>
+      <span>{label}</span>
+    </NavLink>
+  );
+}
 
-  const handleLogout = () => {
-    authAPI.logout();
+export default function Sidebar() {
+  const navigate = useNavigate();
+  const { user, logout } = useAuthStore();
+
+  const isAdmin = user?.nhom_quyen_code === PERMISSION_GROUPS.ADMIN;
+  const isManager = user?.nhom_quyen_code === PERMISSION_GROUPS.MANAGER;
+
+  const mainLinks = [
+    ...(user ? [{ to: '/dashboard', label: 'Tong quan', icon: <FiHome /> }] : []),
+    { to: '/parks', label: 'Ban do cong vien', icon: <FiMap /> },
+    { to: '/parks-list', label: 'Danh muc cong vien', icon: <FiGrid /> },
+    ...(user ? [{ to: '/incidents', label: 'Su co', icon: <FiAlertTriangle /> }] : []),
+    ...(user ? [{ to: '/events', label: 'Su kien', icon: <FiCalendar /> }] : []),
+    ...(user ? [{ to: '/amenities', label: 'Tien ich', icon: <FiLayers /> }] : []),
+  ];
+
+  const operationsLinks = user
+    ? [
+        { to: '/ratings', label: 'Danh gia', icon: <FiStar /> },
+        { to: '/trees', label: 'Cay xanh', icon: <FiTarget /> },
+        { to: '/inspections', label: 'Kiem tra', icon: <FiShield /> },
+      ]
+    : [];
+
+  const adminLinks = isAdmin ? [{ to: '/admin/users', label: 'Nguoi dung', icon: <FiUsers /> }] : [];
+
+  const handleLogout = async () => {
+    await authAPI.logout();
     logout();
     navigate('/login');
   };
 
-  const handleLogin = () => {
-    navigate('/login');
-  };
-
-  // Kiểm tra quyền Admin & Manager
-  const isAdmin = user?.nhom_quyen_code === 'QUAN_TRI';
-  const isManager = user?.nhom_quyen_code === 'QUAN_LY';
-
   return (
-    <aside className="sidebar">
-      <div className="sidebar-header">
-        <div className="sidebar-brand">
-          {isManager ? `📍 ${user?.ma_cong_vien_ten || 'CÔNG VIÊN'}` : 'QUẢN LÝ CÔNG VIÊN'}
+    <aside className="sidebar-shell">
+      <div className="sidebar-top">
+        <div className="sidebar-brand-mark">CV</div>
+        <div>
+          <div className="sidebar-eyebrow">Urban park operations</div>
+          <div className="sidebar-brand-title">QlyCV</div>
         </div>
-        {isManager && <div className="sidebar-subtitle">Quản Lý Công Viên</div>}
+      </div>
+
+      <div className="sidebar-hero">
+        <h2>{isManager ? 'Van hanh theo tung cong vien' : 'Dieu hanh he thong cong vien'}</h2>
+        <p>
+          {isManager
+            ? user?.ma_cong_vien_ten || 'Theo doi su co, su kien va tien ich cua cong vien duoc giao.'
+            : 'Ban do, nghiep vu hien truong va quan tri du lieu tren mot giao dien thong nhat.'}
+        </p>
       </div>
 
       <nav className="sidebar-nav">
-        <ul>
-          {!isManager && (
-            <li className="nav-item">
-              <NavLink to="/articles" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                Bài Viết Công Viên
-              </NavLink>
-            </li>
-          )}
+        <div className="sidebar-group">
+          <div className="sidebar-group-title">Dieu huong</div>
+          {mainLinks.map((item) => (
+            <NavItem key={item.to} {...item} />
+          ))}
+        </div>
 
-          {user && (
-            <>
-              {!isManager && (
-                <li className="nav-item">
-                  <NavLink to="/parks" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                    Bản Đồ Công Viên
-                  </NavLink>
-                </li>
-              )}
+        {operationsLinks.length > 0 && (
+          <div className="sidebar-group">
+            <div className="sidebar-group-title">Van hanh</div>
+            {operationsLinks.map((item) => (
+              <NavItem key={item.to} {...item} />
+            ))}
+          </div>
+        )}
 
-              <li className="nav-item">
-                <NavLink to="/parks-list" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                  {isAdmin ? 'Quản Lý Công Viên' : isManager ? '🏞️ Công Viên Của Tôi' : 'Danh Sách Công Viên'}
-                </NavLink>
-              </li>
+        {adminLinks.length > 0 && (
+          <div className="sidebar-group">
+            <div className="sidebar-group-title">Quan tri</div>
+            {adminLinks.map((item) => (
+              <NavItem key={item.to} {...item} />
+            ))}
+          </div>
+        )}
 
-              {isManager && user?.ma_cong_vien && (
-                <li className="nav-item">
-                  <NavLink 
-                    to={`/parks/${user.ma_cong_vien}`} 
-                    className={({ isActive }) => isActive ? 'nav-link active manager-link' : 'nav-link manager-link'}
-                  >
-                    📋 Chi Tiết Công Viên
-                  </NavLink>
-                </li>
-              )}
-
-              {isManager && (
-                <li className="nav-divider">
-                  <div style={{fontSize: '0.75rem', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', padding: '8px 12px'}}>
-                    Quản Lý
-                  </div>
-                </li>
-              )}
-
-              {isManager && (
-                <>
-                  <li className="nav-item">
-                    <NavLink to="/incidents" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                      🚨 Sự Cố
-                    </NavLink>
-                  </li>
-
-                  <li className="nav-item">
-                    <NavLink to="/amenities" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                      🛠️ Tiện Ích
-                    </NavLink>
-                  </li>
-
-                  <li className="nav-item">
-                    <NavLink to="/events" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                      📅 Sự Kiện
-                    </NavLink>
-                  </li>
-
-                  <li className="nav-item">
-                    <NavLink to="/ratings" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                      ⭐ Đánh Giá
-                    </NavLink>
-                  </li>
-                </>
-              )}
-
-              {!isManager && (
-                <>
-                  {isAdmin && (
-                    <li className="nav-item">
-                      <NavLink
-                        to="/admin/users"
-                        className={({ isActive }) => isActive ? 'nav-link active admin-link' : 'nav-link admin-link'}
-                      >
-                        Quản Lý Người Dùng
-                      </NavLink>
-                    </li>
-                  )}
-
-                  <li className="nav-item">
-                    <NavLink to="/amenities" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                      {isAdmin ? 'Quản Lý Tiện Ích' : 'Tiện Ích'}
-                    </NavLink>
-                  </li>
-
-                  <li className="nav-item">
-                    <NavLink to="/incidents" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                      Báo Cáo Sự Cố
-                    </NavLink>
-                  </li>
-
-                  <li className="nav-item">
-                    <NavLink to="/events" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                      {isAdmin ? 'Quản Lý Sự Kiện' : 'Sự Kiện'}
-                    </NavLink>
-                  </li>
-                </>
-              )}
-            </>
-          )}
-        </ul>
+        {!user && (
+          <div className="sidebar-group">
+            <div className="sidebar-group-title">Tai khoan</div>
+            <NavItem to="/login" icon={<FiLogIn />} label="Dang nhap" />
+          </div>
+        )}
       </nav>
 
       <div className="sidebar-footer">
         {user ? (
           <>
-            <div className="user-info">
-              <strong>{user?.ho_ten || user?.ten_dang_nhap}</strong>
-              <small>{user?.nhom_quyen_ten}</small>
+            <div className="sidebar-user-card">
+              <div className="sidebar-avatar">{getInitials(user.ho_ten || user.ten_dang_nhap)}</div>
+              <div>
+                <div className="sidebar-user-name">{user.ho_ten || user.ten_dang_nhap}</div>
+                <div className="sidebar-user-role">{user.nhom_quyen_ten}</div>
+              </div>
             </div>
-            <button onClick={handleLogout} className="btn-logout">
-              Đăng Xuất
+            <button type="button" className="btn btn-ghost btn-full" onClick={handleLogout}>
+              <FiLogOut /> Dang xuat
             </button>
           </>
         ) : (
-          <button onClick={handleLogin} className="btn-logout" style={{backgroundColor: '#3b82f6'}}>
-            Đăng Nhập
+          <button type="button" className="btn btn-primary btn-full" onClick={() => navigate('/login')}>
+            <FiUser /> Dang nhap de thao tac
           </button>
         )}
       </div>
     </aside>
   );
 }
+

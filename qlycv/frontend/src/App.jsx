@@ -1,144 +1,117 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useEffect } from 'react';
-import { useAuthStore, useUIStore } from './store';
+import { BrowserRouter as Router, Outlet, Route, Routes } from 'react-router-dom';
 import { authAPI } from './api';
-
-// Layouts
-import AuthLayout from './components/Layout/AuthLayout';
-import Sidebar from './components/Sidebar/Sidebar';
-
-// Pages - Auth
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-
-// Pages - Parks
-import ParkMapPage from './pages/ParkMapPage';
-import ParkListPage from './pages/ParkListPage';
-import ParkDetailPage from './pages/ParkDetailPage';
-import CreateParkPage from './pages/CreateParkPage';
-import EditParkPage from './pages/EditParkPage';
-
-// Pages - Admin
-import AdminUsersPage from './pages/AdminUsersPage';
-import AdminUserFormPage from './pages/AdminUserFormPage';
-
-// Pages - Other
-import ParkArticlesPage from './pages/ParkArticlesPage';
-import ArticleDetailPage from './pages/ArticleDetailPage';
-import AmenitiesPage from './pages/AmenitiesPage';
-import CreateAmenityPage from './pages/CreateAmenityPage';
-import EditAmenityPage from './pages/EditAmenityPage';
-import EventsPage from './pages/EventsPage';
-import EventFormPage from './pages/EventFormPage';
-import CreateIncidentPage from './pages/CreateIncidentPage';
-import IncidentsPage from './pages/IncidentsPage';
-import RatingsPage from './pages/RatingsPage';
-import TreesPage from './pages/TreesPage';
-import InspectionsPage from './pages/InspectionsPage';
-import NotFoundPage from './pages/NotFoundPage';
-
-// Components
-import ProtectedRoute from './components/ProtectedRoute';
+import Header from './components/Header/Header';
 import Notification from './components/Notification/Notification';
-
+import ProtectedRoute from './components/ProtectedRoute';
+import { PERMISSION_GROUPS } from './constants';
+import { useAuthStore } from './store';
+import AdminUserFormPage from './pages/AdminUserFormPage';
+import AdminUsersPage from './pages/AdminUsersPage';
+import AmenitiesPage from './pages/AmenitiesPage';
+import ArticleDetailPage from './pages/ArticleDetailPage';
+import CreateAmenityPage from './pages/CreateAmenityPage';
+import CreateIncidentPage from './pages/CreateIncidentPage';
+import CreateParkPage from './pages/CreateParkPage';
+import DashboardPage from './pages/DashboardPage';
+import EditAmenityPage from './pages/EditAmenityPage';
+import EditParkPage from './pages/EditParkPage';
+import EventFormPage from './pages/EventFormPage';
+import EventsPage from './pages/EventsPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import IncidentsPage from './pages/IncidentsPage';
+import InspectionsPage from './pages/InspectionsPage';
+import LoginPage from './pages/LoginPage';
+import NotFoundPage from './pages/NotFoundPage';
+import ParkArticlesPage from './pages/ParkArticlesPage';
+import ParkDetailPage from './pages/ParkDetailPage';
+import ParkListPage from './pages/ParkListPage';
+import ParkMapPage from './pages/ParkMapPage';
+import ProfilePage from './pages/ProfilePage';
+import RatingsPage from './pages/RatingsPage';
+import RegisterPage from './pages/RegisterPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import TreesPage from './pages/TreesPage';
 import './App.css';
 
+function AppLayout() {
+  return (
+    <div className="app-shell">
+      <Header />
+      <main className="app-main">
+        <Outlet />
+      </main>
+    </div>
+  );
+}
+
 function App() {
-  const { user, setUser, token } = useAuthStore();
+  const { user, token, setUser, logout } = useAuthStore();
 
-  // Load user data on mount if token exists
   useEffect(() => {
-    if (token && !user) {
-      const loadUser = async () => {
-        try {
-          const response = await authAPI.getCurrentUser();
-          setUser(response.data);
-        } catch (error) {
-          console.error('Failed to load user:', error);
-        }
-      };
-      loadUser();
-    }
-  }, [token, user, setUser]);
+    if (!token || user) return;
 
-  const { isSidebarOpen } = useUIStore();
+    const loadUser = async () => {
+      try {
+        const response = await authAPI.getCurrentUser();
+        setUser(response.data);
+      } catch (error) {
+        console.error('Failed to load current user', error);
+        logout();
+      }
+    };
+
+    loadUser();
+  }, [logout, setUser, token, user]);
 
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
-        {/* Root redirect based on auth status */}
-        <Route path="/" element={<Navigate to="/articles" replace />} />
-
-        {/* Authentication Routes */}
-        <Route element={<AuthLayout />}>
+        <Route element={<AppLayout />}>
+          <Route index element={<ParkArticlesPage />} />
+          <Route path="/articles" element={<ParkArticlesPage />} />
+          <Route path="/articles/:id" element={<ArticleDetailPage />} />
+          <Route path="/parks" element={<ParkMapPage />} />
+          <Route path="/parks-list" element={<ParkListPage />} />
+          <Route path="/parks/:id" element={<ParkDetailPage />} />
+          <Route path="/events" element={<EventsPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-        </Route>
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-        {/* Main Layout Routes (Public & Protected mixed) */}
-        <Route element={
-          <div className="app-layout" style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden' }}>
-            <Sidebar />
-            <main style={{ flex: 1, overflow: 'auto', position: 'relative', backgroundColor: '#f3f4f6' }}>
-              <Outlet />
-            </main>
-          </div>
-        }>
-            {/* --- PUBLIC ROUTES (Ai cũng xem được) --- */}
-            <Route path="/articles" element={<ParkArticlesPage />} />
-            <Route path="/articles/:id" element={<ArticleDetailPage />} />
-            <Route path="/parks" element={<ParkMapPage />} />
-            <Route path="/parks-list" element={<ParkListPage />} />
-            <Route path="/parks/:id" element={<ParkDetailPage />} />
-            
-            {/* --- PROTECTED ROUTES (Cần đăng nhập) --- */}
-            <Route element={<ProtectedRoute />}>
+          <Route element={<ProtectedRoute />}>
+            <Route path="/profile" element={<ProfilePage />} />
+          </Route>
 
-            {/* Admin Routes */}
+          <Route element={<ProtectedRoute roles={[PERMISSION_GROUPS.COMMUNITY, PERMISSION_GROUPS.MANAGER, PERMISSION_GROUPS.ADMIN]} />}>
+            <Route path="/incidents/create" element={<CreateIncidentPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute roles={[PERMISSION_GROUPS.MANAGER, PERMISSION_GROUPS.ADMIN]} />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/amenities" element={<AmenitiesPage />} />
+            <Route path="/events/create" element={<EventFormPage />} />
+            <Route path="/events/:id/edit" element={<EventFormPage />} />
+            <Route path="/incidents" element={<IncidentsPage />} />
+            <Route path="/ratings" element={<RatingsPage />} />
+            <Route path="/trees" element={<TreesPage />} />
+            <Route path="/inspections" element={<InspectionsPage />} />
+            <Route path="/parks/:id/edit" element={<EditParkPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute roles={[PERMISSION_GROUPS.ADMIN]} />}>
             <Route path="/admin/users" element={<AdminUsersPage />} />
             <Route path="/admin/users/create" element={<AdminUserFormPage />} />
             <Route path="/admin/users/edit/:id" element={<AdminUserFormPage />} />
-
-            {/* Park Management - Admin Only */}
-            <Route element={<ProtectedRoute roles={['QUAN_TRI']} />}>
-              <Route path="/parks/create" element={<CreateParkPage />} />
-              <Route path="/parks/:id/edit" element={<EditParkPage />} />
-            </Route>
-
-            {/* Amenities */}
-            <Route path="/amenities" element={<AmenitiesPage />} />
-            
-            {/* Amenity Management - Admin Only */}
-            <Route element={<ProtectedRoute roles={['QUAN_TRI']} />}>
-              <Route path="/amenities/create" element={<CreateAmenityPage />} />
-              <Route path="/amenities/:id/edit" element={<EditAmenityPage />} />
-            </Route>
-
-            {/* Events */}
-            <Route path="/events" element={<EventsPage />} />
-            <Route path="/events/create" element={<EventFormPage />} />
-            <Route path="/events/:id/edit" element={<EventFormPage />} />
-
-            {/* Incidents */}
-            <Route path="/incidents" element={<IncidentsPage />} />
-            <Route path="/incidents/create" element={<CreateIncidentPage />} />
-
-            {/* Ratings */}
-            <Route path="/ratings" element={<RatingsPage />} />
-
-            {/* Trees */}
-            <Route path="/trees" element={<TreesPage />} />
-
-            {/* Inspections */}
-            <Route path="/inspections" element={<InspectionsPage />} />
+            <Route path="/parks/create" element={<CreateParkPage />} />
+            <Route path="/amenities/create" element={<CreateAmenityPage />} />
+            <Route path="/amenities/:id/edit" element={<EditAmenityPage />} />
           </Route>
         </Route>
 
-        {/* Catch-all */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
-
-      {/* Global Notification */}
       <Notification />
     </Router>
   );

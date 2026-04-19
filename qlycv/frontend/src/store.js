@@ -1,7 +1,6 @@
-import { create } from 'zustand';
+﻿import { create } from 'zustand';
 import { authAPI } from './api';
 
-// Auth Store
 export const useAuthStore = create((set) => ({
   user: null,
   token: localStorage.getItem('authToken') || null,
@@ -42,7 +41,7 @@ export const useAuthStore = create((set) => ({
       return true;
     } catch (error) {
       set({
-        error: error.response?.data?.detail || 'Đăng ký thất bại',
+        error: error.response?.data?.detail || error.response?.data?.error || 'Đăng ký thất bại',
         isLoading: false,
       });
       return false;
@@ -57,8 +56,7 @@ export const useAuthStore = create((set) => ({
   setUser: (user) => set({ user }),
 }));
 
-// Parks Store
-export const useParksStore = create((set, get) => ({
+export const useParksStore = create((set) => ({
   parks: [],
   currentPark: null,
   isLoading: false,
@@ -71,7 +69,6 @@ export const useParksStore = create((set, get) => ({
   clearError: () => set({ error: null }),
 }));
 
-// Ratings Store
 export const useRatingsStore = create((set) => ({
   ratings: [],
   unapprovedRatings: [],
@@ -84,7 +81,6 @@ export const useRatingsStore = create((set) => ({
   setError: (error) => set({ error }),
 }));
 
-// Incidents Store
 export const useIncidentsStore = create((set) => ({
   incidents: [],
   isLoading: false,
@@ -95,7 +91,6 @@ export const useIncidentsStore = create((set) => ({
   setError: (error) => set({ error }),
 }));
 
-// Events Store
 export const useEventsStore = create((set) => ({
   events: [],
   upcomingEvents: [],
@@ -108,7 +103,6 @@ export const useEventsStore = create((set) => ({
   setError: (error) => set({ error }),
 }));
 
-// Filter Store
 export const useFilterStore = create((set) => ({
   filters: {
     maLoai: null,
@@ -137,7 +131,6 @@ export const useFilterStore = create((set) => ({
     }),
 }));
 
-// Map Store
 export const useMapStore = create((set) => ({
   centerLat: 10.8231,
   centerLng: 106.6797,
@@ -148,11 +141,9 @@ export const useMapStore = create((set) => ({
   setCenter: (lat, lng) => set({ centerLat: lat, centerLng: lng }),
   setZoom: (zoom) => set({ zoomLevel: zoom }),
   setSelectedPark: (id) => set({ selectedParkId: id }),
-  toggleFilters: () =>
-    set((state) => ({ showFilters: !state.showFilters })),
+  toggleFilters: () => set((state) => ({ showFilters: !state.showFilters })),
 }));
 
-// UI Store
 export const useUIStore = create((set) => ({
   notification: null,
   isModalOpen: false,
@@ -169,11 +160,9 @@ export const useUIStore = create((set) => ({
   openModal: (content) => set({ isModalOpen: true, modalContent: content }),
   closeModal: () => set({ isModalOpen: false, modalContent: null }),
 
-  toggleSidebar: () =>
-    set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+  toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
 }));
 
-// Dashboard Store
 export const useDashboardStore = create((set) => ({
   statistics: null,
   isLoading: false,

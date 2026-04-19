@@ -1,48 +1,84 @@
-import { Link } from 'react-router-dom';
-import '../styles/pages/PlaceholderPage.css';
+import { useEffect, useMemo, useState } from 'react';
+import { inspectionsAPI, parksAPI } from '../api';
+import { formatDateTime, safeArray } from '../constants';
+import { useUIStore } from '../store';
 
 export default function InspectionsPage() {
-  return (
-    <div className="placeholder-page">
-      {/* LIGHT THEME FORCE STYLE */}
-      <style>{`
-        :root { color-scheme: light; }
-        html, body, #root, .app-container { background-color: #f3f4f6 !important; color: #111827 !important; height: 100%; }
-        
-        /* SIDEBAR FIX */
-        .sidebar, aside, nav, .left-menu, .nav-menu, .main-sidebar, [class*="sidebar"], [class*="Sidebar"], [class*="Sider"], .pro-sidebar-inner {
-            background-color: #ffffff !important;
-            background: #ffffff !important;
-            border-right: 1px solid #e5e7eb !important;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.05) !important;
-        }
-        .sidebar *, aside *, nav *, [class*="sidebar"] * {
-            color: #111827 !important;
-            text-shadow: none !important;
-        }
-        .sidebar a:hover, aside a:hover, .nav-link:hover, .pro-menu-item:hover { 
-            background-color: #eff6ff !important;
-            color: #2563eb !important;
-        }
+  const { showNotification } = useUIStore();
+  const [inspections, setInspections] = useState([]);
+  const [attentionParks, setAttentionParks] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-        /* ACTIVE STATE */
-        .sidebar .active, .sidebar .selected, .sidebar .current, .sidebar .is-active, .sidebar .router-link-active,
-        aside .active, aside .selected, aside .current, aside .is-active, aside .router-link-active,
-        .nav-link.active, li.active > a, a[aria-current="page"], .pro-menu-item.active {
-            background-color: #e5e7eb !important;
-            color: #000000 !important;
-            font-weight: 700 !important;
-            box-shadow: inset 4px 0 0 #3b82f6 !important;
-        }
-        .sidebar .active *, .sidebar .selected *, [aria-current="page"] * { color: #000000 !important; }
-      `}</style>
-      <div className="placeholder-header">
-        <h1>Kiểm Tra Công Viên</h1>
-        <Link to="/" className="btn btn-primary">+ Tạo Phiếu Kiểm Tra</Link>
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const [inspectionsResponse, parksResponse] = await Promise.all([
+          inspectionsAPI.getList({ ordering: '-ngay_kiem_tra' }),
+          parksAPI.getParksNeedingInspection(),
+        ]);
+        setInspections(safeArray(inspectionsResponse.data));
+        setAttentionParks(parksResponse.data || []);
+      } catch {
+        showNotification('Khong the tai du lieu kiem tra', 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [showNotification]);
+
+  const recent = useMemo(() => inspections.slice(0, 8), [inspections]);
+
+  return (
+    <div className="page-shell">
+      <div className="page-header">
+        <div>
+          <div className="page-title">Kiem tra cong vien</div>
+          <p className="page-subtitle">Bang tong hop lich kiem tra dinh ky va danh sach cong vien dang can duoc xuong hien truong.</p>
+        </div>
       </div>
-      <div className="placeholder-content">
-        <p>Trang quản lý phiếu kiểm tra định kỳ</p>
-        <p>Ghi nhận kết quả kiểm tra, nhu cầu bảo trì, nâng cấp.</p>
+
+      <div className="grid-2">
+        <section className="card section-card">
+          <h2 style={{ marginTop: 0, fontFamily: 'Space Grotesk, sans-serif' }}>Cong vien can kiem tra</h2>
+          <div className="info-list">
+            {attentionParks.length > 0 ? attentionParks.slice(0, 8).map((park) => (
+              <div key={park.ma_cong_vien} className="notice">
+                <strong>{park.ten_cong_vien}</strong>
+                <div style={{ color: 'var(--muted)', marginTop: 6 }}>{park.quan_huyen_ten || 'N/A'}</div>
+              </div>
+            )) : <div className="empty-state"><p>Khong co cong vien nao qua han kiem tra.</p></div>}
+          </div>
+        </section>
+
+        <section className="card section-card">
+          <h2 style={{ marginTop: 0, fontFamily: 'Space Grotesk, sans-serif' }}>Phieu kiem tra gan day</h2>
+          {loading ? <div className="loading-container"><div className="spinner" /></div> : (
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Cong vien</th>
+                    <th>Ngay</th>
+                    <th>Ket qua</th>
+                    <th>Diem</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recent.map((inspection) => (
+                    <tr key={inspection.ma_kiem_tra}>
+                      <td>{inspection.cong_vien_ten}</td>
+                      <td>{formatDateTime(inspection.ngay_kiem_tra)}</td>
+                      <td>{inspection.ket_qua || 'N/A'}</td>
+                      <td>{inspection.diem_tong || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );

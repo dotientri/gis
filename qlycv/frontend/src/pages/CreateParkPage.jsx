@@ -4,6 +4,7 @@ import { useForm } from '../hooks';
 import { parksAPI, imagesAPI, amenitiesAPI, parkTypesAPI, districtsAPI, treesAPI } from '../api';
 import { useUIStore } from '../store';
 import { MAP_CONFIG } from '../constants';
+import RichTextEditor from '../components/Form/RichTextEditor';
 import '../styles/pages/ParkFormPage.css';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -107,11 +108,15 @@ export default function CreateParkPage() {
     {
       tens: '',
       mo_ta: '',
+      lich_su: '',
       dien_tich_m2: '',
       ma_loai: '',
       ma_trang_thai: '',
       ma_quan_huyen: '',
       dia_chi: '',
+      gio_mo_cua: '',
+      gio_dong_cua: '',
+      mo_cua_24_7: false,
       toa_do_trung_tam_lat: '10.8231',
       toa_do_trung_tam_lng: '106.6797',
     },
@@ -127,11 +132,15 @@ export default function CreateParkPage() {
         const parkData = {
           ten_cong_vien: values.tens, // Map đúng tên trường backend yêu cầu
           mo_ta: values.mo_ta,
+          lich_su: values.lich_su,
           dien_tich_m2: parseFloat(values.dien_tich_m2),
           ma_trang_thai: values.ma_trang_thai,
           ma_loai: values.ma_loai,
           ma_quan_huyen: values.ma_quan_huyen,
           dia_chi: values.dia_chi,
+          mo_cua_24_7: Boolean(values.mo_cua_24_7),
+          gio_mo_cua: values.mo_cua_24_7 ? null : (values.gio_mo_cua || null),
+          gio_dong_cua: values.mo_cua_24_7 ? null : (values.gio_dong_cua || null),
           toa_do_trung_tam: [
             parseFloat(values.toa_do_trung_tam_lat),
             parseFloat(values.toa_do_trung_tam_lng),
@@ -384,21 +393,29 @@ export default function CreateParkPage() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="mo_ta">Mô Tả Chi Tiết (Tối thiểu 250 ký tự) *</label>
-            <textarea
-              id="mo_ta"
+            <RichTextEditor
               name="mo_ta"
+              label="Mô Tả Chi Tiết (Tối thiểu 250 ký tự) *"
               value={values.mo_ta}
-              onChange={handleChange}
+              onChange={(nextValue) => setFieldValue('mo_ta', nextValue)}
               onBlur={handleBlur}
               placeholder="Viết mô tả chi tiết, dài về công viên. Hãy kể về lịch sử, các tiện ích, cảnh quan, và lợi ích đó mang lại cho cộng đồng. Tối thiểu 250 ký tự..."
-              rows={8}
-              style={{width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ccc'}}
+              helperText="Nội dung này sẽ hiển thị ở trang bài viết và chi tiết công viên."
+              minLength={250}
+              error={touched.mo_ta && errors.mo_ta ? errors.mo_ta : ''}
             />
-            <div style={{fontSize: '12px', color: values.mo_ta?.length >= 250 ? '#4CAF50' : '#FF9800', marginTop: '5px'}}>
-              {values.mo_ta ? `${values.mo_ta.length} ký tự` : '0 ký tự'} (Khuyến nghị: ≥250 ký tự)
-            </div>
-            {touched.mo_ta && errors.mo_ta && <span className="error">{errors.mo_ta}</span>}
+          </div>
+
+          <div className="form-group">
+            <RichTextEditor
+              name="lich_su"
+              label="Lịch Sử Và Bối Cảnh (Tùy chọn)"
+              value={values.lich_su}
+              onChange={(nextValue) => setFieldValue('lich_su', nextValue)}
+              onBlur={handleBlur}
+              placeholder="Bổ sung lịch sử hình thành, các dấu mốc phát triển và bối cảnh của công viên."
+              helperText="Phần này sẽ hiển thị ở mục lịch sử trong bài viết công viên."
+            />
           </div>
 
           <div className="form-row">
@@ -475,6 +492,53 @@ export default function CreateParkPage() {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="form-group">
+            <label style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <input
+                name="mo_cua_24_7"
+                type="checkbox"
+                checked={Boolean(values.mo_cua_24_7)}
+                onChange={(event) => {
+                  const checked = event.target.checked;
+                  setFieldValue('mo_cua_24_7', checked);
+                  if (checked) {
+                    setFieldValue('gio_mo_cua', '');
+                    setFieldValue('gio_dong_cua', '');
+                  }
+                }}
+              />
+              <span>Mo cua 24/7</span>
+            </label>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="gio_mo_cua">Gio mo cua</label>
+              <input
+                id="gio_mo_cua"
+                name="gio_mo_cua"
+                type="time"
+                value={values.gio_mo_cua}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                disabled={Boolean(values.mo_cua_24_7)}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="gio_dong_cua">Gio dong cua</label>
+              <input
+                id="gio_dong_cua"
+                name="gio_dong_cua"
+                type="time"
+                value={values.gio_dong_cua}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                disabled={Boolean(values.mo_cua_24_7)}
+              />
+            </div>
           </div>
 
           {/* SEO Keywords Section */}
@@ -721,7 +785,7 @@ export default function CreateParkPage() {
                     <option value="">-- Chọn Loại Cây --</option>
                     {treeTypes.map((t) => (
                       <option key={t.ma_loai_cay} value={t.ma_loai_cay}>
-                        {t.ten_loai_cay}
+                        {t.ten_loai}
                       </option>
                     ))}
                   </select>
