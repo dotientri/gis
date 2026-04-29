@@ -25,6 +25,15 @@ local_settings.py
 db.sqlite3
 /media
 /staticfiles
+backend/db.sqlite3
+backend/data/db.sqlite3
+backend/data/*.sqlite3
+backend/media/
+backend/static/
+backend/staticfiles/
+backend/logs/
+frontend/node_modules/
+frontend/dist/
 
 # IDE
 .vscode/
