@@ -32,6 +32,7 @@ router.register(r'admin/ratings', admin_views.AdminRatingsViewSet, basename='adm
 router.register(r'admin/events', admin_views.AdminEventsViewSet, basename='admin-events')
 router.register(r'admin/incidents', admin_views.AdminIncidentsViewSet, basename='admin-incidents')
 router.register(r'admin/images', admin_views.AdminImagesViewSet, basename='admin-images')
+router.register(r'admin/contact-requests', admin_views.AdminContactRequestsViewSet, basename='admin-contact-requests')
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -41,6 +42,7 @@ urlpatterns = [
     path('auth/forgot-password/', auth_views.forgot_password, name='api-forgot-password'),
     path('auth/reset-password/', auth_views.reset_password, name='api-reset-password'),
     path('auth/change-password/', auth_views.change_password, name='api-change-password'),
+    path('contact/', auth_views.submit_contact_request, name='api-contact-request'),
     path('dashboard/thong-ke/', views.dashboard_thong_ke, name='api-dashboard'),
     path('debug/parks-coordinates/', debug_views.debug_parks_coordinates, name='debug-parks-coordinates'),
     path('debug/nearest-parks/', debug_views.debug_nearest_parks, name='debug-nearest-parks'),

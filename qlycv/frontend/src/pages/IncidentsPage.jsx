@@ -19,6 +19,7 @@ export default function IncidentsPage() {
   const [loading, setLoading] = useState(true);
   const [isArchived, setIsArchived] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
+  const [importing, setImporting] = useState(false);
 
   const canManage = ['QUAN_TRI', 'QUAN_LY'].includes(user?.nhom_quyen_code);
   const isAdmin = user?.nhom_quyen_code === 'QUAN_TRI';
@@ -70,6 +71,27 @@ export default function IncidentsPage() {
     }
   };
 
+  const handleImport = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+    setImporting(true);
+    try {
+      const response = await incidentsAPI.importExcel(formData);
+      const created = response.data?.created_count || 0;
+      const errors = response.data?.error_count || 0;
+      showNotification(`Da import ${created} su co${errors ? `, ${errors} dong loi` : ''}`, errors ? 'info' : 'success');
+      load(isArchived);
+    } catch (error) {
+      showNotification(error.response?.data?.error || 'Khong the doc file Excel', 'error');
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
     <div className="page-shell">
       <div className="page-header">
@@ -78,6 +100,12 @@ export default function IncidentsPage() {
           <p className="page-subtitle">Mot man hinh cho tiep nhan, phan loai, chuyen trang thai va xuat bao cao hien truong.</p>
         </div>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          {canManage && (
+            <label className={`btn btn-ghost ${importing ? 'disabled' : ''}`} style={{ cursor: importing ? 'not-allowed' : 'pointer' }}>
+              {importing ? 'Dang import...' : 'Doc Excel'}
+              <input type="file" accept=".xlsx,.xls" onChange={handleImport} disabled={importing} style={{ display: 'none' }} />
+            </label>
+          )}
           {canManage && <button type="button" className="btn btn-secondary" onClick={handleExport}>Xuat Excel</button>}
           <Link className="btn btn-primary" to="/incidents/create">Bao cao moi</Link>
         </div>
@@ -205,7 +233,19 @@ export default function IncidentsPage() {
                       )}
                     </td>
                     <td>{formatDateTime(item.ngay_tao)}</td>
-                    <td>{item.nguoi_phu_trach_ten || (item.ma_nguoi_bao_cao ? 'Co nguoi bao cao' : 'An danh')}</td>
+                    <td>
+                      {item.nguoi_phu_trach_ten ? (
+                        <div style={{ display: 'grid', gap: 4 }}>
+                          <strong>{item.nguoi_phu_trach_ten}</strong>
+                          <span style={{ color: 'var(--muted)', fontSize: '0.84rem' }}>Phu trach</span>
+                        </div>
+                      ) : item.nguoi_bao_cao_ten || item.nguoi_bao_cao_username ? (
+                        <div style={{ display: 'grid', gap: 4 }}>
+                          <strong>{item.nguoi_bao_cao_ten || item.nguoi_bao_cao_username}</strong>
+                          <span style={{ color: 'var(--muted)', fontSize: '0.84rem' }}>Nguoi bao cao</span>
+                        </div>
+                      ) : 'An danh'}
+                    </td>
                   </tr>
                 ))}
               </tbody>

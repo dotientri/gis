@@ -9,6 +9,23 @@ const api = axios.create({
   },
 });
 
+const normalizeMediaUrl = (value) => {
+  if (typeof value !== 'string') return value;
+  const match = value.match(/^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?(\/media\/.+)$/i);
+  return match ? match[1] : value;
+};
+
+const normalizeMediaUrls = (value) => {
+  if (Array.isArray(value)) return value.map(normalizeMediaUrls);
+  if (value && typeof value === 'object') {
+    Object.keys(value).forEach((key) => {
+      value[key] = normalizeMediaUrls(value[key]);
+    });
+    return value;
+  }
+  return normalizeMediaUrl(value);
+};
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('authToken');
   if (token) {
@@ -18,7 +35,10 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    response.data = normalizeMediaUrls(response.data);
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('authToken');
@@ -61,6 +81,10 @@ export const parksAPI = {
   update: (id, data) => api.put(`/cong-vien/${id}/`, data),
   patch: (id, data) => api.patch(`/cong-vien/${id}/`, data),
   delete: (id) => api.delete(`/cong-vien/${id}/`),
+  downloadImportTemplate: () =>
+    api.get('/cong-vien/mau-import/', {
+      responseType: 'arraybuffer',
+    }),
   getNearestParks: (latitude, longitude, radiusKm) =>
     api.post('/cong-vien/tim-gan-nhat/', {
       vi_do: latitude,
@@ -117,6 +141,7 @@ export const ratingsAPI = {
   getUnapproved: () => api.get('/danh-gia-cong-vien/danh-gia-chua-duyet/'),
   approve: (id) => api.patch(`/danh-gia-cong-vien/${id}/`, { da_duyet: true }),
   reject: (id) => api.patch(`/danh-gia-cong-vien/${id}/`, { da_duyet: false }),
+  delete: (id) => api.delete(`/danh-gia-cong-vien/${id}/`),
 };
 
 export const inspectionsAPI = {
@@ -134,6 +159,10 @@ export const incidentsAPI = {
   getCategories: () => api.get('/danh-muc-su-co/'),
   updateStatus: (id, trangThai) => api.patch(`/bao-cao-su-co/${id}/`, { trang_thai: trangThai }),
   assign: (id, maQuanLy) => api.patch(`/bao-cao-su-co/${id}/`, { ma_nguoi_phu_trach: maQuanLy }),
+  importExcel: (data) =>
+    api.post('/bao-cao-su-co/import_excel/', data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
   exportExcel: (params) =>
     api.get('/bao-cao-su-co/export_excel/', {
       params,
@@ -155,8 +184,9 @@ export const treesAPI = {
   getList: (params) => api.get('/cay-xanh/', { params }),
   create: (data) => api.post('/cay-xanh/', data),
   update: (id, data) => api.put(`/cay-xanh/${id}/`, data),
+  delete: (id) => api.delete(`/cay-xanh/${id}/`),
   getTypes: () => api.get('/loai-cay/'),
-  getStatistics: () => api.get('/cay-xanh/thong-ke-tinh-trang/'),
+  getStatistics: () => api.get('/cay-xanh/thong_ke_tinh_trang/'),
 };
 
 export const usersAPI = {
@@ -169,6 +199,10 @@ export const usersAPI = {
 
 export const dashboardAPI = {
   getStatistics: () => api.get('/dashboard/thong-ke/'),
+};
+
+export const contactAPI = {
+  submit: (data) => api.post('/contact/', data),
 };
 
 export const permissionGroupsAPI = {
@@ -189,6 +223,8 @@ export const adminAPI = {
   getEvents: (params) => api.get('/admin/events/', { params }),
   getIncidents: (params) => api.get('/admin/incidents/', { params }),
   getImages: (params) => api.get('/admin/images/', { params }),
+  getContactRequests: (params) => api.get('/admin/contact-requests/', { params }),
+  markContactProcessed: (id) => api.post(`/admin/contact-requests/${id}/mark_processed/`),
 };
 
 export default api;

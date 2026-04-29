@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { adminAPI, parksAPI, permissionGroupsAPI } from '../api';
+import PasswordField from '../components/Form/PasswordField';
 import { useUIStore } from '../store';
 
 export default function AdminUserFormPage() {
@@ -100,10 +101,7 @@ export default function AdminUserFormPage() {
                 <input required disabled={isEdit} value={form.ten_dang_nhap} onChange={(event) => setForm((current) => ({ ...current, ten_dang_nhap: event.target.value }))} />
               </div>
               {!isEdit && (
-                <div className="form-group">
-                  <label>Mat khau</label>
-                  <input required type="password" value={form.mat_khau} onChange={(event) => setForm((current) => ({ ...current, mat_khau: event.target.value }))} />
-                </div>
+                <PasswordField label="Mat khau" required value={form.mat_khau} onChange={(event) => setForm((current) => ({ ...current, mat_khau: event.target.value }))} autoComplete="new-password" />
               )}
               <div className="form-group">
                 <label>Email</label>

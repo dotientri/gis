@@ -1,6 +1,7 @@
 ﻿import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { authAPI } from '../api';
+import PasswordField from '../components/Form/PasswordField';
 
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
@@ -44,14 +45,8 @@ export default function ResetPasswordPage() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 16, marginTop: 20 }}>
-            <div className="form-group">
-              <label>Mật khẩu mới</label>
-              <input type="password" required value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} />
-            </div>
-            <div className="form-group">
-              <label>Xác nhận mật khẩu mới</label>
-              <input type="password" required value={form.confirm_password} onChange={(event) => setForm((current) => ({ ...current, confirm_password: event.target.value }))} />
-            </div>
+            <PasswordField label="Mật khẩu mới" required value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} autoComplete="new-password" />
+            <PasswordField label="Xác nhận mật khẩu mới" required value={form.confirm_password} onChange={(event) => setForm((current) => ({ ...current, confirm_password: event.target.value }))} autoComplete="new-password" />
             {message && <div className="notice">{message}</div>}
             {error && <div className="notice" style={{ borderColor: 'rgba(180, 35, 24, 0.3)', color: 'var(--danger)' }}>{error}</div>}
             <button type="submit" className="btn btn-primary btn-full" disabled={loading}>

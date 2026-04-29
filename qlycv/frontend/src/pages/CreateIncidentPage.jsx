@@ -4,6 +4,18 @@ import { incidentsAPI, parksAPI } from '../api';
 import { hasAnyRole, PERMISSION_GROUPS } from '../constants';
 import { useAuthStore, useUIStore } from '../store';
 
+function getApiErrorMessage(error, fallback) {
+  const data = error?.response?.data;
+  if (!data) return fallback;
+  if (typeof data.error === 'string' && data.error) return data.error;
+  if (typeof data.detail === 'string' && data.detail) return data.detail;
+
+  const firstField = Object.values(data).find((value) => Array.isArray(value) ? value[0] : typeof value === 'string');
+  if (Array.isArray(firstField) && firstField[0]) return firstField[0];
+  if (typeof firstField === 'string' && firstField) return firstField;
+  return fallback;
+}
+
 export default function CreateIncidentPage() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
@@ -80,7 +92,7 @@ export default function CreateIncidentPage() {
       showNotification('Da tao bao cao su co', 'success');
       navigate(hasAnyRole(user, [PERMISSION_GROUPS.MANAGER, PERMISSION_GROUPS.ADMIN]) ? '/incidents' : '/profile');
     } catch (error) {
-      showNotification(error.response?.data?.error || 'Khong the tao su co', 'error');
+      showNotification(getApiErrorMessage(error, 'Khong the tao su co'), 'error');
     } finally {
       setSubmitting(false);
     }

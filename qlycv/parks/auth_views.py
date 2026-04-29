@@ -7,6 +7,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.mail import send_mail
+from django.core.mail import EmailMessage
 from django.db.models import Q
 from django.utils import timezone
 from rest_framework import status
@@ -14,8 +15,8 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
-from .models import NguoiDung, NhomQuyen
-from .serializers import NguoiDungSerializer
+from .models import NguoiDung, NhomQuyen, YeuCauLienHe
+from .serializers import NguoiDungSerializer, YeuCauLienHeSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +65,10 @@ def send_reset_password_email(user):
         'Lien ket nay se het han sau 30 phut.'
     )
     send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email], fail_silently=False)
+
+
+def get_contact_receiver_email():
+    return getattr(settings, 'CONTACT_RECEIVER_EMAIL', None) or 'dotientri0285@gmail.com'
 
 
 @api_view(['POST'])
@@ -225,3 +230,57 @@ def change_password(request):
     user.save(update_fields=['mat_khau_hash', 'token'])
 
     return Response({'message': 'Da doi mat khau thanh cong.', 'token': user.token}, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def submit_contact_request(request):
+    user = get_user_from_token(request)
+    payload = request.data.copy()
+
+    if user:
+        payload['ma_nguoi_dung'] = user.ma_nguoi_dung
+        payload['ho_ten'] = payload.get('ho_ten') or user.ho_ten or user.ten_dang_nhap
+        payload['email'] = payload.get('email') or user.email
+
+    serializer = YeuCauLienHeSerializer(data=payload)
+    serializer.is_valid(raise_exception=True)
+
+    contact_request = YeuCauLienHe.objects.create(
+        **serializer.validated_data,
+        ma_nguoi_dung=user,
+        email_nhan=get_contact_receiver_email(),
+    )
+
+    warning = None
+    sender_label = contact_request.ho_ten
+    if user:
+        sender_label = f'{sender_label} ({user.ten_dang_nhap})'
+
+    email_body = (
+        f'Nguoi gui: {sender_label}\n'
+        f'Email: {contact_request.email}\n'
+        f'So dien thoai: {contact_request.so_dien_thoai or "Khong cung cap"}\n'
+        f'Nguon: {contact_request.nguon_truy_cap or "Khong ro"}\n\n'
+        f'Noi dung:\n{contact_request.noi_dung}'
+    )
+
+    try:
+        message = EmailMessage(
+            subject=f'[QlyCV] {contact_request.tieu_de}',
+            body=email_body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[contact_request.email_nhan],
+            reply_to=[contact_request.email] if contact_request.email else None,
+        )
+        message.send(fail_silently=False)
+    except Exception as exc:
+        logger.exception('Failed to send contact request email: %s', exc)
+        warning = 'Yeu cau da duoc luu, nhung he thong gui email dang tam thoi gap loi.'
+
+    response_data = YeuCauLienHeSerializer(contact_request).data
+    response_data['message'] = 'Da gui yeu cau lien he thanh cong.'
+    if warning:
+        response_data['warning'] = warning
+
+    return Response(response_data, status=status.HTTP_201_CREATED)

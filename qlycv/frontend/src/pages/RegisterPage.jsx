@@ -1,6 +1,7 @@
 ﻿import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authAPI } from '../api';
+import PasswordField from '../components/Form/PasswordField';
 import { useAuthStore } from '../store';
 
 export default function RegisterPage() {
@@ -56,14 +57,8 @@ export default function RegisterPage() {
               <label>Email</label>
               <input required type="email" value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} />
             </div>
-            <div className="form-group">
-              <label>Mật khẩu</label>
-              <input required type="password" value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} />
-            </div>
-            <div className="form-group">
-              <label>Xác nhận mật khẩu</label>
-              <input required type="password" value={form.password_confirm} onChange={(event) => setForm((current) => ({ ...current, password_confirm: event.target.value }))} />
-            </div>
+            <PasswordField label="Mật khẩu" required value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} autoComplete="new-password" />
+            <PasswordField label="Xác nhận mật khẩu" required value={form.password_confirm} onChange={(event) => setForm((current) => ({ ...current, password_confirm: event.target.value }))} autoComplete="new-password" />
           </div>
           {error && <div className="notice" style={{ color: 'var(--danger)' }}>{error}</div>}
           <button type="submit" className="btn btn-primary btn-full" disabled={loading}>{loading ? 'Đang đăng ký...' : 'Đăng ký'}</button>

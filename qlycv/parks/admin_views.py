@@ -7,9 +7,9 @@ from django.utils import timezone
 
 from .models import (
     NguoiDung, NhomQuyen, DanhGiaCongVien, SuKienCongVien, 
-    BaoCaoSuCo, HinhAnhCongVien, CongVien
+    BaoCaoSuCo, HinhAnhCongVien, CongVien, YeuCauLienHe
 )
-from .serializers import NguoiDungSerializer, NguoiDungCreateSerializer, NguoiDungAdminUpdateSerializer
+from .serializers import NguoiDungSerializer, NguoiDungCreateSerializer, NguoiDungAdminUpdateSerializer, YeuCauLienHeSerializer
 from .permissions import IsAdmin
 from django.contrib.auth.hashers import make_password
 
@@ -236,6 +236,23 @@ class AdminImagesViewSet(viewsets.ReadOnlyModelViewSet):
                 'ma_nguoi_dung__ho_ten', 'ngay_tao'
             ))
         })
+
+
+class AdminContactRequestsViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = YeuCauLienHe.objects.select_related('ma_nguoi_dung')
+    serializer_class = YeuCauLienHeSerializer
+    permission_classes = [IsAdmin]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['ho_ten', 'email', 'tieu_de', 'noi_dung']
+    filterset_fields = ['da_xu_ly', 'email_nhan', 'nguon_truy_cap']
+    ordering_fields = ['-ngay_tao', 'ho_ten', 'email']
+
+    @action(detail=True, methods=['post'])
+    def mark_processed(self, request, pk=None):
+        item = self.get_object()
+        item.da_xu_ly = True
+        item.save(update_fields=['da_xu_ly'])
+        return Response({'message': f'Da danh dau yeu cau lien he {pk} la da xu ly.'})
 
 
 @api_view(['GET'])

@@ -82,6 +82,9 @@ export default function DashboardPage() {
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           <Link className="btn btn-primary" to="/incidents/create">Bao cao su co</Link>
           <Link className="btn btn-ghost" to="/parks">Mo ban do</Link>
+          <Link className="btn btn-ghost" to={user?.nhom_quyen_code === 'QUAN_TRI' ? '/admin/contact-requests' : '/contact'}>
+            {user?.nhom_quyen_code === 'QUAN_TRI' ? 'Xem lien he' : 'Lien he'}
+          </Link>
         </div>
       </div>
 

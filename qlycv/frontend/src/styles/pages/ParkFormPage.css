@@ -10,11 +10,11 @@
 .form-header h1 {
   font-size: 28px;
   margin-bottom: 8px;
-  color: var(--color-text-primary);
+  color: var(--text, #1d2b22);
 }
 
 .form-header p {
-  color: var(--color-text-secondary);
+  color: var(--muted, #5c6c63);
   font-size: 14px;
 }
 

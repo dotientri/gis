@@ -1,29 +1,94 @@
 .footer {
-  background-color: var(--gray-100);
-  border-top: 1px solid var(--gray-300);
-  padding: 1.5rem;
-  text-align: center;
-  color: var(--gray-600);
-  font-size: 0.875rem;
   margin-top: auto;
+  padding: 1.5rem 1.5rem 1.9rem;
+  border-top: 1px solid rgba(29, 43, 34, 0.08);
+  background:
+    radial-gradient(circle at top left, rgba(23, 114, 69, 0.08), transparent 24%),
+    linear-gradient(180deg, rgba(255, 250, 240, 0.82), rgba(248, 242, 232, 0.92));
+  color: var(--muted);
 }
 
 .footer-content {
   max-width: 1400px;
   margin: 0 auto;
-  display: flex;
-  justify-content: space-around;
-  gap: 2rem;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) repeat(2, minmax(220px, 1fr));
+  gap: 1.25rem;
+  padding: 1.4rem;
+  font-size: 0.92rem;
 }
 
-.footer-content p {
+.footer-block {
+  display: grid;
+  gap: 0.5rem;
+  align-content: start;
+}
+
+.footer-brand {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.footer-badge {
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.38rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(23, 114, 69, 0.12);
+  color: var(--primary);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  font-size: 0.74rem;
+}
+
+.footer-block strong,
+.footer-brand strong {
+  color: var(--text);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1rem;
+}
+
+.footer-content p,
+.footer-brand p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.footer-content a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
+
+.footer-contact-card {
+  max-width: 1400px;
+  margin: 1rem auto 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 0.9rem;
+}
+
+.footer-contact-copy {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.footer-contact-copy strong {
+  color: var(--text);
+}
+
+.footer-contact-copy p {
   margin: 0;
 }
 
 @media (max-width: 768px) {
+  .footer {
+    padding-inline: 1rem;
+  }
+
   .footer-content {
-    flex-direction: column;
-    gap: 0.5rem;
+    grid-template-columns: 1fr;
+    padding: 1rem;
   }
 }

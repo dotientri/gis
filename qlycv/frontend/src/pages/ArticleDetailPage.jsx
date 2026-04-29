@@ -3,10 +3,11 @@ import { Link, useParams } from 'react-router-dom';
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { amenitiesAPI, eventsAPI, parksAPI } from '../api';
+import { amenitiesAPI, eventsAPI, parksAPI, ratingsAPI } from '../api';
 import RichTextContent from '../components/RichTextContent';
-import { EVENT_STATUS_LABELS, EVENT_TYPE_LABELS, formatArea, formatDate, formatDateTime, formatTime, MAP_CONFIG } from '../constants';
+import { EVENT_STATUS_LABELS, EVENT_TYPE_LABELS, formatArea, formatDate, formatDateTime, formatTime, MAP_CONFIG, safeArray } from '../constants';
 import { useApi } from '../hooks';
+import { useAuthStore, useUIStore } from '../store';
 import { getExcerptFromHtml } from '../utils/richText';
 
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -27,17 +28,47 @@ function hasImage(url) {
 
 export default function ArticleDetailPage() {
   const { id } = useParams();
+  const { user } = useAuthStore();
+  const { showNotification } = useUIStore();
   const { data: park, loading, error, execute: fetchPark } = useApi(parksAPI.getDetail, false);
   const { data: amenitiesData, execute: fetchAmenities } = useApi(amenitiesAPI.getList, false);
   const { data: eventsData, execute: fetchEvents } = useApi(eventsAPI.getList, false);
   const [activeImageIndex, setActiveImageIndex] = useState(null);
+  const [ratings, setRatings] = useState([]);
+  const [selectedRating, setSelectedRating] = useState(0);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewText, setReviewText] = useState('');
+  const [ownRating, setOwnRating] = useState(null);
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [isArticleExpanded, setIsArticleExpanded] = useState(false);
 
   useEffect(() => {
     if (!id) return;
     fetchPark(id);
     fetchAmenities({ ma_cong_vien: id, limit: 12 });
     fetchEvents({ ma_cong_vien: id, ordering: 'thoi_gian_bat_dau' });
+    ratingsAPI.getList({ ma_cong_vien: id, da_duyet: true, ordering: '-ngay_tao' })
+      .then((response) => setRatings(safeArray(response.data)))
+      .catch(() => setRatings([]));
   }, [fetchAmenities, fetchEvents, fetchPark, id]);
+
+  useEffect(() => {
+    const loadOwnRating = async () => {
+      if (!id || !user) {
+        setOwnRating(null);
+        return;
+      }
+
+      try {
+        const response = await ratingsAPI.getList({ ma_cong_vien: id, mine: true });
+        setOwnRating(safeArray(response.data)[0] || null);
+      } catch {
+        setOwnRating(null);
+      }
+    };
+
+    loadOwnRating();
+  }, [id, user]);
 
   const amenities = useMemo(() => amenitiesData?.results || amenitiesData || [], [amenitiesData]);
   const events = useMemo(() => eventsData?.results || eventsData || [], [eventsData]);
@@ -55,6 +86,47 @@ export default function ArticleDetailPage() {
     [park?.mo_ta]
   );
   const activeImage = activeImageIndex !== null ? galleryImages[activeImageIndex] : null;
+
+  const handleStarClick = (score) => {
+    if (!user) {
+      showNotification('Vui long dang nhap de danh gia cong vien', 'error');
+      return;
+    }
+    if (ownRating) return;
+    setSelectedRating(score);
+    setShowReviewForm(true);
+  };
+
+  const handleReviewSubmit = async (event) => {
+    event.preventDefault();
+    if (!selectedRating) {
+      showNotification('Vui long chon so sao danh gia', 'error');
+      return;
+    }
+
+    setSubmittingReview(true);
+    try {
+      const payload = {
+        ma_cong_vien: id,
+        diem_tong_quat: selectedRating,
+        diem_ve_sinh: selectedRating,
+        diem_tien_ich: selectedRating,
+        diem_an_toan: selectedRating,
+        diem_tieu_can_thi: selectedRating,
+        noi_dung: reviewText,
+      };
+      const response = await ratingsAPI.create(payload);
+      setOwnRating(response.data);
+      setShowReviewForm(false);
+      setSelectedRating(0);
+      setReviewText('');
+      showNotification('Da gui danh gia. Danh gia se hien thi sau khi duoc duyet.', 'success');
+    } catch (error) {
+      showNotification(error.response?.data?.detail || 'Khong the gui danh gia', 'error');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   useEffect(() => {
     if (activeImageIndex === null) return undefined;
@@ -99,6 +171,41 @@ export default function ArticleDetailPage() {
           <div className="article-hero-actions">
             <Link className="btn btn-primary" to={`/parks/${park.ma_cong_vien}`}>Mo trang cong vien</Link>
             {park.google_maps_url && <a className="btn btn-ghost" href={park.google_maps_url} target="_blank" rel="noreferrer">Chi duong</a>}
+          </div>
+          <div className="article-rating-box">
+            <div className="article-rating-title">
+              {ownRating ? `Bạn đã đánh giá ${ownRating.diem_tong_quat}/5 sao` : 'Đánh giá bài viết công viên'}
+            </div>
+            <div className="article-star-row" aria-label="Chọn số sao đánh giá">
+              {[1, 2, 3, 4, 5].map((score) => (
+                <button
+                  key={score}
+                  type="button"
+                  className={`article-star-button${score <= selectedRating || score <= Number(ownRating?.diem_tong_quat || 0) ? ' active' : ''}`}
+                  onClick={() => handleStarClick(score)}
+                  disabled={Boolean(ownRating)}
+                  aria-label={`${score} sao`}
+                >
+                  {score <= selectedRating || score <= Number(ownRating?.diem_tong_quat || 0) ? '★' : '☆'}
+                </button>
+              ))}
+            </div>
+            {showReviewForm && (
+              <form className="article-review-form" onSubmit={handleReviewSubmit}>
+                <textarea
+                  rows={3}
+                  value={reviewText}
+                  onChange={(event) => setReviewText(event.target.value)}
+                  placeholder="Nhập nội dung đánh giá của bạn..."
+                />
+                <div className="article-review-actions">
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowReviewForm(false)}>Hủy</button>
+                  <button type="submit" className="btn btn-primary btn-sm" disabled={submittingReview}>
+                    {submittingReview ? 'Đang gửi...' : 'Gửi đánh giá'}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       </section>
@@ -154,8 +261,45 @@ export default function ArticleDetailPage() {
         </div>
         <RichTextContent
           html={park.mo_ta}
+          className={`article-body-content${isArticleExpanded ? ' expanded' : ''}`}
           emptyText="Thong tin gioi thieu ve cong vien dang duoc cap nhat."
         />
+        <button
+          type="button"
+          className="btn btn-ghost btn-sm article-expand-toggle"
+          onClick={() => setIsArticleExpanded((current) => !current)}
+        >
+          {isArticleExpanded ? 'Thu gon' : 'Xem them'}
+        </button>
+      </section>
+
+      <section className="card section-card" style={{ marginTop: 24 }}>
+        <div className="page-header" style={{ marginBottom: 18 }}>
+          <div>
+            <h2 style={{ margin: 0, fontFamily: 'Space Grotesk, sans-serif' }}>Đánh giá của người dùng</h2>
+            <p className="page-subtitle">Những đánh giá đã được duyệt cho công viên này.</p>
+          </div>
+          <span className="badge">{ratings.length} đánh giá</span>
+        </div>
+
+        {ratings.length === 0 ? (
+          <div className="empty-state"><p>Chưa có đánh giá đã duyệt nào.</p></div>
+        ) : (
+          <div className="grid-2">
+            {ratings.map((rating) => (
+              <div key={rating.ma_danh_gia} className="notice">
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginBottom: 8 }}>
+                  <strong>{rating.nguoi_dung_ten || 'Người dùng'}</strong>
+                  <span className="badge">{rating.diem_tong_quat || '-'} / 5 sao</span>
+                </div>
+                <div style={{ color: 'var(--muted)', fontSize: '0.86rem', marginBottom: 10 }}>
+                  {formatDateTime(rating.ngay_tao)}
+                </div>
+                <div style={{ whiteSpace: 'normal' }}>{rating.noi_dung || 'Không có nội dung đánh giá.'}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="card section-card" style={{ marginTop: 24 }}>

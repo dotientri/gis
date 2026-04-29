@@ -543,3 +543,26 @@ class ThongKetruyenCap(models.Model):
     
     def __str__(self):
         return f"Thống kê {self.ngay}"
+class YeuCauLienHe(models.Model):
+    ma_yeu_cau = models.AutoField(primary_key=True)
+    ma_nguoi_dung = models.ForeignKey(NguoiDung, on_delete=models.SET_NULL, null=True, blank=True, related_name='yeu_cau_lien_he')
+    ho_ten = models.CharField(max_length=150)
+    email = models.EmailField()
+    so_dien_thoai = models.CharField(max_length=20, null=True, blank=True)
+    tieu_de = models.CharField(max_length=200)
+    noi_dung = models.TextField()
+    nguon_truy_cap = models.CharField(max_length=100, null=True, blank=True)
+    email_nhan = models.EmailField()
+    da_xu_ly = models.BooleanField(default=False)
+    ngay_tao = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'yeu_cau_lien_he'
+        ordering = ['-ngay_tao']
+        indexes = [
+            models.Index(fields=['da_xu_ly', 'ngay_tao']),
+            models.Index(fields=['email']),
+        ]
+
+    def __str__(self):
+        return f"{self.ho_ten} - {self.tieu_de}"

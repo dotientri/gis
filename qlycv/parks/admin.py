@@ -4,7 +4,7 @@ from .models import (
     LoaiTienIch, TienIchCongVien, HinhAnhCongVien,
     NhomQuyen, NguoiDung,
     DanhGiaCongVien, LoaiKiemTra, KiemTraCongVien, DanhMucSuCo, BaoCaoSuCo,
-    LoaiCay, CayXanh, SuKienCongVien, NhatKyThayDoi, ThongKetruyenCap
+    LoaiCay, CayXanh, SuKienCongVien, NhatKyThayDoi, ThongKetruyenCap, YeuCauLienHe
 )
 
 
@@ -360,5 +360,22 @@ class ThongKetruyenCapAdmin(admin.ModelAdmin):
         }),
         ('Dữ liệu', {
             'fields': ('so_lan_truy_cap', 'so_nguoi_truy_cap_doc_lap', 'trang_tim_kiem_nhat')
+        }),
+    )
+@admin.register(YeuCauLienHe)
+class YeuCauLienHeAdmin(admin.ModelAdmin):
+    list_display = ('ho_ten', 'email', 'tieu_de', 'email_nhan', 'da_xu_ly', 'ngay_tao')
+    list_filter = ('da_xu_ly', 'ngay_tao')
+    search_fields = ('ho_ten', 'email', 'tieu_de', 'noi_dung')
+    readonly_fields = ('ma_nguoi_dung', 'ho_ten', 'email', 'so_dien_thoai', 'tieu_de', 'noi_dung', 'nguon_truy_cap', 'email_nhan', 'ngay_tao')
+    fieldsets = (
+        ('Nguoi gui', {
+            'fields': ('ma_nguoi_dung', 'ho_ten', 'email', 'so_dien_thoai')
+        }),
+        ('Noi dung', {
+            'fields': ('tieu_de', 'noi_dung', 'nguon_truy_cap', 'email_nhan')
+        }),
+        ('Xu ly', {
+            'fields': ('da_xu_ly', 'ngay_tao')
         }),
     )

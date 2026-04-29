@@ -21,6 +21,7 @@
   align-items: center;
   gap: 14px;
   min-width: 0;
+  flex: 1;
 }
 
 .header-logo {
@@ -40,6 +41,7 @@
 .header-brand-copy {
   display: grid;
   gap: 4px;
+  min-width: 0;
 }
 
 .header-title {
@@ -193,5 +195,36 @@
   .header-mobile-menu {
     display: grid;
     gap: 4px;
+  }
+}
+
+@media (max-width: 640px) {
+  .header-container {
+    padding: 12px 14px;
+    gap: 12px;
+  }
+
+  .header-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+  }
+
+  .header-title {
+    font-size: 1rem;
+  }
+
+  .header-tagline {
+    font-size: 0.76rem;
+    line-height: 1.3;
+  }
+
+  .header-mobile-toggle {
+    flex: 0 0 auto;
+    padding: 6px;
+  }
+
+  .header-mobile-menu {
+    padding: 0 14px 16px;
   }
 }

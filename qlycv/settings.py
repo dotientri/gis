@@ -131,6 +131,7 @@ EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'deacaa9579de2f')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'false').lower() == 'true'
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@qlycv.local')
+CONTACT_RECEIVER_EMAIL = os.environ.get('CONTACT_RECEIVER_EMAIL', 'dotientri0285@gmail.com')
 
 # Custom User Model (Optional, but good practice if you haven't migrated yet)
 # AUTH_USER_MODEL = 'parks.NguoiDung' # Only if NguoiDung inherits AbstractUser

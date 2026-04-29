@@ -12,8 +12,18 @@ export default function ParkDetailPage() {
   const { showNotification } = useUIStore();
   const [park, setPark] = useState(null);
   const [ratings, setRatings] = useState([]);
+  const [ownRating, setOwnRating] = useState(null);
   const [amenities, setAmenities] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewForm, setReviewForm] = useState({
+    diem_tong_quat: '5',
+    diem_ve_sinh: '5',
+    diem_tien_ich: '5',
+    diem_an_toan: '5',
+    diem_tieu_can_thi: '5',
+    noi_dung: '',
+  });
 
   const isAdmin = user?.nhom_quyen_code === 'QUAN_TRI';
   const isManagerOwnPark = user?.nhom_quyen_code === 'QUAN_LY' && String(user?.ma_cong_vien) === String(id);
@@ -23,14 +33,24 @@ export default function ParkDetailPage() {
     const load = async () => {
       setLoading(true);
       try {
-        const [parkResponse, ratingsResponse, amenitiesResponse] = await Promise.all([
+        const tasks = [
           parksAPI.getDetail(id),
           ratingsAPI.getList({ ma_cong_vien: id }),
           amenitiesAPI.getList({ ma_cong_vien: id }),
-        ]);
+        ];
+        if (user) {
+          tasks.push(ratingsAPI.getList({ ma_cong_vien: id, mine: true }));
+        }
+
+        const [parkResponse, ratingsResponse, amenitiesResponse, ownRatingResponse] = await Promise.all(tasks);
         setPark(parkResponse.data);
         setRatings(safeArray(ratingsResponse.data));
         setAmenities(safeArray(amenitiesResponse.data));
+        if (ownRatingResponse) {
+          setOwnRating(safeArray(ownRatingResponse.data)[0] || null);
+        } else {
+          setOwnRating(null);
+        }
       } catch (error) {
         showNotification('Không thể tải chi tiết công viên', 'error');
       } finally {
@@ -39,7 +59,7 @@ export default function ParkDetailPage() {
     };
 
     load();
-  }, [id, showNotification]);
+  }, [id, showNotification, user]);
 
   const reviewStats = useMemo(() => ({
     total: ratings.length,
@@ -55,6 +75,38 @@ export default function ParkDetailPage() {
     } catch (error) {
       showNotification(error.response?.data?.error || 'Không thể xóa công viên', 'error');
     }
+  };
+
+  const handleReviewSubmit = async (event) => {
+    event.preventDefault();
+    if (!user) {
+      showNotification('Vui long dang nhap de danh gia cong vien', 'error');
+      return;
+    }
+
+    setReviewSubmitting(true);
+    try {
+      const payload = {
+        ma_cong_vien: id,
+        diem_tong_quat: Number(reviewForm.diem_tong_quat),
+        diem_ve_sinh: Number(reviewForm.diem_ve_sinh),
+        diem_tien_ich: Number(reviewForm.diem_tien_ich),
+        diem_an_toan: Number(reviewForm.diem_an_toan),
+        diem_tieu_can_thi: Number(reviewForm.diem_tieu_can_thi),
+        noi_dung: reviewForm.noi_dung,
+      };
+      const response = await ratingsAPI.create(payload);
+      setOwnRating(response.data);
+      showNotification('Da gui danh gia. Danh gia se hien thi sau khi duoc duyet.', 'success');
+    } catch (error) {
+      showNotification(error.response?.data?.detail || 'Khong the gui danh gia', 'error');
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
+
+  const handleReviewChange = (field, value) => {
+    setReviewForm((current) => ({ ...current, [field]: value }));
   };
 
   if (loading) {
@@ -75,6 +127,7 @@ export default function ParkDetailPage() {
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           <Link className="btn btn-ghost" to="/parks-list">Quay lại</Link>
           {park.google_maps_url && <a className="btn btn-primary" href={park.google_maps_url} target="_blank" rel="noreferrer">Chỉ đường</a>}
+          {user && <a className="btn btn-secondary" href="#review-form">Đánh giá công viên</a>}
           {canEditPark && <Link className="btn btn-primary" to={`/parks/${id}/edit`}>Chỉnh sửa</Link>}
           {isAdmin && <button type="button" className="btn btn-danger" onClick={handleDelete}>Xóa</button>}
         </div>
@@ -131,6 +184,62 @@ export default function ParkDetailPage() {
           </div>
         </section>
       </div>
+
+      <section id="review-form" className="card section-card" style={{ marginTop: 24 }}>
+        <div className="page-header" style={{ marginBottom: 16 }}>
+          <div>
+            <h2 style={{ margin: 0, fontFamily: 'Space Grotesk, sans-serif' }}>Đánh giá công viên</h2>
+            <p className="page-subtitle">Mỗi tài khoản chỉ được đánh giá một lần cho mỗi công viên.</p>
+          </div>
+        </div>
+
+        {!user ? (
+          <div className="notice">
+            Bạn cần đăng nhập để gửi đánh giá. <Link to="/login" style={{ color: 'var(--primary)', fontWeight: 700 }}>Đăng nhập</Link>
+          </div>
+        ) : ownRating ? (
+          <div className="notice">
+            <strong>Bạn đã đánh giá công viên này.</strong>
+            <div style={{ marginTop: 8, color: 'var(--muted)' }}>
+              Điểm {ownRating.diem_tong_quat}/5 • {ownRating.da_duyet ? 'Đã duyệt' : 'Đang chờ duyệt'}
+            </div>
+            {ownRating.noi_dung && <div style={{ marginTop: 10 }}>{ownRating.noi_dung}</div>}
+          </div>
+        ) : (
+          <form onSubmit={handleReviewSubmit}>
+            <div className="form-grid">
+              {[
+                ['diem_tong_quat', 'Tổng quát'],
+                ['diem_ve_sinh', 'Vệ sinh'],
+                ['diem_tien_ich', 'Tiện ích'],
+                ['diem_an_toan', 'An toàn'],
+                ['diem_tieu_can_thi', 'Tiếp cận'],
+              ].map(([field, label]) => (
+                <div key={field} className="form-group">
+                  <label>{label}</label>
+                  <select value={reviewForm[field]} onChange={(event) => handleReviewChange(field, event.target.value)}>
+                    {[5, 4, 3, 2, 1].map((score) => <option key={score} value={score}>{score} sao</option>)}
+                  </select>
+                </div>
+              ))}
+              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                <label>Nội dung đánh giá</label>
+                <textarea
+                  rows={4}
+                  value={reviewForm.noi_dung}
+                  onChange={(event) => handleReviewChange('noi_dung', event.target.value)}
+                  placeholder="Chia sẻ trải nghiệm của bạn về công viên này"
+                />
+              </div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 18 }}>
+              <button type="submit" className="btn btn-primary" disabled={reviewSubmitting}>
+                {reviewSubmitting ? 'Đang gửi...' : 'Gửi đánh giá'}
+              </button>
+            </div>
+          </form>
+        )}
+      </section>
 
       <section className="card section-card" style={{ marginTop: 24 }}>
         <div className="page-header" style={{ marginBottom: 16 }}>

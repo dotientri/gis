@@ -38,7 +38,10 @@ export default function Sidebar() {
       ]
     : [];
 
-  const adminLinks = isAdmin ? [{ to: '/admin/users', label: 'Nguoi dung', icon: <FiUsers /> }] : [];
+  const adminLinks = isAdmin ? [
+    { to: '/admin/users', label: 'Nguoi dung', icon: <FiUsers /> },
+    { to: '/admin/contact-requests', label: 'Lien he gui den', icon: <FiUser /> },
+  ] : [];
 
   const handleLogout = async () => {
     await authAPI.logout();
@@ -79,6 +82,7 @@ export default function Sidebar() {
             {operationsLinks.map((item) => (
               <NavItem key={item.to} {...item} />
             ))}
+            {!isAdmin && <NavItem to="/contact" icon={<FiUser />} label="Lien he" />}
           </div>
         )}
 

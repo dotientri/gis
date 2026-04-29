@@ -112,7 +112,7 @@ export default function ParkListPage() {
                   <th>Dien tich</th>
                   <th>Cay xanh</th>
                   <th>Tien ich</th>
-                  <th>Diem</th>
+                  <th>Đánh giá</th>
                   <th>Trang thai</th>
                   <th>Thao tac</th>
                 </tr>
@@ -130,7 +130,12 @@ export default function ParkListPage() {
                     <td>{formatArea(park.dien_tich_m2)}</td>
                     <td>{park.cay_so_luong || 0}</td>
                     <td>{park.tien_ich_so_luong || 0}</td>
-                    <td>{formatRating(park.diem_trung_binh)}</td>
+                    <td>
+                      <div style={{ display: 'grid', gap: 4 }}>
+                        <strong>{park.so_luot_danh_gia ? formatRating(park.diem_trung_binh) : '-'}</strong>
+                        <span style={{ color: 'var(--muted)', fontSize: '0.84rem' }}>{park.so_luot_danh_gia || 0} lượt</span>
+                      </div>
+                    </td>
                     <td>
                       <span className="badge">
                         <span className="badge-dot" style={{ backgroundColor: getStatusColor(park.trang_thai_ten || park.ma_trang_thai, 'park') }} />

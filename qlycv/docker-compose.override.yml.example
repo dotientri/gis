@@ -1,0 +1,35 @@
+version: '3.9'
+
+# Override settings for local development
+# This file is automatically loaded by docker-compose
+# Copy to docker-compose.override.yml to enable custom overrides
+
+services:
+  backend:
+    # Mount source code for development
+    volumes:
+      - .:/app
+    # Use development settings
+    environment:
+      DEBUG: "true"
+      PYTHONDONTWRITEBYTECODE: "0"
+    # Run development server instead of gunicorn
+    command: python manage.py runserver 0.0.0.0:8000
+
+  frontend:
+    # Mount source code for hot reload
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    # Use development server
+    command: npm run dev
+
+  db:
+    # Expose database for local tools
+    ports:
+      - "5432:5432"
+
+  redis:
+    # Expose redis for debugging
+    ports:
+      - "6379:6379"

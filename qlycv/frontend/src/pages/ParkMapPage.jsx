@@ -13,6 +13,17 @@ const iconCache = new Map();
 const STATUS_ORDER = ['tat_ca', 'hoat_dong', 'dang_xay_dung', 'cai_tao', 'tam_dong', 'ngung_hoat_dong', 'quy_hoach'];
 const provider = new OpenStreetMapProvider();
 
+function dedupeParks(list) {
+  const seen = new Set();
+  return safeArray(list).filter((park) => {
+    if (!park?.ma_cong_vien || seen.has(park.ma_cong_vien)) {
+      return false;
+    }
+    seen.add(park.ma_cong_vien);
+    return true;
+  });
+}
+
 function getParkIcon(color) {
   if (!iconCache.has(color)) {
     iconCache.set(
@@ -172,7 +183,7 @@ export default function ParkMapPage() {
     const load = async () => {
       try {
         const response = await parksAPI.getAllForMap({ include_quy_hoach: true });
-        const list = safeArray(response.data);
+        const list = dedupeParks(response.data);
         setParks(list);
         if (list[0]) setSelectedId(list[0].ma_cong_vien);
       } catch (error) {
@@ -219,6 +230,7 @@ export default function ParkMapPage() {
   }, [filteredParks, selectedId]);
 
   const selectedPark = filteredParks.find((item) => item.ma_cong_vien === selectedId) || filteredParks[0];
+  const remainingParks = filteredParks.filter((park) => park.ma_cong_vien !== selectedPark?.ma_cong_vien);
   const center = selectedPark?.toa_do_trung_tam || userLocation || MAP_CONFIG.DEFAULT_CENTER;
   const selectedParkBoundary = useMemo(() => getBoundaryFeature(selectedPark), [selectedPark]);
   const showSelectedBoundary = Boolean(selectedParkBoundary) && routePath.length === 0;
@@ -288,7 +300,7 @@ export default function ParkMapPage() {
 
     try {
       const response = await parksAPI.getNearestParks(userLocation[0], userLocation[1], radiusKm);
-      const results = safeArray(response.data);
+      const results = dedupeParks(response.data);
       setNearbyParkIds(results.map((item) => item.ma_cong_vien));
       setNearbyOnly(true);
       if (results[0]) setSelectedId(results[0].ma_cong_vien);
@@ -371,7 +383,8 @@ export default function ParkMapPage() {
             <div className="notice">
               <div style={{ display: 'grid', gap: 10 }}>
                 <div>
-                  <strong>{selectedPark.ten_cong_vien}</strong>
+                  <span className="badge" style={{ marginBottom: 8 }}>Công viên đang xem</span>
+                  <div><strong>{selectedPark.ten_cong_vien}</strong></div>
                   <div style={{ color: 'var(--muted)', marginTop: 6 }}>{selectedPark.quan_huyen_ten || 'N/A'} • {formatArea(selectedPark.dien_tich_m2)}</div>
                   {selectedPark.trang_thai_van_hanh_label && (
                     <div style={{ color: 'var(--muted)', marginTop: 6 }}>{selectedPark.trang_thai_van_hanh_label}</div>
@@ -394,27 +407,13 @@ export default function ParkMapPage() {
             </div>
           )}
 
-          {routeSteps.length > 0 && (
-            <div className="notice direction-panel">
-              <strong>Hướng dẫn chỉ đường</strong>
-              <div className="direction-list">
-                {routeSteps.map((step) => (
-                  <div key={step.id} className="direction-item">
-                    <div>{step.text}</div>
-                    {step.distance && <small>{step.distance}</small>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {loading ? (
             <div className="loading-container"><div className="spinner" /></div>
           ) : filteredParks.length === 0 ? (
             <div className="empty-state"><p>Không có công viên nào khớp bộ lọc hiện tại.</p></div>
           ) : (
             <div className="map-list">
-              {filteredParks.map((park) => {
+              {remainingParks.map((park) => {
                 const statusCode = String(park.ma_trang_thai_code || park.trang_thai_ten || '').toLowerCase();
                 return (
                   <button
@@ -457,6 +456,11 @@ export default function ParkMapPage() {
                   </button>
                 );
               })}
+              {remainingParks.length === 0 && selectedPark && (
+                <div className="notice">
+                  Không còn công viên nào khác trong bộ lọc hiện tại.
+                </div>
+              )}
             </div>
           )}
         </section>
@@ -511,6 +515,30 @@ export default function ParkMapPage() {
                 );
               })}
             </MapContainer>
+
+            {routeSteps.length > 0 && (
+              <div className="map-route-panel">
+                <div className="map-route-panel-head">
+                  <div>
+                    <strong>Hướng dẫn chỉ đường</strong>
+                    <div className="map-route-panel-meta">
+                      {routeDistanceKm && routeDurationMinutes
+                        ? `${routeDistanceKm.toFixed(1)} km • ${Math.round(routeDurationMinutes)} phút`
+                        : 'Lộ trình đang hiển thị trên bản đồ'}
+                    </div>
+                  </div>
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={clearRoute}>Đóng</button>
+                </div>
+                <div className="direction-list">
+                  {routeSteps.map((step) => (
+                    <div key={step.id} className="direction-item">
+                      <div>{step.text}</div>
+                      {step.distance && <small>{step.distance}</small>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </section>
       </div>

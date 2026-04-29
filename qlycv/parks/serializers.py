@@ -1,14 +1,61 @@
 from django.db.models import Count
 from django.utils import timezone
 from rest_framework import serializers
+from urllib.parse import urlparse
+import re
 from .models import (
     QuanHuyen, PhuongXa, LoaiCongVien, TrangThaiCongVien, CongVien,
     LoaiTienIch, TienIchCongVien, HinhAnhCongVien,
     NhomQuyen, NguoiDung,
     DanhGiaCongVien, LoaiKiemTra, KiemTraCongVien, DanhMucSuCo, BaoCaoSuCo,
-    LoaiCay, CayXanh, SuKienCongVien, NhatKyThayDoi, ThongKetruyenCap
+    LoaiCay, CayXanh, SuKienCongVien, NhatKyThayDoi, ThongKetruyenCap, YeuCauLienHe
 )
 from django.contrib.auth.hashers import make_password
+
+
+def normalize_text_value(value):
+    if value in [None, '']:
+        return ''
+    return re.sub(r'\s+', ' ', str(value).strip()).casefold()
+
+
+def normalize_code_value(value):
+    if value in [None, '']:
+        return ''
+    return re.sub(r'\s+', '', str(value).strip()).casefold()
+
+
+class NormalizedUniqueValidationMixin:
+    def _normalized_unique_exists(self, model, field_name, value, *, normalize=normalize_text_value, extra_filters=None):
+        normalized_value = normalize(value)
+        if not normalized_value:
+            return False
+
+        queryset = model.objects.all()
+        if extra_filters:
+            queryset = queryset.filter(**extra_filters)
+
+        instance = getattr(self, 'instance', None)
+        if instance:
+            queryset = queryset.exclude(pk=instance.pk)
+
+        return any(normalize(getattr(item, field_name, None)) == normalized_value for item in queryset.only(field_name))
+
+
+def build_request_media_url(value, request=None):
+    if not value:
+        return value
+
+    if isinstance(value, str) and value.startswith(('http://', 'https://')):
+        parsed = urlparse(value)
+        if parsed.hostname in ['localhost', '127.0.0.1'] and parsed.path.startswith('/media/'):
+            return request.build_absolute_uri(parsed.path) if request else parsed.path
+        return value
+
+    if isinstance(value, str) and value.startswith('/media/'):
+        return request.build_absolute_uri(value) if request else value
+
+    return value
 
 
 class QuanHuyenSerializer(serializers.ModelSerializer):
@@ -25,16 +72,40 @@ class PhuongXaSerializer(serializers.ModelSerializer):
         fields = ['ma_phuong_xa', 'ma_quan_huyen', 'quan_huyen_ten', 'ten_phuong_xa', 'ma_code', 'loai', 'dien_tich_km2', 'hinh_hoc']
 
 
-class LoaiCongVienSerializer(serializers.ModelSerializer):
+class LoaiCongVienSerializer(NormalizedUniqueValidationMixin, serializers.ModelSerializer):
     class Meta:
         model = LoaiCongVien
         fields = '__all__'
 
+    def validate_ten_loai(self, value):
+        cleaned = re.sub(r'\s+', ' ', str(value).strip())
+        if self._normalized_unique_exists(LoaiCongVien, 'ten_loai', cleaned):
+            raise serializers.ValidationError('Ten loai cong vien da ton tai.')
+        return cleaned
 
-class TrangThaiCongVienSerializer(serializers.ModelSerializer):
+    def validate_ma_code(self, value):
+        cleaned = str(value).strip()
+        if self._normalized_unique_exists(LoaiCongVien, 'ma_code', cleaned, normalize=normalize_code_value):
+            raise serializers.ValidationError('Ma loai cong vien da ton tai.')
+        return cleaned
+
+
+class TrangThaiCongVienSerializer(NormalizedUniqueValidationMixin, serializers.ModelSerializer):
     class Meta:
         model = TrangThaiCongVien
         fields = '__all__'
+
+    def validate_ten_trang_thai(self, value):
+        cleaned = re.sub(r'\s+', ' ', str(value).strip())
+        if self._normalized_unique_exists(TrangThaiCongVien, 'ten_trang_thai', cleaned):
+            raise serializers.ValidationError('Ten trang thai cong vien da ton tai.')
+        return cleaned
+
+    def validate_ma_code(self, value):
+        cleaned = str(value).strip()
+        if self._normalized_unique_exists(TrangThaiCongVien, 'ma_code', cleaned, normalize=normalize_code_value):
+            raise serializers.ValidationError('Ma trang thai cong vien da ton tai.')
+        return cleaned
 
 
 class CongVienListSerializer(serializers.ModelSerializer):
@@ -42,7 +113,8 @@ class CongVienListSerializer(serializers.ModelSerializer):
     trang_thai_ten = serializers.CharField(source='ma_trang_thai.ten_trang_thai', read_only=True)
     ma_trang_thai_code = serializers.CharField(source='ma_trang_thai.ma_code', read_only=True)
     quan_huyen_ten = serializers.CharField(source='ma_quan_huyen.ten_quan_huyen', read_only=True)
-    diem_trung_binh = serializers.FloatField(read_only=True)
+    diem_trung_binh = serializers.SerializerMethodField()
+    so_luot_danh_gia = serializers.SerializerMethodField()
     cay_so_luong = serializers.SerializerMethodField()
     tien_ich_so_luong = serializers.SerializerMethodField()
     anh_dai_dien = serializers.SerializerMethodField()
@@ -63,16 +135,7 @@ class CongVienListSerializer(serializers.ModelSerializer):
         ]
 
     def _build_absolute_media_url(self, value):
-        if not value:
-            return None
-        if isinstance(value, str) and value.startswith(('http://', 'https://')):
-            return value
-
-        request = self.context.get('request')
-        if request:
-            return request.build_absolute_uri(value)
-
-        return value
+        return build_request_media_url(value, self.context.get('request'))
 
     def _resolve_operational_state(self, obj):
         lifecycle_code = getattr(getattr(obj, 'ma_trang_thai', None), 'ma_code', None)
@@ -101,6 +164,18 @@ class CongVienListSerializer(serializers.ModelSerializer):
 
     def get_tien_ich_so_luong(self, obj):
         return obj.tien_ich.count()
+
+    def get_diem_trung_binh(self, obj):
+        value = getattr(obj, 'diem_danh_gia_thuc', None)
+        if value is None:
+            value = obj.diem_trung_binh
+        return round(float(value or 0), 1)
+
+    def get_so_luot_danh_gia(self, obj):
+        value = getattr(obj, 'so_luot_danh_gia_thuc', None)
+        if value is None:
+            value = obj.so_luot_danh_gia
+        return int(value or 0)
 
     def get_anh_dai_dien(self, obj):
         if obj.anh_dai_dien:
@@ -141,7 +216,7 @@ class CongVienListSerializer(serializers.ModelSerializer):
         ]
 
 
-class CongVienDetailSerializer(serializers.ModelSerializer):
+class CongVienDetailSerializer(NormalizedUniqueValidationMixin, serializers.ModelSerializer):
     loai_ten = serializers.CharField(source='ma_loai.ten_loai', read_only=True)
     trang_thai_ten = serializers.CharField(source='ma_trang_thai.ten_trang_thai', read_only=True)
     ma_trang_thai_code = serializers.CharField(source='ma_trang_thai.ma_code', read_only=True)
@@ -180,6 +255,38 @@ class CongVienDetailSerializer(serializers.ModelSerializer):
         if qs.exists():
             raise serializers.ValidationError("Tên công viên này đã tồn tại trong hệ thống. Vui lòng chọn tên khác.")
         return value
+
+    def validate_ten_cong_vien(self, value):
+        cleaned = re.sub(r'\s+', ' ', str(value).strip())
+        if self._normalized_unique_exists(CongVien, 'ten_cong_vien', cleaned):
+            raise serializers.ValidationError('Ten cong vien nay da ton tai trong he thong.')
+        return cleaned
+
+    def validate_ma_code(self, value):
+        if value in [None, '']:
+            return None
+        cleaned = str(value).strip()
+        if self._normalized_unique_exists(CongVien, 'ma_code', cleaned, normalize=normalize_code_value):
+            raise serializers.ValidationError('Ma cong vien nay da ton tai trong he thong.')
+        return cleaned
+
+    def validate_toa_do_trung_tam(self, value):
+        if value in [None, '', []]:
+            raise serializers.ValidationError('Cong vien bat buoc phai co toa do trung tam truoc khi luu.')
+
+        if not isinstance(value, list) or len(value) < 2:
+            raise serializers.ValidationError('Toa do trung tam phai gom [latitude, longitude].')
+
+        try:
+            latitude = float(value[0])
+            longitude = float(value[1])
+        except (TypeError, ValueError):
+            raise serializers.ValidationError('Toa do trung tam khong hop le.')
+
+        if latitude < -90 or latitude > 90 or longitude < -180 or longitude > 180:
+            raise serializers.ValidationError('Toa do trung tam nam ngoai pham vi hop le.')
+
+        return [latitude, longitude]
 
     def get_google_maps_url(self, obj):
         if obj.toa_do_trung_tam and isinstance(obj.toa_do_trung_tam, list) and len(obj.toa_do_trung_tam) >= 2:
@@ -226,10 +333,22 @@ class CongVienDetailSerializer(serializers.ModelSerializer):
         return data
 
 
-class LoaiTienIchSerializer(serializers.ModelSerializer):
+class LoaiTienIchSerializer(NormalizedUniqueValidationMixin, serializers.ModelSerializer):
     class Meta:
         model = LoaiTienIch
         fields = '__all__'
+
+    def validate_ten_loai(self, value):
+        cleaned = re.sub(r'\s+', ' ', str(value).strip())
+        if self._normalized_unique_exists(LoaiTienIch, 'ten_loai', cleaned):
+            raise serializers.ValidationError('Ten loai tien ich da ton tai.')
+        return cleaned
+
+    def validate_ma_code(self, value):
+        cleaned = str(value).strip()
+        if self._normalized_unique_exists(LoaiTienIch, 'ma_code', cleaned, normalize=normalize_code_value):
+            raise serializers.ValidationError('Ma loai tien ich da ton tai.')
+        return cleaned
 
 
 class TienIchCongVienSerializer(serializers.ModelSerializer):
@@ -240,11 +359,22 @@ class TienIchCongVienSerializer(serializers.ModelSerializer):
         model = TienIchCongVien
         fields = ['ma_tien_ich', 'ma_cong_vien', 'cong_vien_ten', 'ma_loai_tien_ich', 'loai_tien_ich_ten', 'so_luong', 'tinh_trang', 'mo_ta', 'vi_tri', 'dang_su_dung', 'ngay_kiem_tra', 'hinh_anh']
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get('request')
+        data['hinh_anh'] = [build_request_media_url(url, request) for url in data.get('hinh_anh') or []]
+        return data
+
 
 class HinhAnhCongVienSerializer(serializers.ModelSerializer):
     class Meta:
         model = HinhAnhCongVien
         fields = ['ma_hinh_anh', 'ma_cong_vien', 'url_anh', 'mo_ta', 'la_anh_chinh', 'ngay_chup']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['url_anh'] = build_request_media_url(data.get('url_anh'), self.context.get('request'))
+        return data
 
 
 class NhomQuyenSerializer(serializers.ModelSerializer):
@@ -370,16 +500,24 @@ class KiemTraCongVienSerializer(serializers.ModelSerializer):
         ]
 
 
-class DanhMucSuCoSerializer(serializers.ModelSerializer):
+class DanhMucSuCoSerializer(NormalizedUniqueValidationMixin, serializers.ModelSerializer):
     class Meta:
         model = DanhMucSuCo
         fields = '__all__'
 
+    def validate_ten_danh_muc(self, value):
+        cleaned = re.sub(r'\s+', ' ', str(value).strip())
+        if self._normalized_unique_exists(DanhMucSuCo, 'ten_danh_muc', cleaned):
+            raise serializers.ValidationError('Ten danh muc su co da ton tai.')
+        return cleaned
 
-class BaoCaoSuCoSerializer(serializers.ModelSerializer):
+
+class BaoCaoSuCoSerializer(NormalizedUniqueValidationMixin, serializers.ModelSerializer):
     cong_vien_ten = serializers.CharField(source='ma_cong_vien.ten_cong_vien', read_only=True)
     danh_muc_ten = serializers.CharField(source='ma_danh_muc.ten_danh_muc', read_only=True)
     nguoi_phu_trach_ten = serializers.CharField(source='ma_nguoi_phu_trach.ho_ten', read_only=True)
+    nguoi_bao_cao_ten = serializers.CharField(source='ma_nguoi_bao_cao.ho_ten', read_only=True)
+    nguoi_bao_cao_username = serializers.CharField(source='ma_nguoi_bao_cao.ten_dang_nhap', read_only=True)
     
     class Meta:
         model = BaoCaoSuCo
@@ -387,18 +525,54 @@ class BaoCaoSuCoSerializer(serializers.ModelSerializer):
             'ma_bao_cao', 'ma_cong_vien', 'cong_vien_ten', 'ma_danh_muc',
             'danh_muc_ten', 'tieu_de', 'noi_dung_mo_ta', 'url_hinh_anh',
             'trang_thai', 'muc_do_uu_tien', 'ma_nguoi_phu_trach',
-            'nguoi_phu_trach_ten', 'ma_nguoi_bao_cao', 'vi_tri', 'dia_chi',
+            'nguoi_phu_trach_ten', 'ma_nguoi_bao_cao', 'nguoi_bao_cao_ten',
+            'nguoi_bao_cao_username', 'vi_tri', 'dia_chi',
             'so_nguoi_xac_nhan', 'ngay_tao', 'ngay_cap_nhat', 'is_archived', 'ngay_luu_tru'
         ]
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get('request')
+        data['url_hinh_anh'] = [build_request_media_url(url, request) for url in data.get('url_hinh_anh') or []]
+        return data
 
-class LoaiCaySerializer(serializers.ModelSerializer):
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        instance = getattr(self, 'instance', None)
+        park = attrs.get('ma_cong_vien', instance.ma_cong_vien if instance else None)
+        title = attrs.get('tieu_de', instance.tieu_de if instance else '')
+
+        if title:
+            cleaned_title = re.sub(r'\s+', ' ', str(title).strip())
+            attrs['tieu_de'] = cleaned_title
+            if park and self._normalized_unique_exists(
+                BaoCaoSuCo,
+                'tieu_de',
+                cleaned_title,
+                extra_filters={'ma_cong_vien': park},
+            ):
+                raise serializers.ValidationError({'tieu_de': 'Su co voi tieu de nay da ton tai trong cong vien da chon.'})
+
+        content = attrs.get('noi_dung_mo_ta')
+        if content:
+            attrs['noi_dung_mo_ta'] = re.sub(r'\s+', ' ', str(content).strip())
+
+        return attrs
+
+
+class LoaiCaySerializer(NormalizedUniqueValidationMixin, serializers.ModelSerializer):
     class Meta:
         model = LoaiCay
         fields = '__all__'
 
+    def validate_ten_loai(self, value):
+        cleaned = re.sub(r'\s+', ' ', str(value).strip())
+        if self._normalized_unique_exists(LoaiCay, 'ten_loai', cleaned):
+            raise serializers.ValidationError('Ten loai cay da ton tai.')
+        return cleaned
 
-class CayXanhSerializer(serializers.ModelSerializer):
+
+class CayXanhSerializer(NormalizedUniqueValidationMixin, serializers.ModelSerializer):
     cong_vien_ten = serializers.CharField(source='ma_cong_vien.ten_cong_vien', read_only=True)
     loai_cay_ten = serializers.CharField(source='ma_loai_cay.ten_loai', read_only=True)
     
@@ -410,6 +584,30 @@ class CayXanhSerializer(serializers.ModelSerializer):
             'duong_kinh_cm', 'ban_kinh_tan_m', 'tinh_trang',
             'ngay_cat_tia_cuoi', 'ngay_trong', 'ngay_tao', 'ngay_cap_nhat'
         ]
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        instance = getattr(self, 'instance', None)
+        park = attrs.get('ma_cong_vien', instance.ma_cong_vien if instance else None)
+        tree_code = attrs.get('ma_so_cay', instance.ma_so_cay if instance else None)
+
+        if tree_code in [None, '']:
+            attrs['ma_so_cay'] = None
+            return attrs
+
+        cleaned_code = str(tree_code).strip()
+        attrs['ma_so_cay'] = cleaned_code
+
+        if park and self._normalized_unique_exists(
+            CayXanh,
+            'ma_so_cay',
+            cleaned_code,
+            normalize=normalize_code_value,
+            extra_filters={'ma_cong_vien': park},
+        ):
+            raise serializers.ValidationError({'ma_so_cay': 'Ma so cay da ton tai trong cong vien nay.'})
+
+        return attrs
 
 
 class SuKienCongVienSerializer(serializers.ModelSerializer):
@@ -443,3 +641,17 @@ class ThongKeTruyenCapSerializer(serializers.ModelSerializer):
         model = ThongKetruyenCap
         fields = '__all__'
         read_only_fields = fields
+
+
+class YeuCauLienHeSerializer(serializers.ModelSerializer):
+    nguoi_dung_ten = serializers.CharField(source='ma_nguoi_dung.ho_ten', read_only=True)
+    nguoi_dung_username = serializers.CharField(source='ma_nguoi_dung.ten_dang_nhap', read_only=True)
+
+    class Meta:
+        model = YeuCauLienHe
+        fields = [
+            'ma_yeu_cau', 'ma_nguoi_dung', 'nguoi_dung_ten', 'nguoi_dung_username',
+            'ho_ten', 'email', 'so_dien_thoai', 'tieu_de', 'noi_dung',
+            'nguon_truy_cap', 'email_nhan', 'da_xu_ly', 'ngay_tao'
+        ]
+        read_only_fields = ['ma_yeu_cau', 'ma_nguoi_dung', 'email_nhan', 'da_xu_ly', 'ngay_tao']

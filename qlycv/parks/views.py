@@ -10,6 +10,7 @@ from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 import json
+import unicodedata
 
 try:
     import geopandas as gpd
@@ -162,7 +163,18 @@ class CongVienViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         if self.action == 'list':
-            queryset = queryset.annotate(tien_ich_so_luong=Count('tien_ich', distinct=True))
+            queryset = queryset.annotate(
+                tien_ich_so_luong=Count('tien_ich', distinct=True),
+                diem_danh_gia_thuc=Avg(
+                    'danh_gia__diem_tong_quat',
+                    filter=Q(danh_gia__da_duyet=True, danh_gia__diem_tong_quat__isnull=False),
+                ),
+                so_luot_danh_gia_thuc=Count(
+                    'danh_gia',
+                    filter=Q(danh_gia__da_duyet=True, danh_gia__diem_tong_quat__isnull=False),
+                    distinct=True,
+                ),
+            )
         return queryset
 
     def _tinh_dien_tich_tu_ranh_gioi(self, instance):
@@ -230,6 +242,46 @@ class CongVienViewSet(viewsets.ModelViewSet):
         except Exception as e:
             raise serializers.ValidationError(f'Lỗi khi lưu công viên: {str(e)}')
     
+    @action(detail=False, methods=['get'], permission_classes=[IsManagerOrAdmin], url_path='mau-import')
+    def mau_import(self, request):
+        if not HAS_OPENPYXL:
+            return Response({'error': 'openpyxl khong duoc cai dat'}, status=status.HTTP_400_BAD_REQUEST)
+
+        workbook = openpyxl.Workbook()
+        sheet = workbook.active
+        sheet.title = 'Mau cong vien'
+
+        headers = [
+            'ten_cong_vien',
+            'dia_chi',
+            'toa_do_trung_tam_lat',
+            'toa_do_trung_tam_lng',
+            'hinh_anh_url',
+            'ghi_chu',
+        ]
+        rows = [
+            ['Cong vien mau 1', 'Duong Nguyen Hue, Quan 1, TP.HCM', 10.776889, 106.700806, '/media/parks/sample-1.jpg', 'Chinh lai vi tri tren map neu can'],
+            ['Cong vien mau 2', 'Duong Le Loi, Quan 1, TP.HCM', '', '', '/media/parks/sample-2.jpg', 'Khong duoc phep import vao CSDL neu thieu toa do'],
+        ]
+
+        for column, value in enumerate(headers, 1):
+            sheet.cell(row=1, column=column, value=value)
+
+        for row_index, row in enumerate(rows, 2):
+            for column, value in enumerate(row, 1):
+                sheet.cell(row=row_index, column=column, value=value)
+
+        buffer = BytesIO()
+        workbook.save(buffer)
+        buffer.seek(0)
+
+        response = HttpResponse(
+            buffer.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="mau_import_cong_vien.xlsx"'
+        return response
+
     @action(detail=True, methods=['post'], permission_classes=[IsAdmin], url_path='assign-manager')
     def assign_manager(self, request, pk=None):
         """
@@ -593,6 +645,10 @@ class TienIchCongVienViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         request_user = self._get_request_user()
+        if self.request.query_params.get('mine') == 'true':
+            if request_user and getattr(request_user, 'ma_nguoi_dung', None):
+                return queryset.filter(ma_nguoi_bao_cao=request_user)
+            return queryset.none()
         if request_user and hasattr(request_user, 'ma_nhom_quyen') and request_user.ma_nhom_quyen.ten_nhom == 'QUAN_LY':
             return queryset.filter(ma_cong_vien=request_user.ma_cong_vien)
 
@@ -632,7 +688,7 @@ class TienIchCongVienViewSet(viewsets.ModelViewSet):
         if images:
             for img in images:
                 file_name = default_storage.save(f'amenity_images/{img.name}', ContentFile(img.read()))
-                file_url = request.build_absolute_uri(settings.MEDIA_URL + file_name)
+                file_url = settings.MEDIA_URL + file_name
                 image_urls.append(file_url)
         
         if image_urls:
@@ -664,7 +720,7 @@ class TienIchCongVienViewSet(viewsets.ModelViewSet):
             new_urls = []
             for img in images:
                 file_name = default_storage.save(f'amenity_images/{img.name}', ContentFile(img.read()))
-                file_url = request.build_absolute_uri(settings.MEDIA_URL + file_name)
+                file_url = settings.MEDIA_URL + file_name
                 new_urls.append(file_url)
             
             data['hinh_anh'] = current_images + new_urls
@@ -699,7 +755,7 @@ class HinhAnhCongVienViewSet(viewsets.ModelViewSet):
         
         if file:
             file_name = default_storage.save(f'park_images/{file.name}', ContentFile(file.read()))
-            file_url = request.build_absolute_uri(settings.MEDIA_URL + file_name)
+            file_url = settings.MEDIA_URL + file_name
             data['url_anh'] = file_url
             
         serializer = self.get_serializer(data=data)
@@ -742,17 +798,148 @@ class DanhGiaCongVienViewSet(viewsets.ModelViewSet):
     serializer_class = DanhGiaCongVienSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['ma_cong_vien', 'da_duyet']
+
+    def _get_request_user(self):
+        user = getattr(self.request, 'user', None)
+        if getattr(user, 'ma_nguoi_dung', None):
+            return user
+
+        token = self.request.headers.get('Authorization', '').replace('Bearer ', '').strip()
+        if not token:
+            return None
+
+        try:
+            user = NguoiDung.objects.select_related('ma_nhom_quyen', 'ma_cong_vien').get(token=token)
+            self.request.user = user
+            return user
+        except NguoiDung.DoesNotExist:
+            return None
+
+    def _is_admin(self, user):
+        return getattr(getattr(user, 'ma_nhom_quyen', None), 'ten_nhom', None) == 'QUAN_TRI'
+
+    def _is_manager(self, user):
+        return getattr(getattr(user, 'ma_nhom_quyen', None), 'ten_nhom', None) == 'QUAN_LY'
+
+    def _refresh_park_rating(self, park_id):
+        if not park_id:
+            return
+
+        aggregate = DanhGiaCongVien.objects.filter(
+            ma_cong_vien_id=park_id,
+            da_duyet=True,
+            diem_tong_quat__isnull=False,
+        ).aggregate(avg=Avg('diem_tong_quat'), count=Count('ma_danh_gia'))
+
+        CongVien.objects.filter(ma_cong_vien=park_id).update(
+            diem_trung_binh=round(float(aggregate['avg'] or 0), 2),
+            so_luot_danh_gia=aggregate['count'] or 0,
+        )
     
     def get_permissions(self):
         if self.request.method == 'GET':
             return [AllowAny()]
         if self.request.method in ['PUT', 'PATCH', 'DELETE']:
-            return [IsAdmin()]
+            return [IsManagerOrAdmin()]
         return [IsAuthenticated()]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        user = self._get_request_user()
+
+        if self.request.query_params.get('mine') == 'true':
+            if not user:
+                return queryset.none()
+            return queryset.filter(ma_nguoi_dung=user)
+
+        if user and self._is_admin(user):
+            return queryset
+
+        if user and self._is_manager(user):
+            if user.ma_cong_vien_id:
+                return queryset.filter(ma_cong_vien=user.ma_cong_vien_id)
+            return queryset.none()
+
+        # Public/community list only exposes approved reviews.
+        return queryset.filter(da_duyet=True)
+
+    def _validate_manager_scope(self, instance=None, park_id=None):
+        user = getattr(self.request, 'user', None)
+        if not user or not self._is_manager(user):
+            return None
+
+        target_park_id = park_id or getattr(instance, 'ma_cong_vien_id', None)
+        if not user.ma_cong_vien_id:
+            return Response({'detail': 'Tai khoan quan ly chua duoc gan cong vien.'}, status=status.HTTP_403_FORBIDDEN)
+        if str(target_park_id) != str(user.ma_cong_vien_id):
+            return Response({'detail': 'Manager chi duoc quan ly danh gia trong cong vien duoc gan.'}, status=status.HTTP_403_FORBIDDEN)
+        return None
+
+    def create(self, request, *args, **kwargs):
+        data = request.data.copy()
+        park_id = data.get('ma_cong_vien')
+        user = request.user
+
+        if DanhGiaCongVien.objects.filter(ma_cong_vien_id=park_id, ma_nguoi_dung=user).exists():
+            return Response(
+                {'detail': 'Ban da danh gia cong vien nay. Moi cong vien chi duoc danh gia 1 lan.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        data['ma_nguoi_dung'] = user.ma_nguoi_dung
+        data['da_duyet'] = False
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        self._refresh_park_rating(park_id)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        scope_error = self._validate_manager_scope(instance=instance)
+        if scope_error:
+            return scope_error
+
+        if self._is_manager(request.user):
+            data = request.data.copy()
+            disallowed = set(data.keys()) - {'da_duyet'}
+            if disallowed:
+                return Response({'detail': 'Manager chi duoc duyet hoac tu choi danh gia.'}, status=status.HTTP_403_FORBIDDEN)
+
+        response = super().update(request, *args, **kwargs)
+        self._refresh_park_rating(instance.ma_cong_vien_id)
+        return response
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        scope_error = self._validate_manager_scope(instance=instance)
+        if scope_error:
+            return scope_error
+
+        if self._is_manager(request.user):
+            data = request.data.copy()
+            disallowed = set(data.keys()) - {'da_duyet'}
+            if disallowed:
+                return Response({'detail': 'Manager chi duoc duyet hoac tu choi danh gia.'}, status=status.HTTP_403_FORBIDDEN)
+
+        response = super().partial_update(request, *args, **kwargs)
+        self._refresh_park_rating(instance.ma_cong_vien_id)
+        return response
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        park_id = instance.ma_cong_vien_id
+        scope_error = self._validate_manager_scope(instance=instance)
+        if scope_error:
+            return scope_error
+        response = super().destroy(request, *args, **kwargs)
+        self._refresh_park_rating(park_id)
+        return response
     
-    @action(detail=False, methods=['get'], permission_classes=[IsAdmin])
+    @action(detail=False, methods=['get'], permission_classes=[IsManagerOrAdmin])
     def danh_gia_chua_duyet(self, request):
-        queryset = self.queryset.filter(da_duyet=False)
+        queryset = self.get_queryset().filter(da_duyet=False)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
@@ -859,7 +1046,7 @@ class BaoCaoSuCoViewSet(viewsets.ModelViewSet):
         if images:
             for img in images:
                 file_name = default_storage.save(f'incident_images/{img.name}', ContentFile(img.read()))
-                file_url = request.build_absolute_uri(settings.MEDIA_URL + file_name)
+                file_url = settings.MEDIA_URL + file_name
                 image_urls.append(file_url)
         
         if image_urls:
@@ -919,6 +1106,169 @@ class BaoCaoSuCoViewSet(viewsets.ModelViewSet):
             return Response({'message': 'Cập nhật trạng thái thành công'})
         return Response({'error': 'trang_thai là bắt buộc'}, status=status.HTTP_400_BAD_REQUEST)
     
+    @action(detail=False, methods=['post'], permission_classes=[IsManagerOrAdmin])
+    def import_excel(self, request):
+        if not HAS_OPENPYXL:
+            return Response({'error': 'openpyxl khong duoc cai dat'}, status=status.HTTP_400_BAD_REQUEST)
+
+        excel_file = request.FILES.get('file')
+        if not excel_file:
+            return Response({'error': 'Vui long chon file Excel voi field file.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        def cell_text(value):
+            return str(value).strip() if value is not None else ''
+
+        def normalize(value):
+            text = unicodedata.normalize('NFKD', cell_text(value))
+            text = ''.join(char for char in text if not unicodedata.combining(char))
+            text = text.replace('đ', 'd').replace('Đ', 'D')
+            return text.lower().replace(' ', '_').replace('-', '_')
+
+        def pick(row, *keys):
+            for key in keys:
+                if key in row and row[key] not in [None, '']:
+                    return row[key]
+            return ''
+
+        def resolve_park(value):
+            if value in [None, '']:
+                return None
+            text = cell_text(value)
+            if text.isdigit():
+                return CongVien.objects.filter(ma_cong_vien=int(text)).first()
+            return CongVien.objects.filter(ten_cong_vien__iexact=text).first()
+
+        def resolve_category(value):
+            text = cell_text(value)
+            if not text:
+                return None
+            if text.isdigit():
+                category = DanhMucSuCo.objects.filter(ma_danh_muc=int(text)).first()
+                if category:
+                    return category
+            category, _ = DanhMucSuCo.objects.get_or_create(ten_danh_muc=text)
+            return category
+
+        try:
+            workbook = openpyxl.load_workbook(excel_file, data_only=True)
+            sheet = workbook.active
+            header_cells = next(sheet.iter_rows(min_row=1, max_row=1, values_only=True), None)
+            if not header_cells:
+                return Response({'error': 'File Excel khong co dong tieu de.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            headers = [normalize(value) for value in header_cells]
+            created = []
+            errors = []
+            request_user = self._get_request_user()
+            is_manager = getattr(getattr(request_user, 'ma_nhom_quyen', None), 'ten_nhom', None) == 'QUAN_LY'
+
+            for row_index, values in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
+                row = {headers[index]: values[index] for index in range(min(len(headers), len(values)))}
+                # Support files exported by this app, whose visible headers may be localized.
+                if len(values) > 1 and 'cong_vien' not in row and 'ma_cong_vien' not in row:
+                    row['cong_vien'] = values[1]
+                if len(values) > 2 and 'tieu_de' not in row:
+                    row['tieu_de'] = values[2]
+                if len(values) > 3 and 'noi_dung_mo_ta' not in row:
+                    row['noi_dung_mo_ta'] = values[3]
+                if len(values) > 4 and 'danh_muc' not in row:
+                    row['danh_muc'] = values[4]
+                if len(values) > 5 and 'muc_do_uu_tien' not in row:
+                    row['muc_do_uu_tien'] = values[5]
+                if len(values) > 6 and 'trang_thai' not in row:
+                    row['trang_thai'] = values[6]
+
+                title = cell_text(pick(row, 'tieu_de', 'title', 'ten_su_co'))
+                description = cell_text(pick(row, 'noi_dung_mo_ta', 'mo_ta', 'description', 'noi_dung'))
+
+                if not title and not description:
+                    continue
+                if not title:
+                    errors.append({'row': row_index, 'error': 'Thieu tieu_de/title'})
+                    continue
+
+                park = resolve_park(pick(row, 'ma_cong_vien', 'cong_vien', 'park', 'park_id'))
+                if not park and is_manager:
+                    park = request_user.ma_cong_vien
+
+                if not park:
+                    errors.append({'row': row_index, 'error': 'Khong tim thay cong vien'})
+                    continue
+
+                if is_manager and str(park.ma_cong_vien) != str(request_user.ma_cong_vien_id):
+                    errors.append({'row': row_index, 'error': 'Manager chi duoc import su co cua cong vien duoc gan'})
+                    continue
+
+                latitude = pick(row, 'vi_do', 'lat', 'latitude')
+                longitude = pick(row, 'kinh_do', 'lng', 'longitude')
+                vi_tri_raw = pick(row, 'vi_tri', 'toa_do', 'location')
+                location = []
+                try:
+                    if latitude not in [None, ''] and longitude not in [None, '']:
+                        location = [float(latitude), float(longitude)]
+                    elif vi_tri_raw not in [None, '']:
+                        parts = [
+                            cell_text(value)
+                            for value in str(vi_tri_raw).replace(';', ',').split(',')
+                            if cell_text(value)
+                        ]
+                        if len(parts) >= 2:
+                            location = [float(parts[0]), float(parts[1])]
+                except (TypeError, ValueError):
+                    location = []
+
+                priority_raw = normalize(pick(row, 'muc_do_uu_tien', 'uu_tien', 'priority'))
+                priority_map = {
+                    'thap': 'thap',
+                    'trung_binh': 'trung_binh',
+                    'cao': 'cao',
+                    'khan_cap': 'khan_cap',
+                    'low': 'thap',
+                    'medium': 'trung_binh',
+                    'high': 'cao',
+                    'urgent': 'khan_cap',
+                }
+                status_raw = normalize(pick(row, 'trang_thai', 'status'))
+                status_map = {
+                    'cho_xu_ly': 'cho_xu_ly',
+                    'dang_xu_ly': 'dang_xu_ly',
+                    'da_xu_ly': 'da_xu_ly',
+                    'pending': 'cho_xu_ly',
+                    'processing': 'dang_xu_ly',
+                    'done': 'da_xu_ly',
+                }
+
+                incident = BaoCaoSuCo.objects.create(
+                    ma_cong_vien=park,
+                    ma_danh_muc=resolve_category(pick(row, 'ma_danh_muc', 'danh_muc', 'loai_su_co', 'category')),
+                    tieu_de=title,
+                    noi_dung_mo_ta=description or title,
+                    muc_do_uu_tien=priority_map.get(priority_raw, 'trung_binh'),
+                    trang_thai=status_map.get(status_raw, 'cho_xu_ly'),
+                    dia_chi=cell_text(pick(row, 'dia_chi', 'address')),
+                    vi_tri=location,
+                    url_hinh_anh=[
+                        cell_text(value)
+                        for value in str(pick(row, 'url_hinh_anh', 'duong_dan_anh', 'hinh_anh', 'image_urls')).split(',')
+                        if cell_text(value)
+                    ],
+                    ma_nguoi_bao_cao=request_user if getattr(request_user, 'ma_nguoi_dung', None) else None,
+                )
+                created.append(incident)
+
+            serializer = self.get_serializer(created, many=True)
+            return Response({
+                'created_count': len(created),
+                'error_count': len(errors),
+                'errors': errors,
+                'results': serializer.data,
+            }, status=status.HTTP_201_CREATED if created else status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            import traceback
+            print(f"Import Excel Error: {e}")
+            traceback.print_exc()
+            return Response({'error': f'Loi doc Excel: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+
     @action(detail=False, methods=['get'], permission_classes=[IsManagerOrAdmin])
     def export_excel(self, request):
         """
@@ -996,8 +1346,19 @@ class BaoCaoSuCoViewSet(viewsets.ModelViewSet):
                 cell.alignment = center_align
                 cell.border = border
             
+            headers = ['STT', 'Cong vien', 'Tieu de', 'Mo ta', 'Loai su co', 'Muc do uu tien',
+                       'Trang thai', 'Dia chi', 'Vi tri', 'Duong dan anh', 'Nguoi bao cao', 'Nguoi phu trach', 'So xac nhan', 'Ngay tao']
+
+            for col_num, header in enumerate(headers, 1):
+                cell = ws.cell(row=1, column=col_num)
+                cell.value = header
+                cell.font = header_font
+                cell.fill = header_fill
+                cell.alignment = center_align
+                cell.border = border
+
             # Set column widths
-            column_widths = [5, 20, 25, 30, 15, 15, 15, 15, 15, 10, 15]
+            column_widths = [5, 20, 25, 30, 15, 15, 15, 24, 20, 36, 15, 15, 10, 15]
             for col_num, width in enumerate(column_widths, 1):
                 ws.column_dimensions[openpyxl.utils.get_column_letter(col_num)].width = width
             
@@ -1011,6 +1372,9 @@ class BaoCaoSuCoViewSet(viewsets.ModelViewSet):
                     incident.ma_danh_muc.ten_danh_muc if incident.ma_danh_muc else 'N/A',
                     incident.get_muc_do_uu_tien_display(),
                     incident.get_trang_thai_display(),
+                    incident.dia_chi or '',
+                    ', '.join(str(value) for value in (incident.vi_tri or [])),
+                    ', '.join(incident.url_hinh_anh or []),
                     incident.ma_nguoi_bao_cao.ten_dang_nhap if incident.ma_nguoi_bao_cao else 'Anonymous',
                     incident.ma_nguoi_phu_trach.ten_dang_nhap if incident.ma_nguoi_phu_trach else 'Chưa phân công',
                     incident.so_nguoi_xac_nhan,
@@ -1095,11 +1459,89 @@ class CayXanhViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.request.method == 'GET':
             return [AllowAny()]
-        return [IsAdmin()]
+        return [IsManagerOrAdmin()]
+
+    def _get_request_user(self):
+        user = getattr(self.request, 'user', None)
+        if getattr(user, 'ma_nguoi_dung', None):
+            return user
+
+        token = self.request.headers.get('Authorization', '').replace('Bearer ', '').strip()
+        if not token:
+            return None
+
+        try:
+            user = NguoiDung.objects.select_related('ma_nhom_quyen', 'ma_cong_vien').get(token=token)
+            self.request.user = user
+            return user
+        except NguoiDung.DoesNotExist:
+            return None
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        request_user = self._get_request_user()
+        if request_user and hasattr(request_user, 'ma_nhom_quyen') and request_user.ma_nhom_quyen.ten_nhom == 'QUAN_LY':
+            if request_user.ma_cong_vien_id:
+                return queryset.filter(ma_cong_vien=request_user.ma_cong_vien_id)
+            return queryset.none()
+        return queryset
+
+    def _managed_park_id(self):
+        park = getattr(self.request.user, 'ma_cong_vien', None)
+        return getattr(self.request.user, 'ma_cong_vien_id', None) or getattr(park, 'ma_cong_vien', None)
+
+    def _is_manager(self):
+        group = getattr(getattr(self.request.user, 'ma_nhom_quyen', None), 'ten_nhom', None)
+        return group == 'QUAN_LY'
+
+    def _manager_forbidden_response(self, park_id=None, obj=None):
+        if not self._is_manager():
+            return None
+
+        managed_park_id = self._managed_park_id()
+        if not managed_park_id:
+            return Response({'detail': 'Tai khoan quan ly chua duoc gan cong vien.'}, status=status.HTTP_403_FORBIDDEN)
+
+        object_park_id = getattr(obj, 'ma_cong_vien_id', None)
+        if object_park_id and str(object_park_id) != str(managed_park_id):
+            return Response({'detail': 'Manager chi duoc quan ly cay trong cong vien duoc gan.'}, status=status.HTTP_403_FORBIDDEN)
+
+        target_park_id = park_id or object_park_id
+        if str(target_park_id) != str(managed_park_id):
+            return Response({'detail': 'Manager chi duoc quan ly cay trong cong vien duoc gan.'}, status=status.HTTP_403_FORBIDDEN)
+
+        return None
+
+    def create(self, request, *args, **kwargs):
+        forbidden = self._manager_forbidden_response(park_id=request.data.get('ma_cong_vien'))
+        if forbidden:
+            return forbidden
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        obj = self.get_object()
+        forbidden = self._manager_forbidden_response(park_id=request.data.get('ma_cong_vien'), obj=obj)
+        if forbidden:
+            return forbidden
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        obj = self.get_object()
+        forbidden = self._manager_forbidden_response(park_id=request.data.get('ma_cong_vien'), obj=obj)
+        if forbidden:
+            return forbidden
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        obj = self.get_object()
+        forbidden = self._manager_forbidden_response(obj=obj)
+        if forbidden:
+            return forbidden
+        return super().destroy(request, *args, **kwargs)
     
     @action(detail=False, methods=['get'])
     def thong_ke_tinh_trang(self, request):
-        stats = CayXanh.objects.values('tinh_trang').annotate(
+        stats = self.get_queryset().values('tinh_trang').annotate(
             count=Count('ma_cay')
         ).order_by('tinh_trang')
         return Response(stats)

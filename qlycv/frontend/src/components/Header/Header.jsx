@@ -1,6 +1,6 @@
 ﻿import { useMemo, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { FiChevronDown, FiGrid, FiLayers, FiLogOut, FiMap, FiMenu, FiShield, FiUser, FiX } from 'react-icons/fi';
+import { FiChevronDown, FiGrid, FiLayers, FiLogOut, FiMap, FiMenu, FiShield, FiStar, FiTarget, FiUser, FiX } from 'react-icons/fi';
 import { getRoleLabel, hasAnyRole, PERMISSION_GROUPS, resolveRoleCode } from '../../constants';
 import { useAuthStore } from '../../store';
 import './Header.css';
@@ -29,15 +29,24 @@ export default function Header() {
 
     if (hasAnyRole(user, [PERMISSION_GROUPS.COMMUNITY, PERMISSION_GROUPS.MANAGER, PERMISSION_GROUPS.ADMIN])) {
       items.push({ to: '/incidents/create', label: 'Báo sự cố', icon: <FiShield size={16} /> });
+      items.push({
+        to: resolveRoleCode(user) === PERMISSION_GROUPS.ADMIN ? '/admin/contact-requests' : '/contact',
+        label: resolveRoleCode(user) === PERMISSION_GROUPS.ADMIN ? 'Liên hệ đã gửi' : 'Liên hệ',
+        icon: <FiUser size={16} />,
+      });
     }
 
     if (hasAnyRole(user, [PERMISSION_GROUPS.MANAGER])) {
       items.push({ to: '/dashboard', label: 'Quản lý công viên', icon: <FiMap size={16} /> });
       items.push({ to: '/amenities', label: 'Tiện ích công viên', icon: <FiLayers size={16} /> });
+      items.push({ to: '/trees', label: 'Quản lý cây xanh', icon: <FiTarget size={16} /> });
+      items.push({ to: '/ratings', label: 'Quản lý đánh giá', icon: <FiStar size={16} /> });
     }
 
     if (hasAnyRole(user, [PERMISSION_GROUPS.ADMIN])) {
       items.push({ to: '/dashboard', label: 'Dashboard', icon: <FiGrid size={16} /> });
+      items.push({ to: '/trees', label: 'Quản lý cây xanh', icon: <FiTarget size={16} /> });
+      items.push({ to: '/ratings', label: 'Quản lý đánh giá', icon: <FiStar size={16} /> });
       items.push({ to: '/admin/users', label: 'Quản trị người dùng', icon: <FiShield size={16} /> });
     }
 

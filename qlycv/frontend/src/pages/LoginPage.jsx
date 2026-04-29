@@ -1,6 +1,7 @@
 ﻿import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authAPI } from '../api';
+import PasswordField from '../components/Form/PasswordField';
 import { hasAnyRole, PERMISSION_GROUPS } from '../constants';
 import { useAuthStore } from '../store';
 
@@ -41,10 +42,7 @@ export default function LoginPage() {
             <label>Tên đăng nhập hoặc email</label>
             <input required value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="admin hoặc admin@example.com" />
           </div>
-          <div className="form-group">
-            <label>Mật khẩu</label>
-            <input required type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
-          </div>
+          <PasswordField label="Mật khẩu" required value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" />
           {error && <div className="notice" style={{ color: 'var(--danger)' }}>{error}</div>}
           <button type="submit" className="btn btn-primary btn-full" disabled={loading}>{loading ? 'Đang đăng nhập...' : 'Đăng nhập'}</button>
         </form>

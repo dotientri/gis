@@ -1,18 +1,21 @@
 import { useEffect } from 'react';
-import { BrowserRouter as Router, Outlet, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import { authAPI } from './api';
 import Header from './components/Header/Header';
+import Footer from './components/Footer/Footer';
 import Notification from './components/Notification/Notification';
 import ProtectedRoute from './components/ProtectedRoute';
 import { PERMISSION_GROUPS } from './constants';
 import { useAuthStore } from './store';
 import AdminUserFormPage from './pages/AdminUserFormPage';
 import AdminUsersPage from './pages/AdminUsersPage';
+import AdminContactRequestsPage from './pages/AdminContactRequestsPage';
 import AmenitiesPage from './pages/AmenitiesPage';
 import ArticleDetailPage from './pages/ArticleDetailPage';
 import CreateAmenityPage from './pages/CreateAmenityPage';
 import CreateIncidentPage from './pages/CreateIncidentPage';
 import CreateParkPage from './pages/CreateParkPage';
+import ContactPage from './pages/ContactPage';
 import DashboardPage from './pages/DashboardPage';
 import EditAmenityPage from './pages/EditAmenityPage';
 import EditParkPage from './pages/EditParkPage';
@@ -35,12 +38,32 @@ import TreesPage from './pages/TreesPage';
 import './App.css';
 
 function AppLayout() {
+  const location = useLocation();
+  const hideFooter = (
+    location.pathname === '/dashboard' ||
+    location.pathname.startsWith('/admin/') ||
+    location.pathname === '/amenities' ||
+    location.pathname === '/amenities/create' ||
+    location.pathname.startsWith('/amenities/') ||
+    location.pathname === '/incidents' ||
+    location.pathname === '/ratings' ||
+    location.pathname === '/trees' ||
+    location.pathname === '/inspections' ||
+    location.pathname === '/events/create' ||
+    /^\/events\/[^/]+\/edit$/.test(location.pathname) ||
+    location.pathname === '/parks/create' ||
+    /^\/parks\/[^/]+\/edit$/.test(location.pathname)
+  );
+
   return (
     <div className="app-shell">
       <Header />
-      <main className="app-main">
-        <Outlet />
-      </main>
+      <div className="app-body">
+        <main className="app-main">
+          <Outlet />
+        </main>
+        {!hideFooter && <Footer />}
+      </div>
     </div>
   );
 }
@@ -75,6 +98,7 @@ function App() {
           <Route path="/parks-list" element={<ParkListPage />} />
           <Route path="/parks/:id" element={<ParkDetailPage />} />
           <Route path="/events" element={<EventsPage />} />
+          <Route path="/contact" element={<ContactPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -102,6 +126,7 @@ function App() {
 
           <Route element={<ProtectedRoute roles={[PERMISSION_GROUPS.ADMIN]} />}>
             <Route path="/admin/users" element={<AdminUsersPage />} />
+            <Route path="/admin/contact-requests" element={<AdminContactRequestsPage />} />
             <Route path="/admin/users/create" element={<AdminUserFormPage />} />
             <Route path="/admin/users/edit/:id" element={<AdminUserFormPage />} />
             <Route path="/parks/create" element={<CreateParkPage />} />
