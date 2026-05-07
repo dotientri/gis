@@ -318,7 +318,7 @@ Docker là công cụ chạy project trong "hộp" riêng.
 3. Gõ lệnh clone project:
 
    ```powershell
-   git clone https://github.com/username/qlycv.git
+   git clone https://github.com/dotientri/qlycv.git
    ```
 
    ⚠️ **Thay `username` bằng GitHub username của project!**

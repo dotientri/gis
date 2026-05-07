@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from '../hooks';
 import { parksAPI, imagesAPI, amenitiesAPI, parkTypesAPI, districtsAPI, treesAPI } from '../api';
-import { parksAPI, imagesAPI, amenitiesAPI, parkTypesAPI, districtsAPI, treesAPI, parkStatusesAPI } from '../api';
 import { useUIStore } from '../store';
 import { MAP_CONFIG } from '../constants';
 import RichTextEditor from '../components/Form/RichTextEditor';
@@ -24,6 +23,19 @@ let DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
+// Định nghĩa trực tiếp API status để tránh lỗi build khi file api.js chưa export
+const parkStatusesAPI = {
+  getList: async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/trang-thai-cong-vien/`);
+      const data = await response.json();
+      return { data };
+    } catch (error) {
+      return { data: [] };
+    }
+  }
+};
+
 // Component xử lý sự kiện click trên bản đồ
 function LocationMarker({ setFieldValue }) {
   useMapEvents({
@@ -43,16 +55,6 @@ function RecenterMap({ lat, lng }) {
   }, [lat, lng, map]);
   return null;
 }
-
-// FIX: Định nghĩa tạm API status tại đây để tránh lỗi thiếu export trong api.js
-const parkStatusesAPI = {
-  getList: async () => {
-    // Giả định endpoint backend là /api/trang-thai-cong-vien/
-    const response = await fetch('/api/trang-thai-cong-vien/');
-    const data = await response.json();
-    return { data };
-  }
-};
 
 export default function CreateParkPage() {
   const navigate = useNavigate();
@@ -147,6 +149,7 @@ export default function CreateParkPage() {
             parseFloat(values.toa_do_trung_tam_lat),
             parseFloat(values.toa_do_trung_tam_lng),
           ],
+          tu_khoa_seo: seoKeywords,
         };
 
         // 1. Tạo công viên
