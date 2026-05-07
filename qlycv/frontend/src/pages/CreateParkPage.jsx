@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from '../hooks';
 import { parksAPI, imagesAPI, amenitiesAPI, parkTypesAPI, districtsAPI, treesAPI } from '../api';
+import { parksAPI, imagesAPI, amenitiesAPI, parkTypesAPI, districtsAPI, treesAPI, parkStatusesAPI } from '../api';
 import { useUIStore } from '../store';
 import { MAP_CONFIG } from '../constants';
 import RichTextEditor from '../components/Form/RichTextEditor';
@@ -11,7 +12,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-lea
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-// Fix lá»—i icon máº·c Ä‘á»‹nh cá»§a Leaflet trong React
+// Fix lỗi icon mặc định của Leaflet trong React
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
@@ -23,7 +24,7 @@ let DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// Component xá»­ lĂ½ sá»± kiá»‡n click trĂªn báº£n Ä‘á»“
+// Component xử lý sự kiện click trên bản đồ
 function LocationMarker({ setFieldValue }) {
   useMapEvents({
     click(e) {
@@ -34,7 +35,7 @@ function LocationMarker({ setFieldValue }) {
   return null;
 }
 
-// Component Ä‘á»ƒ cáº­p nháº­t view báº£n Ä‘á»“ khi tá»a Ä‘á»™ thay Ä‘á»•i tá»« input
+// Component để cập nhật view bản đồ khi tọa độ thay đổi từ input
 function RecenterMap({ lat, lng }) {
   const map = useMap();
   useEffect(() => {
@@ -43,10 +44,10 @@ function RecenterMap({ lat, lng }) {
   return null;
 }
 
-// FIX: Äá»‹nh nghÄ©a táº¡m API status táº¡i Ä‘Ă¢y Ä‘á»ƒ trĂ¡nh lá»—i thiáº¿u export trong api.js
+// FIX: Định nghĩa tạm API status tại đây để tránh lỗi thiếu export trong api.js
 const parkStatusesAPI = {
   getList: async () => {
-    // Giáº£ Ä‘á»‹nh endpoint backend lĂ  /api/trang-thai-cong-vien/
+    // Giả định endpoint backend là /api/trang-thai-cong-vien/
     const response = await fetch('/api/trang-thai-cong-vien/');
     const data = await response.json();
     return { data };
@@ -59,39 +60,39 @@ export default function CreateParkPage() {
   const [parkTypes, setParkTypes] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [parkStatuses, setParkStatuses] = useState([]);
-  const [amenityTypes, setAmenityTypes] = useState([]); // ThĂªm state lÆ°u loáº¡i tiá»‡n Ă­ch
-  const [treeTypes, setTreeTypes] = useState([]); // State cho loáº¡i cĂ¢y
+  const [amenityTypes, setAmenityTypes] = useState([]); // Thêm state lưu loại tiện ích
+  const [treeTypes, setTreeTypes] = useState([]); // State cho loại cây
   const [seoKeywords, setSeoKeywords] = useState(''); // State cho SEO keywords
   
-  // State cho hĂ¬nh áº£nh, tiá»‡n Ă­ch vĂ  cĂ¢y
+  // State cho hình ảnh, tiện ích và cây
   const [parkImages, setParkImages] = useState([]);
-  // Khá»Ÿi táº¡o state rá»—ng, sáº½ Ä‘Æ°á»£c Ä‘iá»n dá»¯ liá»‡u tá»« API
+  // Khởi tạo state rỗng, sẽ được điền dữ liệu từ API
   const [amenities, setAmenities] = useState({});
-  const [trees, setTrees] = useState([]); // State cho danh sĂ¡ch cĂ¢y
+  const [trees, setTrees] = useState([]); // State cho danh sách cây
 
-  // Táº£i danh sĂ¡ch Loáº¡i cĂ´ng viĂªn vĂ  Quáº­n huyá»‡n
+  // Tải danh sách Loại công viên và Quận huyện
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [typesRes, districtsRes, amenitiesRes, statusesRes, treesRes] = await Promise.all([
           parkTypesAPI.getList(),
           districtsAPI.getList({ limit: 100 }),
-          amenitiesAPI.getTypes(), // Táº£i danh sĂ¡ch loáº¡i tiá»‡n Ă­ch
-          parkStatusesAPI.getList(), // Táº£i danh sĂ¡ch tráº¡ng thĂ¡i
-          treesAPI.getTypes() // Táº£i danh sĂ¡ch loáº¡i cĂ¢y
+          amenitiesAPI.getTypes(), // Tải danh sách loại tiện ích
+          parkStatusesAPI.getList(), // Tải danh sách trạng thái
+          treesAPI.getTypes() // Tải danh sách loại cây
         ]);
         setParkTypes(typesRes.data.results || typesRes.data);
         setDistricts(districtsRes.data.results || districtsRes.data);
         setParkStatuses(statusesRes.data.results || statusesRes.data);
         setTreeTypes(treesRes.data.results || treesRes.data);
         
-        // Xá»­ lĂ½ danh sĂ¡ch tiá»‡n Ă­ch Ä‘á»™ng
+        // Xử lý danh sách tiện ích động
         const typesList = amenitiesRes.data.results || amenitiesRes.data;
         setAmenityTypes(typesList);
         
         const initialAmenities = {};
         typesList.forEach(type => {
-          // Sá»­ dá»¥ng ma_code lĂ m key
+          // Sử dụng ma_code làm key
           initialAmenities[type.ma_code] = { 
             checked: false, images: [], label: type.ten_loai, code: type.ma_code, 
             id_type: type.ma_loai_tien_ich, description: '', quantity: 1 
@@ -99,7 +100,7 @@ export default function CreateParkPage() {
         });
         setAmenities(initialAmenities);
       } catch (error) {
-        console.error("Lá»—i táº£i danh má»¥c:", error);
+        console.error("Lỗi tải danh mục:", error);
       }
     };
     fetchData();
@@ -123,15 +124,15 @@ export default function CreateParkPage() {
     },
     async (values) => {
       try {
-        // Validate: Ăt nháº¥t 4 áº£nh cĂ´ng viĂªn
+        // Validate: Ít nhất 4 ảnh công viên
         if (parkImages.length < 4) {
-          showNotification('Vui lĂ²ng táº£i lĂªn Ă­t nháº¥t 4 áº£nh cho cĂ´ng viĂªn', 'error');
+          showNotification('Vui lòng tải lên ít nhất 4 ảnh cho công viên', 'error');
           return;
         }
 
         // Convert to backend format
         const parkData = {
-          ten_cong_vien: values.tens, // Map Ä‘Ăºng tĂªn trÆ°á»ng backend yĂªu cáº§u
+          ten_cong_vien: values.tens, // Map đúng tên trường backend yêu cầu
           mo_ta: values.mo_ta,
           lich_su: values.lich_su,
           dien_tich_m2: parseFloat(values.dien_tich_m2),
@@ -148,42 +149,42 @@ export default function CreateParkPage() {
           ],
         };
 
-        // 1. Táº¡o cĂ´ng viĂªn
+        // 1. Tạo công viên
         const response = await parksAPI.create(parkData);
-        // Kiá»ƒm tra ká»¹ cáº¥u trĂºc response Ä‘á»ƒ láº¥y Ä‘Ăºng ID
+        // Kiểm tra kỹ cấu trúc response để lấy đúng ID
         console.log("Create response:", response.data);
-        // Äáº£m báº£o láº¥y giĂ¡ trá»‹ sá»‘, trĂ¡nh láº¥y nháº§m object
+        // Đảm bảo lấy giá trị số, tránh lấy nhầm object
         const parkId = typeof response.data.ma_cong_vien === 'number' ? response.data.ma_cong_vien : 
                        (typeof response.data.id === 'number' ? response.data.id : response.data.pk);
 
-        // 2. Upload áº£nh cĂ´ng viĂªn (Giáº£ láº­p upload tá»«ng áº£nh)
-        // LÆ°u Ă½: Cáº§n API upload thá»±c táº¿, á»Ÿ Ä‘Ă¢y dĂ¹ng imagesAPI.create
+        // 2. Upload ảnh công viên (Giả lập upload từng ảnh)
+        // Lưu ý: Cần API upload thực tế, ở đây dùng imagesAPI.create
         for (let i = 0; i < parkImages.length; i++) {
           const formData = new FormData();
           formData.append('ma_cong_vien', parkId);
-          formData.append('url_anh', parkImages[i]); // Backend cáº§n xá»­ lĂ½ file upload
-          formData.append('la_anh_chinh', i === 0); // áº¢nh Ä‘áº§u tiĂªn lĂ  áº£nh chĂ­nh
+          formData.append('url_anh', parkImages[i]); // Backend cần xử lý file upload
+          formData.append('la_anh_chinh', i === 0); // Ảnh đầu tiên là ảnh chính
           try {
             await imagesAPI.create(formData);
           } catch (e) {
-            console.error("Lá»—i upload áº£nh", e);
+            console.error("Lỗi upload ảnh", e);
           }
         }
 
-        // 3. Táº¡o tiá»‡n Ă­ch vĂ  upload áº£nh tiá»‡n Ă­ch
+        // 3. Tạo tiện ích và upload ảnh tiện ích
         for (const key of Object.keys(amenities)) {
           if (amenities[key].checked) {
             const item = amenities[key];
 
             const amenityFormData = new FormData();
             amenityFormData.append('ma_cong_vien', parkId);
-            amenityFormData.append('ma_loai_tien_ich', item.id_type); // DĂ¹ng ID Ä‘Ă£ lÆ°u
+            amenityFormData.append('ma_loai_tien_ich', item.id_type); // Dùng ID đã lưu
             amenityFormData.append('so_luong', amenities[key].quantity || 1);
-            amenityFormData.append('mo_ta', amenities[key].description || ''); // Gá»­i ghi chĂº
+            amenityFormData.append('mo_ta', amenities[key].description || ''); // Gửi ghi chú
             amenityFormData.append('tinh_trang', 'tot');
             amenityFormData.append('dang_su_dung', true);
             
-            // Gá»­i kĂ¨m file áº£nh tiá»‡n Ă­ch (náº¿u cĂ³)
+            // Gửi kèm file ảnh tiện ích (nếu có)
             amenities[key].images.forEach((file) => {
               amenityFormData.append('hinh_anh_files', file);
             });
@@ -191,14 +192,14 @@ export default function CreateParkPage() {
             try {
               await amenitiesAPI.create(amenityFormData);
             } catch (e) {
-              console.error(`Lá»—i táº¡o tiá»‡n Ă­ch ${key}`, e);
+              console.error(`Lỗi tạo tiện ích ${key}`, e);
             }
           }
         }
 
-        // 4. Táº¡o danh sĂ¡ch cĂ¢y (náº¿u cĂ³)
+        // 4. Tạo danh sách cây (nếu có)
         for (const tree of trees) {
-          if (tree.ma_loai_cay) { // Chá»‰ create cĂ¢y náº¿u cĂ³ loáº¡i cĂ¢y Ä‘Æ°á»£c chá»n
+          if (tree.ma_loai_cay) { // Chỉ create cây nếu có loại cây được chá»n
             const treeData = {
               ma_cong_vien: parkId,
               ma_loai_cay: tree.ma_loai_cay,
@@ -214,24 +215,24 @@ export default function CreateParkPage() {
             try {
               await treesAPI.create(treeData);
             } catch (e) {
-              console.error("Lá»—i táº¡o cĂ¢y:", e);
+              console.error("Lỗi tạo cây:", e);
             }
           }
         }
 
-        showNotification('Táº¡o cĂ´ng viĂªn thĂ nh cĂ´ng!', 'success');
+        showNotification('Tạo công viên thành công!', 'success');
         navigate(`/parks/${parkId}`);
       } catch (err) {
-        console.error("Lá»—i táº¡o cĂ´ng viĂªn:", err.response?.data);
+        console.error("Lỗi tạo công viên:", err.response?.data);
         
-        // Xá»­ lĂ½ hiá»ƒn thá»‹ lá»—i thĂ¢n thiá»‡n hÆ¡n
-        let errorMsg = 'Lá»—i khi táº¡o cĂ´ng viĂªn';
+        // Xử lý hiển thị lỗi thân thiện hơn
+        let errorMsg = 'Lỗi khi tạo công viên';
         if (err.response?.data) {
-          // Náº¿u lá»—i lĂ  trĂ¹ng tĂªn (tá»« validator backend)
+          // Nếu lỗi là trùng tên (từ validator backend)
           if (err.response.data.ten_cong_vien) {
             errorMsg = err.response.data.ten_cong_vien[0];
           } else {
-            // CĂ¡c lá»—i khĂ¡c
+            // Các lỗi khác
             errorMsg = Object.values(err.response.data).flat().join(', ');
           }
         }
@@ -244,7 +245,7 @@ export default function CreateParkPage() {
     }
   );
 
-  // Xá»­ lĂ½ chá»n áº£nh cĂ´ng viĂªn
+  // Xử lý chá»n ảnh công viên
   const handleLocationPick = (nextLat, nextLng) => {
     setFieldValue('toa_do_trung_tam_lat', Number(nextLat).toFixed(6));
     setFieldValue('toa_do_trung_tam_lng', Number(nextLng).toFixed(6));
@@ -257,12 +258,12 @@ export default function CreateParkPage() {
     }
   };
 
-  // Xá»­ lĂ½ xĂ³a áº£nh cĂ´ng viĂªn Ä‘Ă£ chá»n
+  // Xử lý xóa ảnh công viên đã chá»n
   const handleRemoveParkImage = (index) => {
     setParkImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Xá»­ lĂ½ checkbox tiá»‡n Ă­ch
+  // Xử lý checkbox tiện ích
   const handleAmenityCheck = (key) => {
     setAmenities(prev => ({
       ...prev,
@@ -270,11 +271,11 @@ export default function CreateParkPage() {
     }));
   };
 
-  // Xá»­ lĂ½ áº£nh tiá»‡n Ă­ch
+  // Xử lý ảnh tiện ích
   const handleAmenityImageChange = (key, e) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
-      // Giá»›i háº¡n 2 áº£nh
+      // Giới hạn 2 ảnh
       const currentLength = amenities[key].images.length;
       const newFiles = filesArray.slice(0, 2 - currentLength);
       
@@ -285,7 +286,7 @@ export default function CreateParkPage() {
     }
   };
 
-  // Xá»­ lĂ½ xĂ³a áº£nh tiá»‡n Ă­ch Ä‘Ă£ chá»n
+  // Xử lý xóa ảnh tiện ích đã chá»n
   const handleRemoveAmenityImage = (key, index) => {
     setAmenities((prev) => ({
       ...prev,
@@ -296,7 +297,7 @@ export default function CreateParkPage() {
     }));
   };
 
-  // Xá»­ lĂ½ ghi chĂº tiá»‡n Ă­ch
+  // Xử lý ghi chú tiện ích
   const handleAmenityDescriptionChange = (key, value) => {
     setAmenities(prev => ({
       ...prev,
@@ -304,7 +305,7 @@ export default function CreateParkPage() {
     }));
   };
 
-  // Xá»­ lĂ½ sá»‘ lÆ°á»£ng tiá»‡n Ă­ch
+  // Xử lý số lượng tiện ích
   const handleAmenityQuantityChange = (key, value) => {
     setAmenities(prev => ({
       ...prev,
@@ -312,7 +313,7 @@ export default function CreateParkPage() {
     }));
   };
 
-  // Xá»­ lĂ½ thĂªm cĂ¢y
+  // Xử lý thêm cây
   const handleAddTree = () => {
     setTrees(prev => [...prev, {
       ma_loai_cay: '',
@@ -326,7 +327,7 @@ export default function CreateParkPage() {
     }]);
   };
 
-  // Xá»­ lĂ½ thay Ä‘á»•i cĂ¢y
+  // Xử lý thay đổi cây
   const handleTreeChange = (index, field, value) => {
     setTrees(prev => {
       const newTrees = [...prev];
@@ -335,7 +336,7 @@ export default function CreateParkPage() {
     });
   };
 
-  // Xá»­ lĂ½ xĂ³a cĂ¢y
+  // Xử lý xóa cây
   const handleRemoveTree = (index) => {
     setTrees(prev => prev.filter((_, i) => i !== index));
   };
@@ -375,16 +376,16 @@ export default function CreateParkPage() {
         .sidebar .active *, .sidebar .selected *, [aria-current="page"] * { color: #000000 !important; }
       `}</style>
       <div className="form-header">
-        <h1>Táº¡o CĂ´ng ViĂªn</h1>
-        <p>Äiá»n Ä‘áº§y Ä‘á»§ thĂ´ng tin cĂ´ng viĂªn</p>
+        <h1>Tạo Công Viên</h1>
+        <p>Điền đầy đủ thông tin công viên</p>
       </div>
 
       <form onSubmit={handleSubmit} className="park-form">
         <div className="form-section">
-          <h2>ThĂ´ng Tin CÆ¡ Báº£n</h2>
+          <h2>Thông Tin Cơ Bản</h2>
 
           <div className="form-group">
-            <label htmlFor="tens">TĂªn CĂ´ng ViĂªn *</label>
+            <label htmlFor="tens">Tên Công Viên *</label>
             <input
               id="tens"
               name="tens"
@@ -392,7 +393,7 @@ export default function CreateParkPage() {
               value={values.tens}
               onChange={handleChange}
               onBlur={handleBlur}
-              placeholder="Vd: CĂ´ng viĂªn Tao ÄĂ n"
+              placeholder="Vd: Công viên Tao Đàn"
               required
             />
             {touched.tens && errors.tens && <span className="error">{errors.tens}</span>}
@@ -401,12 +402,12 @@ export default function CreateParkPage() {
           <div className="form-group">
             <RichTextEditor
               name="mo_ta"
-              label="MĂ´ Táº£ Chi Tiáº¿t (Tá»‘i thiá»ƒu 250 kĂ½ tá»±) *"
+              label="Mô Tả Chi Tiết (Tối thiểu 250 ký tự) *"
               value={values.mo_ta}
               onChange={(nextValue) => setFieldValue('mo_ta', nextValue)}
               onBlur={handleBlur}
-              placeholder="Viáº¿t mĂ´ táº£ chi tiáº¿t, dĂ i vá» cĂ´ng viĂªn. HĂ£y ká»ƒ vá» lá»‹ch sá»­, cĂ¡c tiá»‡n Ă­ch, cáº£nh quan, vĂ  lá»£i Ă­ch Ä‘Ă³ mang láº¡i cho cá»™ng Ä‘á»“ng. Tá»‘i thiá»ƒu 250 kĂ½ tá»±..."
-              helperText="Ná»™i dung nĂ y sáº½ hiá»ƒn thá»‹ á»Ÿ trang bĂ i viáº¿t vĂ  chi tiáº¿t cĂ´ng viĂªn."
+              placeholder="Viết mô tả chi tiết, dài về công viên. Hãy kể về lịch sử, các tiện ích, cảnh quan, và lợi ích đó mang lại cho cộng đồng. Tối thiểu 250 ký tự..."
+              helperText="Nội dung này sẽ hiển thị ở trang bài viết và chi tiết công viên."
               minLength={250}
               error={touched.mo_ta && errors.mo_ta ? errors.mo_ta : ''}
             />
@@ -415,18 +416,18 @@ export default function CreateParkPage() {
           <div className="form-group">
             <RichTextEditor
               name="lich_su"
-              label="Lá»‹ch Sá»­ VĂ  Bá»‘i Cáº£nh (TĂ¹y chá»n)"
+              label="Lịch Sử Và Bối Cảnh (Tùy chá»n)"
               value={values.lich_su}
               onChange={(nextValue) => setFieldValue('lich_su', nextValue)}
               onBlur={handleBlur}
-              placeholder="Bá»• sung lá»‹ch sá»­ hĂ¬nh thĂ nh, cĂ¡c dáº¥u má»‘c phĂ¡t triá»ƒn vĂ  bá»‘i cáº£nh cá»§a cĂ´ng viĂªn."
-              helperText="Pháº§n nĂ y sáº½ hiá»ƒn thá»‹ á»Ÿ má»¥c lá»‹ch sá»­ trong bĂ i viáº¿t cĂ´ng viĂªn."
+              placeholder="Bổ sung lịch sử hình thành, các dấu mốc phát triển và bối cảnh của công viên."
+              helperText="Phần này sẽ hiển thị ở mục lịch sử trong bài viết công viên."
             />
           </div>
 
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="dien_tich_m2">Diá»‡n TĂ­ch (mÂ²) *</label>
+              <label htmlFor="dien_tich_m2">Diện Tích (m²) *</label>
               <input
                 id="dien_tich_m2"
                 name="dien_tich_m2"
@@ -443,7 +444,7 @@ export default function CreateParkPage() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="ma_quan_huyen">Quáº­n Huyá»‡n *</label>
+              <label htmlFor="ma_quan_huyen">Quận Huyện *</label>
               <select
                 id="ma_quan_huyen"
                 name="ma_quan_huyen"
@@ -452,7 +453,7 @@ export default function CreateParkPage() {
                 onBlur={handleBlur}
                 required
               >
-                <option value="">-- Chá»n Quáº­n/Huyá»‡n --</option>
+                <option value="">-- Chọn Quận/Huyện --</option>
                 {districts.map((d) => (
                   <option key={d.ma_quan_huyen} value={d.ma_quan_huyen}>
                     {d.ten_quan_huyen}
@@ -463,7 +464,7 @@ export default function CreateParkPage() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="ma_trang_thai">Tráº¡ng ThĂ¡i *</label>
+            <label htmlFor="ma_trang_thai">Trạng Thái *</label>
             <select
               id="ma_trang_thai"
               name="ma_trang_thai"
@@ -472,7 +473,7 @@ export default function CreateParkPage() {
               onBlur={handleBlur}
               required
             >
-              <option value="">-- Chá»n Tráº¡ng ThĂ¡i --</option>
+              <option value="">-- Chọn Trạng Thái --</option>
               {parkStatuses.map((s) => (
                 <option key={s.ma_trang_thai} value={s.ma_trang_thai}>
                   {s.mo_ta || s.ten_trang_thai}
@@ -482,7 +483,7 @@ export default function CreateParkPage() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="ma_loai">Loáº¡i CĂ´ng ViĂªn *</label>
+            <label htmlFor="ma_loai">Loại Công Viên *</label>
             <select
               id="ma_loai"
               name="ma_loai"
@@ -491,7 +492,7 @@ export default function CreateParkPage() {
               onBlur={handleBlur}
               required
             >
-              <option value="">-- Chá»n Loáº¡i CĂ´ng ViĂªn --</option>
+              <option value="">-- Chọn Loại Công Viên --</option>
               {parkTypes.map((t) => (
                 <option key={t.ma_loai} value={t.ma_loai}>
                   {t.ten_loai}
@@ -549,27 +550,27 @@ export default function CreateParkPage() {
 
           {/* SEO Keywords Section */}
           <div className="form-group">
-            <label htmlFor="seo_keywords">Tá»« khĂ³a tĂ¬m kiáº¿m (tĂ¹y chá»n)</label>
+            <label htmlFor="seo_keywords">Từ khóa tìm kiếm (tùy chá»n)</label>
             <textarea
               id="seo_keywords"
               value={seoKeywords}
               onChange={(e) => setSeoKeywords(e.target.value)}
-              placeholder="Nháº­p cĂ¡c tá»« khĂ³a liĂªn quan Ä‘Æ°á»£c phĂ¢n cĂ¡ch báº±ng dáº¥u pháº©y. VD: cĂ´ng viĂªn Quáº­n 1, cĂ´ng viĂªn xanh táº¡i TP.HCM, Ä‘á»‹a Ä‘iá»ƒm vui chÆ¡i gia Ä‘Ă¬nh"
+              placeholder="Nhập các từ khóa liên quan được phân cách bằng dấu phẩy. VD: công viên Quận 1, công viên xanh tại TP.HCM, địa điểm vui chơi gia đình"
               rows={3}
               style={{width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ccc'}}
             />
             <small style={{color: '#666', marginTop: '5px', display: 'block'}}>
-              GiĂºp tá»‘i Æ°u hĂ³a cĂ´ng cá»¥ tĂ¬m kiáº¿m
+              Giúp tối ưu hóa công cụ tìm kiếm
             </small>
           </div>
         </div>
 
         <div className="form-section">
-          <h2>Vá»‹ TrĂ­ (Tá»a Äá»™)</h2>
+          <h2>Vị Trí (Tá»a Độ)</h2>
 
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="toa_do_trung_tam_lat">VÄ© Äá»™ (Latitude) *</label>
+              <label htmlFor="toa_do_trung_tam_lat">Vĩ Độ (Latitude) *</label>
               <input
                 id="toa_do_trung_tam_lat"
                 name="toa_do_trung_tam_lat"
@@ -583,7 +584,7 @@ export default function CreateParkPage() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="toa_do_trung_tam_lng">Kinh Äá»™ (Longitude) *</label>
+              <label htmlFor="toa_do_trung_tam_lng">Kinh Độ (Longitude) *</label>
               <input
                 id="toa_do_trung_tam_lng"
                 name="toa_do_trung_tam_lng"
@@ -606,14 +607,14 @@ export default function CreateParkPage() {
           />
 
           <div className="form-group">
-            <label htmlFor="dia_chi">Äá»‹a Chá»‰ Chi Tiáº¿t *</label>
+            <label htmlFor="dia_chi">Địa Chỉ Chi Tiết *</label>
             <textarea
               id="dia_chi"
               name="dia_chi"
               value={values.dia_chi}
               onChange={handleChange}
               onBlur={handleBlur}
-              placeholder="Vd: Tá»‘ Há»¯u, Quáº­n 4, TP. Há»“ ChĂ­ Minh"
+              placeholder="Vd: Tố Hữu, Quận 4, TP. Hồ Chí Minh"
               rows={2}
               style={{width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ccc'}}
               required
@@ -622,11 +623,11 @@ export default function CreateParkPage() {
           </div>
         </div>
 
-        {/* Pháº§n HĂ¬nh áº¢nh CĂ´ng ViĂªn */}
+        {/* Phần Hình Ảnh Công Viên */}
         <div className="form-section">
-          <h2>HĂ¬nh áº¢nh CĂ´ng ViĂªn (Tá»‘i thiá»ƒu 4 áº£nh cháº¥t lÆ°á»£ng cao)</h2>
+          <h2>Hình Ảnh Công Viên (Tối thiểu 4 ảnh chất lượng cao)</h2>
           <small style={{color: '#666', display: 'block', marginBottom: '10px'}}>
-            Táº£i lĂªn cĂ¡c hĂ¬nh áº£nh cháº¥t lÆ°á»£ng cao, Ä‘a dáº¡ng (toĂ n cáº£nh, tiá»‡n Ă­ch, cĂ¢y cá», v.v.) Ä‘á»ƒ tá»‘i Æ°u hĂ³a SEO vĂ  thu hĂºt du khĂ¡ch
+            Tải lên các hình ảnh chất lượng cao, đa dạng (toàn cảnh, tiện ích, cây cỏ, v.v.) để tối ưu hóa SEO và thu hút du khách
           </small>
           <div className="form-group">
             <input 
@@ -657,18 +658,18 @@ export default function CreateParkPage() {
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
                     }}
-                  >Ă—</button>
+                  >×</button>
                 </div>
               ))}
             </div>
-            {parkImages.length < 4 && <span className="error">â  Hiá»‡n táº¡i: {parkImages.length} áº£nh. Cáº§n thĂªm Ă­t nháº¥t {4 - parkImages.length} áº£nh ná»¯a.</span>}
-            {parkImages.length >= 4 && <span style={{color: '#4CAF50', fontSize: '12px'}}>Äáº¡t yĂªu cáº§u tá»‘i thiá»ƒu</span>}
+            {parkImages.length < 4 && <span className="error">â  Hiện tại: {parkImages.length} ảnh. Cần thêm ít nhất {4 - parkImages.length} ảnh nữa.</span>}
+            {parkImages.length >= 4 && <span style={{color: '#4CAF50', fontSize: '12px'}}>Đạt yêu cầu tối thiểu</span>}
           </div>
         </div>
 
-        {/* Pháº§n Tiá»‡n Ăch */}
+        {/* Phần Tiện Ích */}
         <div className="form-section">
-          <h2>Tiá»‡n Ăch CĂ³ Sáºµn</h2>
+          <h2>Tiện Ích Có Sẵn</h2>
           <div className="amenities-list">
             {Object.keys(amenities).map(key => (
               <div key={key} className="amenity-item" style={{marginBottom: '20px', padding: '15px', border: '1px solid #eee', borderRadius: '8px'}}>
@@ -686,7 +687,7 @@ export default function CreateParkPage() {
                 {amenities[key].checked && (
                   <div className="amenity-upload" style={{marginLeft: '30px'}}>
                     <div style={{marginBottom: '10px'}}>
-                      <label style={{display: 'block', marginBottom: '5px', fontWeight: 'bold'}}>Sá»‘ lÆ°á»£ng:</label>
+                      <label style={{display: 'block', marginBottom: '5px', fontWeight: 'bold'}}>Số lượng:</label>
                       <input 
                         type="number" 
                         min="1"
@@ -696,7 +697,7 @@ export default function CreateParkPage() {
                       />
                     </div>
 
-                    <label style={{display: 'block', marginBottom: '5px', fontWeight: 'bold'}}>Táº£i lĂªn 2 áº£nh minh há»a:</label>
+                    <label style={{display: 'block', marginBottom: '5px', fontWeight: 'bold'}}>Tải lên 2 ảnh minh há»a:</label>
                     <input 
                       type="file" 
                       multiple 
@@ -705,7 +706,7 @@ export default function CreateParkPage() {
                       disabled={amenities[key].images.length >= 2}
                     />
                     
-                    {/* Preview áº£nh tiá»‡n Ă­ch */}
+                    {/* Preview ảnh tiện ích */}
                     <div style={{display: 'flex', gap: '10px', marginTop: '10px'}}>
                       {amenities[key].images.map((img, idx) => (
                         <div key={idx} style={{width: '80px', height: '80px', border: '1px solid #ddd', position: 'relative'}}>
@@ -725,25 +726,25 @@ export default function CreateParkPage() {
                               cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                               fontSize: '12px', boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
                             }}
-                          >Ă—</button>
+                          >×</button>
                         </div>
                       ))}
                     </div>
 
-                    <div style={{fontSize: '12px', color: '#666', marginTop: '5px'}}>ÄĂ£ chá»n: {amenities[key].images.length}/2 áº£nh</div>
+                    <div style={{fontSize: '12px', color: '#666', marginTop: '5px'}}>Đã chá»n: {amenities[key].images.length}/2 ảnh</div>
                     
                     <label style={{display: 'block', marginTop: '15px', marginBottom: '5px', fontWeight: 'bold'}}>
-                      MĂ´ táº£ chi tiáº¿t (Tá»‘i thiá»ƒu 150 kĂ½ tá»±) *
+                      Mô tả chi tiết (Tối thiểu 150 ký tự) *
                     </label>
                     <textarea
-                      placeholder={`MĂ´ táº£ chi tiáº¿t ${amenities[key].label}. Giá»›i thiá»‡u cĂ¡c tiá»‡n Ă­ch, Ä‘iá»u kiá»‡n vá»‡ sinh, giá» má»Ÿ cá»­a, chi phĂ­ sá»­ dá»¥ng...`}
+                      placeholder={`Mô tả chi tiết ${amenities[key].label}. Giới thiệu các tiện ích, điều kiện vệ sinh, giờ mở cửa, chi phí sử dụng...`}
                       value={amenities[key].description}
                       onChange={(e) => handleAmenityDescriptionChange(key, e.target.value)}
                       rows={4}
                       style={{width: '100%', marginTop: '5px', padding: '8px', borderRadius: '4px', border: '1px solid #ddd'}}
                     />
                     <div style={{fontSize: '12px', color: amenities[key].description?.length >= 150 ? '#4CAF50' : '#FF9800', marginTop: '5px'}}>
-                      {amenities[key].description ? `${amenities[key].description.length} kĂ½ tá»±` : '0 kĂ½ tá»±'} (Khuyáº¿n nghá»‹: â‰¥150 kĂ½ tá»±)
+                      {amenities[key].description ? `${amenities[key].description.length} ký tự` : '0 ký tự'} (Khuyến nghị: ≥150 ký tự)
                     </div>
                   </div>
                 )}
@@ -752,35 +753,35 @@ export default function CreateParkPage() {
           </div>
         </div>
 
-        {/* Pháº§n CĂ¢y Xanh */}
+        {/* Phần Cây Xanh */}
         <div className="form-section">
-          <h2>CĂ¢y Xanh (TĂ¹y Chá»n)</h2>
+          <h2>Cây Xanh (Tùy Chọn)</h2>
           <small style={{color: '#666', display: 'block', marginBottom: '10px'}}>
-            Nháº­p thĂ´ng tin chi tiáº¿t vá» cĂ¡c cĂ¢y trong cĂ´ng viĂªn
+            Nhập thông tin chi tiết về các cây trong công viên
           </small>
 
           {trees.map((tree, idx) => (
             <div key={idx} style={{marginBottom: '20px', padding: '15px', border: '1px solid #eee', borderRadius: '8px', backgroundColor: '#f9f9f9'}}>
               <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px'}}>
-                <h3 style={{margin: 0}}>CĂ¢y thá»© {idx + 1}</h3>
+                <h3 style={{margin: 0}}>Cây thứ {idx + 1}</h3>
                 <button
                   type="button"
                   onClick={() => handleRemoveTree(idx)}
                   style={{background: '#ef4444', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer'}}
                 >
-                  XĂ³a cĂ¢y nĂ y
+                  Xóa cây này
                 </button>
               </div>
 
               <div className="form-row">
                 <div className="form-group">
-                  <label>Loáº¡i CĂ¢y *</label>
+                  <label>Loại Cây *</label>
                   <select
                     value={tree.ma_loai_cay}
                     onChange={(e) => handleTreeChange(idx, 'ma_loai_cay', e.target.value)}
                     required
                   >
-                    <option value="">-- Chá»n Loáº¡i CĂ¢y --</option>
+                    <option value="">-- Chọn Loại Cây --</option>
                     {treeTypes.map((t) => (
                       <option key={t.ma_loai_cay} value={t.ma_loai_cay}>
                         {t.ten_loai}
@@ -790,7 +791,7 @@ export default function CreateParkPage() {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor={`ma_so_cay_${idx}`}>MĂ£ Sá»‘ CĂ¢y</label>
+                  <label htmlFor={`ma_so_cay_${idx}`}>Mã Số Cây</label>
                   <input
                     id={`ma_so_cay_${idx}`}
                     type="text"
@@ -803,7 +804,7 @@ export default function CreateParkPage() {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label htmlFor={`chieu_cao_${idx}`}>Chiá»u Cao (mĂ©t)</label>
+                  <label htmlFor={`chieu_cao_${idx}`}>Chiá»u Cao (mét)</label>
                   <input
                     id={`chieu_cao_${idx}`}
                     type="number"
@@ -815,7 +816,7 @@ export default function CreateParkPage() {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor={`duong_kinh_${idx}`}>ÄÆ°á»ng KĂ­nh (cm)</label>
+                  <label htmlFor={`duong_kinh_${idx}`}>Đường Kính (cm)</label>
                   <input
                     id={`duong_kinh_${idx}`}
                     type="number"
@@ -827,7 +828,7 @@ export default function CreateParkPage() {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor={`ban_kinh_${idx}`}>BĂ¡n KĂ­nh TĂ¡n (mĂ©t)</label>
+                  <label htmlFor={`ban_kinh_${idx}`}>Bán Kính Tán (mét)</label>
                   <input
                     id={`ban_kinh_${idx}`}
                     type="number"
@@ -841,22 +842,22 @@ export default function CreateParkPage() {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label htmlFor={`tinh_trang_${idx}`}>TĂ¬nh Tráº¡ng</label>
+                  <label htmlFor={`tinh_trang_${idx}`}>Tình Trạng</label>
                   <select
                     id={`tinh_trang_${idx}`}
                     value={tree.tinh_trang}
                     onChange={(e) => handleTreeChange(idx, 'tinh_trang', e.target.value)}
                   >
-                    <option value="tot">Tá»‘t</option>
-                    <option value="kha">KhĂ¡</option>
-                    <option value="trung_binh">Trung BĂ¬nh</option>
-                    <option value="kem">KĂ©m</option>
-                    <option value="chet">Cháº¿t</option>
+                    <option value="tot">Tốt</option>
+                    <option value="kha">Khá</option>
+                    <option value="trung_binh">Trung Bình</option>
+                    <option value="kem">Kém</option>
+                    <option value="chet">Chết</option>
                   </select>
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor={`ngay_trong_${idx}`}>NgĂ y Trá»“ng</label>
+                  <label htmlFor={`ngay_trong_${idx}`}>Ngày Trồng</label>
                   <input
                     id={`ngay_trong_${idx}`}
                     type="date"
@@ -866,7 +867,7 @@ export default function CreateParkPage() {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor={`ngay_cat_tia_${idx}`}>NgĂ y Cáº¯t Tá»‰a Cuá»‘i</label>
+                  <label htmlFor={`ngay_cat_tia_${idx}`}>Ngày Cắt Tỉa Cuối</label>
                   <input
                     id={`ngay_cat_tia_${idx}`}
                     type="date"
@@ -883,20 +884,20 @@ export default function CreateParkPage() {
             onClick={handleAddTree}
             style={{background: '#4CAF50', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer', marginTop: '10px'}}
           >
-            + ThĂªm CĂ¢y
+            + Thêm Cây
           </button>
         </div>
 
         <div className="form-actions">
           <button type="submit" className="btn btn-primary btn-large" disabled={isSubmitting}>
-            {isSubmitting ? 'Äang lÆ°u...' : 'Táº¡o CĂ´ng ViĂªn'}
+            {isSubmitting ? 'Đang lưu...' : 'Tạo Công Viên'}
           </button>
           <button
             type="button"
             onClick={() => navigate('/parks-list')}
             className="btn btn-ghost btn-large"
           >
-            Há»§y
+            Hủy
           </button>
         </div>
       </form>

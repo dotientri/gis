@@ -235,8 +235,8 @@ export default function ParkMapPage() {
   const selectedParkBoundary = useMemo(() => getBoundaryFeature(selectedPark), [selectedPark]);
   const showSelectedBoundary = Boolean(selectedParkBoundary) && routePath.length === 0;
 
-  const buildRouteToPark = async (park) => {
-    if (!userLocation) {
+  const buildRouteToPark = async (park, originLocation = userLocation) => {
+    if (!originLocation) {
       showNotification('Hãy lấy vị trí hiện tại trước khi chỉ đường.', 'error');
       return;
     }
@@ -248,7 +248,7 @@ export default function ParkMapPage() {
     setRouteLoading(true);
     try {
       const [destLat, destLng] = park.toa_do_trung_tam;
-      const [userLat, userLng] = userLocation;
+      const [userLat, userLng] = originLocation;
       const response = await fetch(
         `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${destLng},${destLat}?overview=full&geometries=geojson&steps=true`
       );
@@ -273,6 +273,28 @@ export default function ParkMapPage() {
     } finally {
       setRouteLoading(false);
     }
+  };
+
+  const handleUserLocationDragEnd = (event) => {
+    const next = event.target.getLatLng();
+    const nextLocation = [next.lat, next.lng];
+
+    setUserLocation(nextLocation);
+
+    if (nearbyOnly) {
+      setNearbyOnly(false);
+      setNearbyParkIds([]);
+    }
+
+    if (routePath.length > 0 && selectedPark) {
+      buildRouteToPark(selectedPark, nextLocation);
+      return;
+    }
+
+    setRoutePath([]);
+    setRouteDistanceKm(null);
+    setRouteDurationMinutes(null);
+    setRouteSteps([]);
   };
 
   const handleLocateUser = () => {
@@ -472,8 +494,13 @@ export default function ParkMapPage() {
               <MapSearchControl />
               <MapViewportController center={center} routePath={routePath} />
               {userLocation && (
-                <Marker position={userLocation}>
-                  <Popup>Vị trí hiện tại của bạn</Popup>
+                <Marker
+                  position={userLocation}
+                  draggable
+                  autoPan
+                  eventHandlers={{ dragend: handleUserLocationDragEnd }}
+                >
+                  <Popup>Vị trí bắt đầu của bạn. Kéo marker để đổi điểm xuất phát.</Popup>
                 </Marker>
               )}
               {userLocation && nearbyOnly && <Circle center={userLocation} radius={radiusKm * 1000} pathOptions={{ color: '#177245', fillColor: '#177245', fillOpacity: 0.08, weight: 2 }} />}

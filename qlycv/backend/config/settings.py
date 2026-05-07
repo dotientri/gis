@@ -62,6 +62,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'parks.middleware.UTF8ResponseMiddleware',  # UTF-8 encoding fix
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -93,6 +94,9 @@ DATABASES = {
         'PASSWORD': os.environ.get('DB_PASSWORD', 'YourPassword123'),
         'HOST': os.environ.get('DB_HOST', 'localhost'),
         'PORT': os.environ.get('DB_PORT', '5432'),
+        'OPTIONS': {
+            'client_encoding': 'UTF8',
+        }
     }
 }
 
@@ -126,7 +130,14 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
+    'DEFAULT_RENDERER_CLASSES': [
+        'parks.renderers.UTF8JSONRenderer',
+    ],
 }
+
+# UTF-8 Encoding - Fix lỗi chữ Tiếng Việt
+import json
+json.JSONEncoder.ensure_ascii = False
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'sandbox.smtp.mailtrap.io')

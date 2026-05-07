@@ -137,6 +137,35 @@ class CongVien(models.Model):
     def __str__(self):
         return self.ten_cong_vien
     
+    def save(self, *args, **kwargs):
+        """
+        Override save để tự động lấy phường/xã gần nhất khi có tọa độ
+        """
+        # Nếu có tọa độ trung tâm, tự động lấy phường/xã gần nhất
+        if self.toa_do_trung_tam and isinstance(self.toa_do_trung_tam, list) and len(self.toa_do_trung_tam) == 2:
+            try:
+                lat, lng = float(self.toa_do_trung_tam[0]), float(self.toa_do_trung_tam[1])
+                from .utils import get_nearest_phuong_xa, build_dia_chi
+                
+                nearest_phuong_xa = get_nearest_phuong_xa(lat, lng)
+                if nearest_phuong_xa:
+                    self.ma_phuong_xa = nearest_phuong_xa
+                    self.ma_quan_huyen = nearest_phuong_xa.ma_quan_huyen
+                    
+                    # Xây dựng địa chỉ
+                    dia_chi = build_dia_chi(
+                        phuong_xa_obj=nearest_phuong_xa,
+                        quan_huyen_obj=nearest_phuong_xa.ma_quan_huyen,
+                        dia_chi_raw=self.dia_chi
+                    )
+                    if dia_chi:
+                        self.dia_chi = dia_chi
+            except (ValueError, TypeError, Exception) as e:
+                # Nếu có lỗi, vẫn lưu bình thường (không dừng quá trình save)
+                print(f"⚠️ Lỗi khi lấy phường/xã gần nhất cho {self.ten_cong_vien}: {e}")
+        
+        super().save(*args, **kwargs)
+    
     def delete(self, *args, **kwargs):
         """Validation khi xóa công viên"""
         from django.core.exceptions import ValidationError
