@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:15-alpine
+    image: postgis/postgis:17-3.5-alpine
     env_file: .env
     environment:
       POSTGRES_DB: ${DB_NAME:-gis_database}
@@ -8,6 +8,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-YourPassword123}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./backup_full.sql:/docker-entrypoint-initdb.d/01-backup_full.sql:ro
     ports:
       - "5432:5432"
     healthcheck:
