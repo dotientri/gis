@@ -1,0 +1,3229 @@
+[
+{
+  "model": "auth.permission",
+  "pk": 1,
+  "fields": {
+    "name": "Can add log entry",
+    "content_type": 1,
+    "codename": "add_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2,
+  "fields": {
+    "name": "Can change log entry",
+    "content_type": 1,
+    "codename": "change_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 3,
+  "fields": {
+    "name": "Can delete log entry",
+    "content_type": 1,
+    "codename": "delete_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 4,
+  "fields": {
+    "name": "Can view log entry",
+    "content_type": 1,
+    "codename": "view_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 5,
+  "fields": {
+    "name": "Can add permission",
+    "content_type": 2,
+    "codename": "add_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 6,
+  "fields": {
+    "name": "Can change permission",
+    "content_type": 2,
+    "codename": "change_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 7,
+  "fields": {
+    "name": "Can delete permission",
+    "content_type": 2,
+    "codename": "delete_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 8,
+  "fields": {
+    "name": "Can view permission",
+    "content_type": 2,
+    "codename": "view_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 9,
+  "fields": {
+    "name": "Can add group",
+    "content_type": 3,
+    "codename": "add_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 10,
+  "fields": {
+    "name": "Can change group",
+    "content_type": 3,
+    "codename": "change_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 11,
+  "fields": {
+    "name": "Can delete group",
+    "content_type": 3,
+    "codename": "delete_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 12,
+  "fields": {
+    "name": "Can view group",
+    "content_type": 3,
+    "codename": "view_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 13,
+  "fields": {
+    "name": "Can add user",
+    "content_type": 4,
+    "codename": "add_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 14,
+  "fields": {
+    "name": "Can change user",
+    "content_type": 4,
+    "codename": "change_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 15,
+  "fields": {
+    "name": "Can delete user",
+    "content_type": 4,
+    "codename": "delete_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 16,
+  "fields": {
+    "name": "Can view user",
+    "content_type": 4,
+    "codename": "view_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 17,
+  "fields": {
+    "name": "Can add content type",
+    "content_type": 5,
+    "codename": "add_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 18,
+  "fields": {
+    "name": "Can change content type",
+    "content_type": 5,
+    "codename": "change_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 19,
+  "fields": {
+    "name": "Can delete content type",
+    "content_type": 5,
+    "codename": "delete_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 20,
+  "fields": {
+    "name": "Can view content type",
+    "content_type": 5,
+    "codename": "view_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 21,
+  "fields": {
+    "name": "Can add session",
+    "content_type": 6,
+    "codename": "add_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 22,
+  "fields": {
+    "name": "Can change session",
+    "content_type": 6,
+    "codename": "change_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 23,
+  "fields": {
+    "name": "Can delete session",
+    "content_type": 6,
+    "codename": "delete_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 24,
+  "fields": {
+    "name": "Can view session",
+    "content_type": 6,
+    "codename": "view_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 25,
+  "fields": {
+    "name": "Can add quan huyen",
+    "content_type": 7,
+    "codename": "add_quanhuyen"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 26,
+  "fields": {
+    "name": "Can change quan huyen",
+    "content_type": 7,
+    "codename": "change_quanhuyen"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 27,
+  "fields": {
+    "name": "Can delete quan huyen",
+    "content_type": 7,
+    "codename": "delete_quanhuyen"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 28,
+  "fields": {
+    "name": "Can view quan huyen",
+    "content_type": 7,
+    "codename": "view_quanhuyen"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 29,
+  "fields": {
+    "name": "Can add phuong xa",
+    "content_type": 8,
+    "codename": "add_phuongxa"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 30,
+  "fields": {
+    "name": "Can change phuong xa",
+    "content_type": 8,
+    "codename": "change_phuongxa"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 31,
+  "fields": {
+    "name": "Can delete phuong xa",
+    "content_type": 8,
+    "codename": "delete_phuongxa"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 32,
+  "fields": {
+    "name": "Can view phuong xa",
+    "content_type": 8,
+    "codename": "view_phuongxa"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 33,
+  "fields": {
+    "name": "Can add loai cong vien",
+    "content_type": 9,
+    "codename": "add_loaicongvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 34,
+  "fields": {
+    "name": "Can change loai cong vien",
+    "content_type": 9,
+    "codename": "change_loaicongvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 35,
+  "fields": {
+    "name": "Can delete loai cong vien",
+    "content_type": 9,
+    "codename": "delete_loaicongvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 36,
+  "fields": {
+    "name": "Can view loai cong vien",
+    "content_type": 9,
+    "codename": "view_loaicongvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 37,
+  "fields": {
+    "name": "Can add trang thai cong vien",
+    "content_type": 10,
+    "codename": "add_trangthaicongvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 38,
+  "fields": {
+    "name": "Can change trang thai cong vien",
+    "content_type": 10,
+    "codename": "change_trangthaicongvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 39,
+  "fields": {
+    "name": "Can delete trang thai cong vien",
+    "content_type": 10,
+    "codename": "delete_trangthaicongvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 40,
+  "fields": {
+    "name": "Can view trang thai cong vien",
+    "content_type": 10,
+    "codename": "view_trangthaicongvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 41,
+  "fields": {
+    "name": "Can add cong vien",
+    "content_type": 11,
+    "codename": "add_congvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 42,
+  "fields": {
+    "name": "Can change cong vien",
+    "content_type": 11,
+    "codename": "change_congvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 43,
+  "fields": {
+    "name": "Can delete cong vien",
+    "content_type": 11,
+    "codename": "delete_congvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 44,
+  "fields": {
+    "name": "Can view cong vien",
+    "content_type": 11,
+    "codename": "view_congvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 45,
+  "fields": {
+    "name": "Can add loai tien ich",
+    "content_type": 12,
+    "codename": "add_loaitienich"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 46,
+  "fields": {
+    "name": "Can change loai tien ich",
+    "content_type": 12,
+    "codename": "change_loaitienich"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 47,
+  "fields": {
+    "name": "Can delete loai tien ich",
+    "content_type": 12,
+    "codename": "delete_loaitienich"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 48,
+  "fields": {
+    "name": "Can view loai tien ich",
+    "content_type": 12,
+    "codename": "view_loaitienich"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 49,
+  "fields": {
+    "name": "Can add tien ich cong vien",
+    "content_type": 13,
+    "codename": "add_tienichcongvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 50,
+  "fields": {
+    "name": "Can change tien ich cong vien",
+    "content_type": 13,
+    "codename": "change_tienichcongvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 51,
+  "fields": {
+    "name": "Can delete tien ich cong vien",
+    "content_type": 13,
+    "codename": "delete_tienichcongvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 52,
+  "fields": {
+    "name": "Can view tien ich cong vien",
+    "content_type": 13,
+    "codename": "view_tienichcongvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 53,
+  "fields": {
+    "name": "Can add hinh anh cong vien",
+    "content_type": 14,
+    "codename": "add_hinhanhcongvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 54,
+  "fields": {
+    "name": "Can change hinh anh cong vien",
+    "content_type": 14,
+    "codename": "change_hinhanhcongvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 55,
+  "fields": {
+    "name": "Can delete hinh anh cong vien",
+    "content_type": 14,
+    "codename": "delete_hinhanhcongvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 56,
+  "fields": {
+    "name": "Can view hinh anh cong vien",
+    "content_type": 14,
+    "codename": "view_hinhanhcongvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 57,
+  "fields": {
+    "name": "Can add nhom quyen",
+    "content_type": 15,
+    "codename": "add_nhomquyen"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 58,
+  "fields": {
+    "name": "Can change nhom quyen",
+    "content_type": 15,
+    "codename": "change_nhomquyen"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 59,
+  "fields": {
+    "name": "Can delete nhom quyen",
+    "content_type": 15,
+    "codename": "delete_nhomquyen"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 60,
+  "fields": {
+    "name": "Can view nhom quyen",
+    "content_type": 15,
+    "codename": "view_nhomquyen"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 61,
+  "fields": {
+    "name": "Can add nguoi dung",
+    "content_type": 16,
+    "codename": "add_nguoidung"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 62,
+  "fields": {
+    "name": "Can change nguoi dung",
+    "content_type": 16,
+    "codename": "change_nguoidung"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 63,
+  "fields": {
+    "name": "Can delete nguoi dung",
+    "content_type": 16,
+    "codename": "delete_nguoidung"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 64,
+  "fields": {
+    "name": "Can view nguoi dung",
+    "content_type": 16,
+    "codename": "view_nguoidung"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 65,
+  "fields": {
+    "name": "Can add danh gia cong vien",
+    "content_type": 17,
+    "codename": "add_danhgiacongvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 66,
+  "fields": {
+    "name": "Can change danh gia cong vien",
+    "content_type": 17,
+    "codename": "change_danhgiacongvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 67,
+  "fields": {
+    "name": "Can delete danh gia cong vien",
+    "content_type": 17,
+    "codename": "delete_danhgiacongvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 68,
+  "fields": {
+    "name": "Can view danh gia cong vien",
+    "content_type": 17,
+    "codename": "view_danhgiacongvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 69,
+  "fields": {
+    "name": "Can add loai kiem tra",
+    "content_type": 18,
+    "codename": "add_loaikiemtra"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 70,
+  "fields": {
+    "name": "Can change loai kiem tra",
+    "content_type": 18,
+    "codename": "change_loaikiemtra"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 71,
+  "fields": {
+    "name": "Can delete loai kiem tra",
+    "content_type": 18,
+    "codename": "delete_loaikiemtra"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 72,
+  "fields": {
+    "name": "Can view loai kiem tra",
+    "content_type": 18,
+    "codename": "view_loaikiemtra"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 73,
+  "fields": {
+    "name": "Can add kiem tra cong vien",
+    "content_type": 19,
+    "codename": "add_kiemtracongvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 74,
+  "fields": {
+    "name": "Can change kiem tra cong vien",
+    "content_type": 19,
+    "codename": "change_kiemtracongvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 75,
+  "fields": {
+    "name": "Can delete kiem tra cong vien",
+    "content_type": 19,
+    "codename": "delete_kiemtracongvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 76,
+  "fields": {
+    "name": "Can view kiem tra cong vien",
+    "content_type": 19,
+    "codename": "view_kiemtracongvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 77,
+  "fields": {
+    "name": "Can add danh muc su co",
+    "content_type": 20,
+    "codename": "add_danhmucsuco"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 78,
+  "fields": {
+    "name": "Can change danh muc su co",
+    "content_type": 20,
+    "codename": "change_danhmucsuco"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 79,
+  "fields": {
+    "name": "Can delete danh muc su co",
+    "content_type": 20,
+    "codename": "delete_danhmucsuco"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 80,
+  "fields": {
+    "name": "Can view danh muc su co",
+    "content_type": 20,
+    "codename": "view_danhmucsuco"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 81,
+  "fields": {
+    "name": "Can add bao cao su co",
+    "content_type": 21,
+    "codename": "add_baocaosuco"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 82,
+  "fields": {
+    "name": "Can change bao cao su co",
+    "content_type": 21,
+    "codename": "change_baocaosuco"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 83,
+  "fields": {
+    "name": "Can delete bao cao su co",
+    "content_type": 21,
+    "codename": "delete_baocaosuco"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 84,
+  "fields": {
+    "name": "Can view bao cao su co",
+    "content_type": 21,
+    "codename": "view_baocaosuco"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 85,
+  "fields": {
+    "name": "Can add loai cay",
+    "content_type": 22,
+    "codename": "add_loaicay"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 86,
+  "fields": {
+    "name": "Can change loai cay",
+    "content_type": 22,
+    "codename": "change_loaicay"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 87,
+  "fields": {
+    "name": "Can delete loai cay",
+    "content_type": 22,
+    "codename": "delete_loaicay"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 88,
+  "fields": {
+    "name": "Can view loai cay",
+    "content_type": 22,
+    "codename": "view_loaicay"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 89,
+  "fields": {
+    "name": "Can add cay xanh",
+    "content_type": 23,
+    "codename": "add_cayxanh"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 90,
+  "fields": {
+    "name": "Can change cay xanh",
+    "content_type": 23,
+    "codename": "change_cayxanh"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 91,
+  "fields": {
+    "name": "Can delete cay xanh",
+    "content_type": 23,
+    "codename": "delete_cayxanh"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 92,
+  "fields": {
+    "name": "Can view cay xanh",
+    "content_type": 23,
+    "codename": "view_cayxanh"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 93,
+  "fields": {
+    "name": "Can add su kien cong vien",
+    "content_type": 24,
+    "codename": "add_sukiencongvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 94,
+  "fields": {
+    "name": "Can change su kien cong vien",
+    "content_type": 24,
+    "codename": "change_sukiencongvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 95,
+  "fields": {
+    "name": "Can delete su kien cong vien",
+    "content_type": 24,
+    "codename": "delete_sukiencongvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 96,
+  "fields": {
+    "name": "Can view su kien cong vien",
+    "content_type": 24,
+    "codename": "view_sukiencongvien"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 97,
+  "fields": {
+    "name": "Can add nhat ky thay doi",
+    "content_type": 25,
+    "codename": "add_nhatkythaydoi"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 98,
+  "fields": {
+    "name": "Can change nhat ky thay doi",
+    "content_type": 25,
+    "codename": "change_nhatkythaydoi"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 99,
+  "fields": {
+    "name": "Can delete nhat ky thay doi",
+    "content_type": 25,
+    "codename": "delete_nhatkythaydoi"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 100,
+  "fields": {
+    "name": "Can view nhat ky thay doi",
+    "content_type": 25,
+    "codename": "view_nhatkythaydoi"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 101,
+  "fields": {
+    "name": "Can add thong ketruyen cap",
+    "content_type": 26,
+    "codename": "add_thongketruyencap"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 102,
+  "fields": {
+    "name": "Can change thong ketruyen cap",
+    "content_type": 26,
+    "codename": "change_thongketruyencap"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 103,
+  "fields": {
+    "name": "Can delete thong ketruyen cap",
+    "content_type": 26,
+    "codename": "delete_thongketruyencap"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 104,
+  "fields": {
+    "name": "Can view thong ketruyen cap",
+    "content_type": 26,
+    "codename": "view_thongketruyencap"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 1,
+  "fields": {
+    "app_label": "admin",
+    "model": "logentry"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 2,
+  "fields": {
+    "app_label": "auth",
+    "model": "permission"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 3,
+  "fields": {
+    "app_label": "auth",
+    "model": "group"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 4,
+  "fields": {
+    "app_label": "auth",
+    "model": "user"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 5,
+  "fields": {
+    "app_label": "contenttypes",
+    "model": "contenttype"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 6,
+  "fields": {
+    "app_label": "sessions",
+    "model": "session"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 7,
+  "fields": {
+    "app_label": "parks",
+    "model": "quanhuyen"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 8,
+  "fields": {
+    "app_label": "parks",
+    "model": "phuongxa"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 9,
+  "fields": {
+    "app_label": "parks",
+    "model": "loaicongvien"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 10,
+  "fields": {
+    "app_label": "parks",
+    "model": "trangthaicongvien"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 11,
+  "fields": {
+    "app_label": "parks",
+    "model": "congvien"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 12,
+  "fields": {
+    "app_label": "parks",
+    "model": "loaitienich"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 13,
+  "fields": {
+    "app_label": "parks",
+    "model": "tienichcongvien"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 14,
+  "fields": {
+    "app_label": "parks",
+    "model": "hinhanhcongvien"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 15,
+  "fields": {
+    "app_label": "parks",
+    "model": "nhomquyen"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 16,
+  "fields": {
+    "app_label": "parks",
+    "model": "nguoidung"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 17,
+  "fields": {
+    "app_label": "parks",
+    "model": "danhgiacongvien"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 18,
+  "fields": {
+    "app_label": "parks",
+    "model": "loaikiemtra"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 19,
+  "fields": {
+    "app_label": "parks",
+    "model": "kiemtracongvien"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 20,
+  "fields": {
+    "app_label": "parks",
+    "model": "danhmucsuco"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 21,
+  "fields": {
+    "app_label": "parks",
+    "model": "baocaosuco"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 22,
+  "fields": {
+    "app_label": "parks",
+    "model": "loaicay"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 23,
+  "fields": {
+    "app_label": "parks",
+    "model": "cayxanh"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 24,
+  "fields": {
+    "app_label": "parks",
+    "model": "sukiencongvien"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 25,
+  "fields": {
+    "app_label": "parks",
+    "model": "nhatkythaydoi"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 26,
+  "fields": {
+    "app_label": "parks",
+    "model": "thongketruyencap"
+  }
+},
+{
+  "model": "parks.quanhuyen",
+  "pk": 1,
+  "fields": {
+    "ten_quan_huyen": "Quận 1",
+    "ma_code": "Q1",
+    "loai": "quan",
+    "dien_tich_km2": "4.7200",
+    "dan_so": 230000,
+    "hinh_hoc": {},
+    "ngay_tao": "2026-03-13T05:11:03.243Z",
+    "ngay_cap_nhat": "2026-03-13T05:11:03.243Z"
+  }
+},
+{
+  "model": "parks.quanhuyen",
+  "pk": 2,
+  "fields": {
+    "ten_quan_huyen": "Quận 2",
+    "ma_code": "Q2",
+    "loai": "quan",
+    "dien_tich_km2": "49.8700",
+    "dan_so": 650000,
+    "hinh_hoc": {},
+    "ngay_tao": "2026-03-13T05:11:03.250Z",
+    "ngay_cap_nhat": "2026-03-13T05:11:03.250Z"
+  }
+},
+{
+  "model": "parks.quanhuyen",
+  "pk": 3,
+  "fields": {
+    "ten_quan_huyen": "Quận 3",
+    "ma_code": "Q3",
+    "loai": "quan",
+    "dien_tich_km2": "7.2300",
+    "dan_so": 400000,
+    "hinh_hoc": {},
+    "ngay_tao": "2026-03-13T05:11:03.256Z",
+    "ngay_cap_nhat": "2026-03-13T05:11:03.256Z"
+  }
+},
+{
+  "model": "parks.quanhuyen",
+  "pk": 4,
+  "fields": {
+    "ten_quan_huyen": "Quận 4",
+    "ma_code": "Q4",
+    "loai": "quan",
+    "dien_tich_km2": "9.1100",
+    "dan_so": 280000,
+    "hinh_hoc": {},
+    "ngay_tao": "2026-03-13T05:11:03.262Z",
+    "ngay_cap_nhat": "2026-03-13T05:11:03.262Z"
+  }
+},
+{
+  "model": "parks.quanhuyen",
+  "pk": 5,
+  "fields": {
+    "ten_quan_huyen": "Quận 5",
+    "ma_code": "Q5",
+    "loai": "quan",
+    "dien_tich_km2": "5.1600",
+    "dan_so": 350000,
+    "hinh_hoc": {},
+    "ngay_tao": "2026-03-13T05:11:03.268Z",
+    "ngay_cap_nhat": "2026-03-13T05:11:03.268Z"
+  }
+},
+{
+  "model": "parks.quanhuyen",
+  "pk": 6,
+  "fields": {
+    "ten_quan_huyen": "Quận 7",
+    "ma_code": "Q7",
+    "loai": "quan",
+    "dien_tich_km2": "48.5000",
+    "dan_so": 580000,
+    "hinh_hoc": {},
+    "ngay_tao": "2026-03-13T05:11:03.274Z",
+    "ngay_cap_nhat": "2026-03-13T05:11:03.274Z"
+  }
+},
+{
+  "model": "parks.quanhuyen",
+  "pk": 7,
+  "fields": {
+    "ten_quan_huyen": "Quận 10",
+    "ma_code": "Q10",
+    "loai": "quan",
+    "dien_tich_km2": "7.2300",
+    "dan_so": 610000,
+    "hinh_hoc": {},
+    "ngay_tao": "2026-03-13T05:11:03.282Z",
+    "ngay_cap_nhat": "2026-03-13T05:11:03.282Z"
+  }
+},
+{
+  "model": "parks.quanhuyen",
+  "pk": 8,
+  "fields": {
+    "ten_quan_huyen": "Quận Bình Thạnh",
+    "ma_code": "QBT",
+    "loai": "quan",
+    "dien_tich_km2": "20.7600",
+    "dan_so": 420000,
+    "hinh_hoc": {},
+    "ngay_tao": "2026-03-13T05:11:03.288Z",
+    "ngay_cap_nhat": "2026-03-13T05:11:03.288Z"
+  }
+},
+{
+  "model": "parks.phuongxa",
+  "pk": 1,
+  "fields": {
+    "ma_quan_huyen": 1,
+    "ten_phuong_xa": "Phường Bến Nghé",
+    "ma_code": "BN",
+    "loai": "phuong",
+    "dien_tich_km2": null,
+    "hinh_hoc": {}
+  }
+},
+{
+  "model": "parks.phuongxa",
+  "pk": 2,
+  "fields": {
+    "ma_quan_huyen": 1,
+    "ten_phuong_xa": "Phường Đa Kao",
+    "ma_code": "DK",
+    "loai": "phuong",
+    "dien_tich_km2": null,
+    "hinh_hoc": {}
+  }
+},
+{
+  "model": "parks.phuongxa",
+  "pk": 3,
+  "fields": {
+    "ma_quan_huyen": 2,
+    "ten_phuong_xa": "Phường An Khánh",
+    "ma_code": "AK",
+    "loai": "phuong",
+    "dien_tich_km2": null,
+    "hinh_hoc": {}
+  }
+},
+{
+  "model": "parks.phuongxa",
+  "pk": 4,
+  "fields": {
+    "ma_quan_huyen": 2,
+    "ten_phuong_xa": "Phường Bình Thuận",
+    "ma_code": "BT",
+    "loai": "phuong",
+    "dien_tich_km2": null,
+    "hinh_hoc": {}
+  }
+},
+{
+  "model": "parks.phuongxa",
+  "pk": 5,
+  "fields": {
+    "ma_quan_huyen": 3,
+    "ten_phuong_xa": "Phường 1",
+    "ma_code": "P1",
+    "loai": "phuong",
+    "dien_tich_km2": null,
+    "hinh_hoc": {}
+  }
+},
+{
+  "model": "parks.phuongxa",
+  "pk": 6,
+  "fields": {
+    "ma_quan_huyen": 3,
+    "ten_phuong_xa": "Phường 9",
+    "ma_code": "P9",
+    "loai": "phuong",
+    "dien_tich_km2": null,
+    "hinh_hoc": {}
+  }
+},
+{
+  "model": "parks.phuongxa",
+  "pk": 7,
+  "fields": {
+    "ma_quan_huyen": 6,
+    "ten_phuong_xa": "Phường Bình Khánh",
+    "ma_code": "BK",
+    "loai": "phuong",
+    "dien_tich_km2": null,
+    "hinh_hoc": {}
+  }
+},
+{
+  "model": "parks.phuongxa",
+  "pk": 8,
+  "fields": {
+    "ma_quan_huyen": 6,
+    "ten_phuong_xa": "Phường Bình Thuận",
+    "ma_code": "BT2",
+    "loai": "phuong",
+    "dien_tich_km2": null,
+    "hinh_hoc": {}
+  }
+},
+{
+  "model": "parks.loaicongvien",
+  "pk": 1,
+  "fields": {
+    "ten_loai": "Công viên cấp quận",
+    "ma_code": "CCPQ",
+    "mo_ta": null,
+    "icon_url": null,
+    "mau_sac": null
+  }
+},
+{
+  "model": "parks.loaicongvien",
+  "pk": 2,
+  "fields": {
+    "ten_loai": "Công viên cấp phường",
+    "ma_code": "CCPP",
+    "mo_ta": null,
+    "icon_url": null,
+    "mau_sac": null
+  }
+},
+{
+  "model": "parks.loaicongvien",
+  "pk": 3,
+  "fields": {
+    "ten_loai": "Công viên cỏ xanh",
+    "ma_code": "CCXH",
+    "mo_ta": null,
+    "icon_url": null,
+    "mau_sac": null
+  }
+},
+{
+  "model": "parks.loaicongvien",
+  "pk": 4,
+  "fields": {
+    "ten_loai": "Công viên chủ đề",
+    "ma_code": "CCDT",
+    "mo_ta": null,
+    "icon_url": null,
+    "mau_sac": null
+  }
+},
+{
+  "model": "parks.loaicongvien",
+  "pk": 5,
+  "fields": {
+    "ten_loai": "Vườn ghi công",
+    "ma_code": "VGC",
+    "mo_ta": null,
+    "icon_url": null,
+    "mau_sac": null
+  }
+},
+{
+  "model": "parks.trangthaicongvien",
+  "pk": 1,
+  "fields": {
+    "ten_trang_thai": "hoat_dong",
+    "ma_code": "hoat_dong",
+    "mo_ta": "Hoạt động",
+    "mau_sac": null
+  }
+},
+{
+  "model": "parks.trangthaicongvien",
+  "pk": 2,
+  "fields": {
+    "ten_trang_thai": "dang_xay_dung",
+    "ma_code": "dang_xay_dung",
+    "mo_ta": "Đang xây dựng",
+    "mau_sac": null
+  }
+},
+{
+  "model": "parks.trangthaicongvien",
+  "pk": 3,
+  "fields": {
+    "ten_trang_thai": "cai_tao",
+    "ma_code": "cai_tao",
+    "mo_ta": "Cải tạo",
+    "mau_sac": null
+  }
+},
+{
+  "model": "parks.congvien",
+  "pk": 1,
+  "fields": {
+    "ten_cong_vien": "Công viên Tao Đàn",
+    "ma_code": "TD001",
+    "ma_loai": 1,
+    "ma_trang_thai": 1,
+    "ma_quan_huyen": 1,
+    "ma_phuong_xa": null,
+    "dia_chi": "64 Nguễn Hữu Cảnh, Phường Bến Nghé, Quận 1",
+    "dien_tich_m2": "189034.34",
+    "dien_tich_cay_xanh": "25000.00",
+    "dien_tich_mat_nuoc": "3000.00",
+    "toa_do_trung_tam": [
+      10.774748,
+      106.695946
+    ],
+    "ranh_gioi": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [
+            106.693093,
+            10.777361
+          ],
+          [
+            106.689767,
+            10.773651
+          ],
+          [
+            106.692256,
+            10.772155
+          ],
+          [
+            106.695946,
+            10.774748
+          ],
+          [
+            106.693093,
+            10.777361
+          ]
+        ]
+      ]
+    },
+    "vi_tri_cong_vao": [],
+    "don_vi_quan_ly": "Sở Xây dựng TP.HCM",
+    "so_dien_thoai": "(028) 3822 8821",
+    "email": "info@taodanpark.hcm.vn",
+    "gio_mo_cua": null,
+    "gio_dong_cua": null,
+    "mo_cua_24_7": true,
+    "mien_phi_vao_cua": true,
+    "gia_ve": null,
+    "nam_thanh_lap": 1975,
+    "mo_ta": "Công viên Tao Đàn là một trong những công viên lâu đời và nổi tiếng nhất tại thành phố Hồ Chí Minh, nằm ở vị trí trung tâm của Quận 1. Công viên được xây dựng vào năm 1975 và đã trở thành điểm đến yêu thích của hàng triệu cư dân và du khách mỗi năm.\n\nVới diện tích 33.000 m², Công viên Tao Đàn sở hữu một không gian xanh mát với hơn 25.000 m² cây xanh, tạo nên một môi trường sinh thái lành mạnh giữa lòng thành phố. Công viên có 3.000 m² mặt nước, giúp điều chỉnh khí hậu và tạo không gian thư thái cho du khách.\n\nCông viên nổi bật với những tiện ích đa dạng và hiện đại:\n- Sân chơi trẻ em được thiết kế an toàn với các thiết bị mới\n- Khu thể dục thể thao với dụng cụ tập luyện miễn phí\n- Hồ nước nhân tạo tuyệt đẹp phù hợp cho hoạt động ngắm cảnh và thư giãn\n- Nhà vệ sinh sạch sẽ, được bảo vệ 24/7\n- Các quán nước và nhà hàng có phục vụ chất lượng cao\n- Bãi đỗ xe rộng rãi và an toàn\n\nMôi trường sạch sẽ và an toàn là ưu tiên hàng đầu của Công viên Tao Đàn. Toàn bộ khu vực được vệ sinh hàng ngày, cây cỏ được chăm sóc đặc biệt để duy trì vẻ đẹp và tính chức năng. Lực lượng bảo vệ 24/7 đảm bảo an ninh cho du khách.\n\nCông viên là nơi lý tưởng để các gia đình tươi vui, bạn bè gặp gỡ, và người lớn tuổi tập luyện thể dục sáng sớm. Đây cũng là điểm tham quan du lịch quan trọng tại TP.HCM, mô tả sự phát triển của thành phố qua các thập kỷ.",
+    "lich_su": "Công viên được thành lập vào năm 1975, ban đầu chỉ là một khu vườn nhỏ. Qua các năm, nó đã được mở rộng và cải tạo liên tục để trở thành công viên cấp quận hiện đại.",
+    "diem_trung_binh": "0.00",
+    "so_luot_danh_gia": 0,
+    "anh_dai_dien": "https://images.unsplash.com/photo-1585938389612-a552a28d6914?w=800&q=80",
+    "da_xac_minh": true,
+    "ngay_tao": "2026-03-13T05:11:03.469Z",
+    "ngay_cap_nhat": "2026-03-27T08:50:45.643Z"
+  }
+},
+{
+  "model": "parks.congvien",
+  "pk": 2,
+  "fields": {
+    "ten_cong_vien": "Công viên Gia Định",
+    "ma_code": "GD001",
+    "ma_loai": 1,
+    "ma_trang_thai": 1,
+    "ma_quan_huyen": 3,
+    "ma_phuong_xa": null,
+    "dia_chi": "1 Lê Văn Miến, Phường 1, Quận 3",
+    "dien_tich_m2": "72443.27",
+    "dien_tich_cay_xanh": "35000.00",
+    "dien_tich_mat_nuoc": "5000.00",
+    "toa_do_trung_tam": [
+      10.813131,
+      106.675862
+    ],
+    "ranh_gioi": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [
+            106.678035,
+            10.813966
+          ],
+          [
+            106.676125,
+            10.814156
+          ],
+          [
+            106.675535,
+            10.814124
+          ],
+          [
+            106.673765,
+            10.813418
+          ],
+          [
+            106.675975,
+            10.811416
+          ],
+          [
+            106.678035,
+            10.813966
+          ]
+        ]
+      ]
+    },
+    "vi_tri_cong_vao": [],
+    "don_vi_quan_ly": "Sở Xây dựng TP.HCM",
+    "so_dien_thoai": "(028) 3822 5555",
+    "email": "info@giacdinh.hcm.vn",
+    "gio_mo_cua": null,
+    "gio_dong_cua": null,
+    "mo_cua_24_7": true,
+    "mien_phi_vao_cua": true,
+    "gia_ve": null,
+    "nam_thanh_lap": 1980,
+    "mo_ta": "Công viên Gia Định là một điểm đến lý tưởng cho cả gia đình muốn tìm kiếm không gian xanh, yên tĩnh giữa lòng thành phố. Với diện tích 45.000 m², công viên mang lại cảm giác gần gũi với thiên nhiên.\n\nCông viên nổi bật với:\n- Các cây xanh lớn, cung cấp bóng mát tự nhiên\n- Đường đi bộ sạch sẽ, an toàn\n- Sân chơi trẻ em hiện đại và an toàn\n- Các ghế ngồi thoải mái đặt khắp công viên\n- Hệ thống chiếu sáng công viên hiện đại\n- Không gian rộng mở, thích hợp cho hoạt động cộng đồng\n\nCông viên Gia Định là nơi lý tưởng để bắt đầu ngày mới với bộ môn yoga hoặc chạy bộ. Vui chơi cùng con em với sân chơi an toàn. Hoặc đơn giản là tản bộ và thư giãn trong không gian xanh.\n\nVới hệ thống tiện ích hoàn chỉnh và nhân viên chuyên nghiệp, Công viên Gia Định cam kết mang lại trải nghiệm tốt nhất cho mỗi du khách.",
+    "lich_su": "Công viên Gia Định được khánh thành vào năm 1980 nhằm mục đích cung cấp không gian xanh cho cư dân quận 3. Qua các năm, nó đã phát triển thành một trong những công viên được yêu thích nhất ở Quận 3.",
+    "diem_trung_binh": "0.00",
+    "so_luot_danh_gia": 0,
+    "anh_dai_dien": "https://images.unsplash.com/photo-1562664377-709f2c337eb2?w=800&q=80",
+    "da_xac_minh": true,
+    "ngay_tao": "2026-03-13T05:11:03.528Z",
+    "ngay_cap_nhat": "2026-03-27T08:50:45.684Z"
+  }
+},
+{
+  "model": "parks.congvien",
+  "pk": 3,
+  "fields": {
+    "ten_cong_vien": "Công viên Phú Mỹ Hưng - Khu Orchard",
+    "ma_code": "Q7001",
+    "ma_loai": 1,
+    "ma_trang_thai": 3,
+    "ma_quan_huyen": 6,
+    "ma_phuong_xa": null,
+    "dia_chi": "Đường Nguyễn Văn Linh, Quận 7",
+    "dien_tich_m2": "75000.00",
+    "dien_tich_cay_xanh": "55000.00",
+    "dien_tich_mat_nuoc": "10000.00",
+    "toa_do_trung_tam": [
+      10.726,
+      106.7312
+    ],
+    "ranh_gioi": {},
+    "vi_tri_cong_vao": [],
+    "don_vi_quan_ly": "Công ty Tây Sài Gòn",
+    "so_dien_thoai": "(028) 5410 0500",
+    "email": "info@orchardpark.hcm.vn",
+    "gio_mo_cua": "05:11:03.580",
+    "gio_dong_cua": "05:11:03.580",
+    "mo_cua_24_7": false,
+    "mien_phi_vao_cua": false,
+    "gia_ve": "50000.00",
+    "nam_thanh_lap": 2010,
+    "mo_ta": "Công viên Phú Mỹ Hưng - Khu Orchard là một công viên cao cấp, hiện đại với diện tích 75.000 m², mang phong cách quốc tế. Đây là nơi hoàn hảo cho những ai tìm kiếm một không gian xanh sang trọng và tiện ích đầy đủ.\n\nCác đặc điểm nổi bật:\n- Cải tạo từ vườn cây ăn quả truyền thống\n- Hệ thống cây xanh đa dạng: hoa, cây cảnh, cây ăn quả\n- Hồ nước lớn với ca nô du lịch\n- Thực phẩm cao cấp\n- Không gian sự kiện rộng rãi\n- Sân chơi trẻ em cao cấp\n- Nhà hàng, quán cafe phục vụ chất lượng cao\n- Khách sạn, spa trong khu\n\nCông viên là nơi lý tưởng để tổ chức những sự kiện lớn, picnic gia đình, hoặc đơn giản là thư giãn trong không gian sang trọng. Với quản lý chuyên nghiệp và tiện ích đầy đủ, Phú Mỹ Hưng Orchard cam kết mang lại trải nghiệm tuyệt vời cho du khách.",
+    "lich_su": "Công viên được phát triển từ năm 2010 như một phần của dự án Phú Mỹ Hưng. Nó đã trở thành một trong những công viên sang trọng nhất tại TP.HCM.",
+    "diem_trung_binh": "0.00",
+    "so_luot_danh_gia": 0,
+    "anh_dai_dien": "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80",
+    "da_xac_minh": true,
+    "ngay_tao": "2026-03-13T05:11:03.582Z",
+    "ngay_cap_nhat": "2026-03-27T08:50:45.718Z"
+  }
+},
+{
+  "model": "parks.congvien",
+  "pk": 4,
+  "fields": {
+    "ten_cong_vien": "Công viên Bình Khánh",
+    "ma_code": "BK001",
+    "ma_loai": 1,
+    "ma_trang_thai": 1,
+    "ma_quan_huyen": 2,
+    "ma_phuong_xa": null,
+    "dia_chi": "Đường Bình Khánh, Quận 2",
+    "dien_tich_m2": "29369.63",
+    "dien_tich_cay_xanh": "45000.00",
+    "dien_tich_mat_nuoc": "8000.00",
+    "toa_do_trung_tam": [
+      10.782486,
+      106.734436
+    ],
+    "ranh_gioi": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [
+            106.734114,
+            10.783266
+          ],
+          [
+            106.735412,
+            10.783867
+          ],
+          [
+            106.73611,
+            10.782508
+          ],
+          [
+            106.73449,
+            10.781675
+          ],
+          [
+            106.734436,
+            10.782486
+          ],
+          [
+            106.734114,
+            10.783266
+          ]
+        ]
+      ]
+    },
+    "vi_tri_cong_vao": [],
+    "don_vi_quan_ly": "UBND Quận 2",
+    "so_dien_thoai": "(028) 3744 1234",
+    "email": "info@binhkhanh.q2.hcm.vn",
+    "gio_mo_cua": null,
+    "gio_dong_cua": null,
+    "mo_cua_24_7": true,
+    "mien_phi_vao_cua": true,
+    "gia_ve": null,
+    "nam_thanh_lap": 2005,
+    "mo_ta": "Công viên Bình Khánh là một công viên sinh thái nằm ở Quận 2, với diện tích 60.000 m² và hơn 45.000 m² cây xanh. Đây là một trong những công viên được phát triển tốt nhất ở TP.HCM.\n\nCông viên nổi bật với:\n- Khu rừng tự nhiên được bảo vệ\n- Hệ sinh thái đa dạng với nhiều loài chim\n- Đường đi bộ trong rừng dài 2km\n- Sân chơi trẻ em với thiết bị tự nhiên\n- Khu picnic gia đình\n- Hồ nước tự nhiên\n- Trường dạy bơi lội\n- Quán nước sạch sẽ\n\nCông viên là nơi lý tưởng cho những ai muốn tìm hiểu thiên nhiên và sinh thái. Là điểm du lịch sinh thái quan trọng tại TP.HCM. Du khách có thể tham gia các hoạt động giáo dục về thiên nhiên và bảo vệ môi trường.\n\nVới quản lý bền vững, Công viên Bình Khánh cam kết bảo vệ hệ sinh thái và mang lại giá trị giáo dục cao cho du khách.",
+    "lich_su": "Công viên được phát triển vào năm 2005 nhằm bảo vệ hệ sinh thái tự nhiên của quận 2. Nó đã trở thành một khu học tập về thiên nhiên và sinh thái quan trọng.",
+    "diem_trung_binh": "0.00",
+    "so_luot_danh_gia": 0,
+    "anh_dai_dien": "https://images.unsplash.com/photo-1498084393753-b411b2d26b34?w=800&q=80",
+    "da_xac_minh": true,
+    "ngay_tao": "2026-03-13T05:11:03.644Z",
+    "ngay_cap_nhat": "2026-03-27T08:50:45.754Z"
+  }
+},
+{
+  "model": "parks.congvien",
+  "pk": 5,
+  "fields": {
+    "ten_cong_vien": "Công viên Lê Văn Tám",
+    "ma_code": "LVT001",
+    "ma_loai": 1,
+    "ma_trang_thai": 1,
+    "ma_quan_huyen": 1,
+    "ma_phuong_xa": null,
+    "dia_chi": "Võ Thị Sáu, Đa Kao, Quận 1",
+    "dien_tich_m2": "59029.68",
+    "dien_tich_cay_xanh": "40000.00",
+    "dien_tich_mat_nuoc": null,
+    "toa_do_trung_tam": [
+      10.787366,
+      106.692969
+    ],
+    "ranh_gioi": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [
+            106.693817,
+            10.789706
+          ],
+          [
+            106.695276,
+            10.788251
+          ],
+          [
+            106.693699,
+            10.786681
+          ],
+          [
+            106.692036,
+            10.787893
+          ],
+          [
+            106.693817,
+            10.789706
+          ]
+        ]
+      ]
+    },
+    "vi_tri_cong_vao": [],
+    "don_vi_quan_ly": "Sở Xây dựng TP.HCM",
+    "so_dien_thoai": null,
+    "email": null,
+    "gio_mo_cua": null,
+    "gio_dong_cua": null,
+    "mo_cua_24_7": true,
+    "mien_phi_vao_cua": true,
+    "gia_ve": null,
+    "nam_thanh_lap": 1985,
+    "mo_ta": "Công viên Lê Văn Tám là một không gian xanh mát nằm ngay giao lộ Võ Thị Sáu và Hai Bà Trưng. Nơi đây thường xuyên diễn ra các hội chợ sách và triển lãm hoa.",
+    "lich_su": null,
+    "diem_trung_binh": "0.00",
+    "so_luot_danh_gia": 0,
+    "anh_dai_dien": "https://images.unsplash.com/photo-1585938389612-a552a28d6914?w=800&q=80",
+    "da_xac_minh": true,
+    "ngay_tao": "2026-03-13T05:11:03.696Z",
+    "ngay_cap_nhat": "2026-03-27T08:50:45.794Z"
+  }
+},
+{
+  "model": "parks.congvien",
+  "pk": 6,
+  "fields": {
+    "ten_cong_vien": "Công viên 23 tháng 9",
+    "ma_code": "239001",
+    "ma_loai": 1,
+    "ma_trang_thai": 1,
+    "ma_quan_huyen": 1,
+    "ma_phuong_xa": null,
+    "dia_chi": "Phạm Ngũ Lão, Phường Phạm Ngũ Lão, Quận 1",
+    "dien_tich_m2": "45824.05",
+    "dien_tich_cay_xanh": "50000.00",
+    "dien_tich_mat_nuoc": null,
+    "toa_do_trung_tam": [
+      10.768869,
+      106.692293
+    ],
+    "ranh_gioi": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [
+            106.690083,
+            10.768416
+          ],
+          [
+            106.69401,
+            10.770018
+          ],
+          [
+            106.694503,
+            10.769249
+          ],
+          [
+            106.690523,
+            10.767647
+          ],
+          [
+            106.690083,
+            10.768416
+          ]
+        ]
+      ]
+    },
+    "vi_tri_cong_vao": [],
+    "don_vi_quan_ly": "Trung tâm Quản lý Hạ tầng Kỹ thuật",
+    "so_dien_thoai": null,
+    "email": null,
+    "gio_mo_cua": null,
+    "gio_dong_cua": null,
+    "mo_cua_24_7": true,
+    "mien_phi_vao_cua": true,
+    "gia_ve": null,
+    "nam_thanh_lap": 1990,
+    "mo_ta": "Nằm dài theo đường Lê Lai và Phạm Ngũ Lão, công viên 23/9 là mảng xanh quan trọng của khu phố Tây Bùi Viện.",
+    "lich_su": null,
+    "diem_trung_binh": "0.00",
+    "so_luot_danh_gia": 0,
+    "anh_dai_dien": "https://images.unsplash.com/photo-1562664377-709f2c337eb2?w=800&q=80",
+    "da_xac_minh": true,
+    "ngay_tao": "2026-03-13T05:11:03.744Z",
+    "ngay_cap_nhat": "2026-03-27T08:50:45.831Z"
+  }
+},
+{
+  "model": "parks.congvien",
+  "pk": 7,
+  "fields": {
+    "ten_cong_vien": "Công viên Vinhomes Central Park",
+    "ma_code": "VCP001",
+    "ma_loai": 1,
+    "ma_trang_thai": 1,
+    "ma_quan_huyen": 8,
+    "ma_phuong_xa": null,
+    "dia_chi": "208 Nguyễn Hữu Cảnh, Phường 22, Bình Thạnh",
+    "dien_tich_m2": "149524.64",
+    "dien_tich_cay_xanh": "80000.00",
+    "dien_tich_mat_nuoc": "20000.00",
+    "toa_do_trung_tam": [
+      10.792828,
+      106.724517
+    ],
+    "ranh_gioi": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [
+            106.72228,
+            10.789811
+          ],
+          [
+            106.722946,
+            10.789369
+          ],
+          [
+            106.722763,
+            10.789168
+          ],
+          [
+            106.722935,
+            10.789042
+          ],
+          [
+            106.723085,
+            10.789284
+          ],
+          [
+            106.725574,
+            10.793163
+          ],
+          [
+            106.72526,
+            10.795008
+          ],
+          [
+            106.725046,
+            10.795272
+          ],
+          [
+            106.725405,
+            10.795583
+          ],
+          [
+            106.725641,
+            10.795383
+          ],
+          [
+            106.725947,
+            10.79562
+          ],
+          [
+            106.726172,
+            10.797596
+          ],
+          [
+            106.725888,
+            10.797643
+          ],
+          [
+            106.725904,
+            10.797838
+          ],
+          [
+            106.725437,
+            10.797875
+          ],
+          [
+            106.725276,
+            10.797169
+          ],
+          [
+            106.725362,
+            10.797032
+          ],
+          [
+            106.723589,
+            10.794185
+          ],
+          [
+            106.722645,
+            10.794564
+          ],
+          [
+            106.723353,
+            10.791919
+          ],
+          [
+            106.72228,
+            10.789811
+          ]
+        ]
+      ]
+    },
+    "vi_tri_cong_vao": [],
+    "don_vi_quan_ly": "Vinhomes",
+    "so_dien_thoai": null,
+    "email": null,
+    "gio_mo_cua": null,
+    "gio_dong_cua": null,
+    "mo_cua_24_7": true,
+    "mien_phi_vao_cua": true,
+    "gia_ve": null,
+    "nam_thanh_lap": 2016,
+    "mo_ta": "Công viên ven sông Sài Gòn lớn nhất TP.HCM với thiết kế cảnh quan tuyệt đẹp, lấy cảm hứng từ Central Park New York.",
+    "lich_su": null,
+    "diem_trung_binh": "0.00",
+    "so_luot_danh_gia": 0,
+    "anh_dai_dien": "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80",
+    "da_xac_minh": true,
+    "ngay_tao": "2026-03-13T05:11:03.791Z",
+    "ngay_cap_nhat": "2026-03-27T08:50:45.864Z"
+  }
+},
+{
+  "model": "parks.congvien",
+  "pk": 8,
+  "fields": {
+    "ten_cong_vien": "Công viên Lê Thị Riêng",
+    "ma_code": "LTR001",
+    "ma_loai": 1,
+    "ma_trang_thai": 1,
+    "ma_quan_huyen": 7,
+    "ma_phuong_xa": null,
+    "dia_chi": "875 Cách Mạng Tháng 8, Phường 15, Quận 10",
+    "dien_tich_m2": "74606.14",
+    "dien_tich_cay_xanh": null,
+    "dien_tich_mat_nuoc": null,
+    "toa_do_trung_tam": [
+      10.785772,
+      106.66627
+    ],
+    "ranh_gioi": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [
+            106.664683,
+            10.78672
+          ],
+          [
+            106.663717,
+            10.785645
+          ],
+          [
+            106.663052,
+            10.784444
+          ],
+          [
+            106.665004,
+            10.783158
+          ],
+          [
+            106.66627,
+            10.785772
+          ],
+          [
+            106.664683,
+            10.78672
+          ]
+        ]
+      ]
+    },
+    "vi_tri_cong_vao": [],
+    "don_vi_quan_ly": null,
+    "so_dien_thoai": null,
+    "email": null,
+    "gio_mo_cua": null,
+    "gio_dong_cua": null,
+    "mo_cua_24_7": false,
+    "mien_phi_vao_cua": true,
+    "gia_ve": null,
+    "nam_thanh_lap": null,
+    "mo_ta": "",
+    "lich_su": null,
+    "diem_trung_binh": "0.00",
+    "so_luot_danh_gia": 0,
+    "anh_dai_dien": "https://images.unsplash.com/photo-1498084393753-b411b2d26b34?w=800&q=80",
+    "da_xac_minh": true,
+    "ngay_tao": "2026-03-13T05:11:03.844Z",
+    "ngay_cap_nhat": "2026-03-27T08:50:45.897Z"
+  }
+},
+{
+  "model": "parks.congvien",
+  "pk": 9,
+  "fields": {
+    "ten_cong_vien": "Công viên du lịch Sinh Thái Hốc Môn",
+    "ma_code": null,
+    "ma_loai": 3,
+    "ma_trang_thai": 1,
+    "ma_quan_huyen": 1,
+    "ma_phuong_xa": null,
+    "dia_chi": null,
+    "dien_tich_m2": "61694.14",
+    "dien_tich_cay_xanh": null,
+    "dien_tich_mat_nuoc": null,
+    "toa_do_trung_tam": [
+      10.858666,
+      -253.418203
+    ],
+    "ranh_gioi": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [
+            -253.419356,
+            10.859762
+          ],
+          [
+            -253.419732,
+            10.857844
+          ],
+          [
+            -253.41926,
+            10.857665
+          ],
+          [
+            -253.416653,
+            10.857718
+          ],
+          [
+            -253.416556,
+            10.859035
+          ],
+          [
+            -253.419356,
+            10.859762
+          ]
+        ]
+      ]
+    },
+    "vi_tri_cong_vao": [],
+    "don_vi_quan_ly": null,
+    "so_dien_thoai": null,
+    "email": null,
+    "gio_mo_cua": null,
+    "gio_dong_cua": null,
+    "mo_cua_24_7": false,
+    "mien_phi_vao_cua": true,
+    "gia_ve": null,
+    "nam_thanh_lap": null,
+    "mo_ta": "Vị trí và quy mô\nCông viên Sinh thái Hóc Môn nằm ở huyện Hóc Môn, thuộc khu vực ngoại thành phía Bắc của TP. Hồ Chí Minh. Công viên trải rộng trên diện tích rộng lớn, bao gồm các khu vực rừng cây trồng, ao hồ, và các vườn cây ăn trái, đem lại không gian xanh mát và yên bình cho du khách. Đây là điểm đến thuận tiện cho những người dân thành phố muốn trốn khỏi khói bụi đô thị mà vẫn không cần đi quá xa.\nHệ sinh thái và đa dạng sinh học\nCông viên được thiết kế nhằm bảo tồn hệ sinh thái tự nhiên đa dạng, bao gồm phong phú các loại cây cối, hoa cỏ, cùng với các loài chim, cá và động vật nhỏ sống trong môi trường tự nhiên. Du khách có thể tham quan các khu rừng nhân tạo, hồ nước và đầm lầy, quan sát các loài sinh vật trong điều kiện gần gũi với môi trường tự nhiên, vừa vui chơi vừa học hỏi về sinh học và bảo tồn thiên nhiên.\nHoạt động tham quan và giáo dục môi trường\nTại công viên, người dân và học sinh có thể tham gia các hoạt động như: đi dạo đường mòn sinh thái, tham quan vườn cây ăn trái, tìm hiểu về các loài động thực vật bản địa, trải nghiệm làm các hoạt động nông nghiệp hoặc thả cá trong hồ. Công viên cũng thường tổ chức các chương trình giáo dục về môi trường, góp phần nâng cao nhận thức về bảo vệ thiên nhiên và đa dạng sinh học.\nTầm quan trọng và lợi ích\nCông viên không chỉ mang tính giải trí, thư giãn mà còn đóng vai trò quan trọng trong giáo dục môi trường và bảo tồn đa dạng sinh học. Nó tạo ra môi trường xanh cho cư dân đô thị, hỗ trợ cân bằng sinh thái và cải thiện chất lượng không khí. Đồng thời, công viên cũng thúc đẩy du lịch sinh thái tại địa phương và tạo cơ hội cho các hoạt động thể thao ngoài trời và nghiên cứu khoa học.\nGợi ý di chuyển\nDu khách có thể đến Công viên Sinh thái Hóc Môn bằng xe máy hoặc ô tô từ trung tâm TP. Hồ Chí Minh theo các tuyến đường chính hướng về Hóc Môn, hoặc sử dụng các phương tiện công cộng kết hợp taxi để thuận tiện. Công viên thường có bãi đậu xe rộng rãi và các tiện ích cơ bản cho du khách.",
+    "lich_su": null,
+    "diem_trung_binh": "0.00",
+    "so_luot_danh_gia": 0,
+    "anh_dai_dien": null,
+    "da_xac_minh": false,
+    "ngay_tao": "2026-03-13T05:53:46.874Z",
+    "ngay_cap_nhat": "2026-03-20T09:56:36.359Z"
+  }
+},
+{
+  "model": "parks.loaitienich",
+  "pk": 1,
+  "fields": {
+    "ten_loai": "Nhà vệ sinh",
+    "ma_code": "nha_ve_sinh",
+    "mo_ta": null,
+    "icon_url": null
+  }
+},
+{
+  "model": "parks.loaitienich",
+  "pk": 2,
+  "fields": {
+    "ten_loai": "Hồ bơi",
+    "ma_code": "ho_boi",
+    "mo_ta": null,
+    "icon_url": null
+  }
+},
+{
+  "model": "parks.loaitienich",
+  "pk": 3,
+  "fields": {
+    "ten_loai": "Sân thể thao",
+    "ma_code": "san_the_thao",
+    "mo_ta": null,
+    "icon_url": null
+  }
+},
+{
+  "model": "parks.loaitienich",
+  "pk": 4,
+  "fields": {
+    "ten_loai": "Hồ nước",
+    "ma_code": "ho_nuoc",
+    "mo_ta": null,
+    "icon_url": null
+  }
+},
+{
+  "model": "parks.loaitienich",
+  "pk": 5,
+  "fields": {
+    "ten_loai": "Phòng chăm sóc trẻ em",
+    "ma_code": "cham_soc_tre",
+    "mo_ta": null,
+    "icon_url": null
+  }
+},
+{
+  "model": "parks.loaitienich",
+  "pk": 6,
+  "fields": {
+    "ten_loai": "Bãi đỗ xe",
+    "ma_code": "bai_do_xe",
+    "mo_ta": null,
+    "icon_url": null
+  }
+},
+{
+  "model": "parks.loaitienich",
+  "pk": 7,
+  "fields": {
+    "ten_loai": "Quán nước",
+    "ma_code": "quan_nuoc",
+    "mo_ta": null,
+    "icon_url": null
+  }
+},
+{
+  "model": "parks.loaitienich",
+  "pk": 8,
+  "fields": {
+    "ten_loai": "Sân chơi trẻ em",
+    "ma_code": "san_choi_tre",
+    "mo_ta": null,
+    "icon_url": null
+  }
+},
+{
+  "model": "parks.tienichcongvien",
+  "pk": 1,
+  "fields": {
+    "ma_cong_vien": 1,
+    "ma_loai_tien_ich": 1,
+    "so_luong": 1,
+    "tinh_trang": "tot",
+    "mo_ta": "Nhà vệ sinh sạch sẽ, được vệ sinh liên tục. Có cả phòng vệ sinh cho người khuyết tật. Được cấp nước sạch từ hệ thống cấp nước công cộng. Bóng điện sáng, có thông gió tốt. Được quản lý bởi nhân viên công viên chuyên nghiệp, đảm bảo vệ sinh 24/7.",
+    "vi_tri": [],
+    "dang_su_dung": true,
+    "ngay_kiem_tra": null,
+    "hinh_anh": []
+  }
+},
+{
+  "model": "parks.tienichcongvien",
+  "pk": 2,
+  "fields": {
+    "ma_cong_vien": 1,
+    "ma_loai_tien_ich": 2,
+    "so_luong": 1,
+    "tinh_trang": "tot",
+    "mo_ta": "Hồ bơi ngoài trời với nước sạch, được lọc hàng ngày. Có nhân viên cứu hộ chuyên nghiệp. Phù hợp cho trẻ em và người lớn. Chu kỳ vệ sinh nghiêm ngặt theo tiêu chuẩn quốc tế.",
+    "vi_tri": [],
+    "dang_su_dung": true,
+    "ngay_kiem_tra": null,
+    "hinh_anh": []
+  }
+},
+{
+  "model": "parks.tienichcongvien",
+  "pk": 3,
+  "fields": {
+    "ma_cong_vien": 1,
+    "ma_loai_tien_ich": 3,
+    "so_luong": 1,
+    "tinh_trang": "tot",
+    "mo_ta": "Sân bóng chuyền, sân cầu lông, sân bóng rổ. Tất cả đều được bảo trì thường xuyên. Có chiếu sáng đủ để chơi vào buổi tối. Không phí sử dụng, miễn phí cho cộng đồng.",
+    "vi_tri": [],
+    "dang_su_dung": true,
+    "ngay_kiem_tra": null,
+    "hinh_anh": []
+  }
+},
+{
+  "model": "parks.tienichcongvien",
+  "pk": 4,
+  "fields": {
+    "ma_cong_vien": 1,
+    "ma_loai_tien_ich": 4,
+    "so_luong": 1,
+    "tinh_trang": "tot",
+    "mo_ta": "Hồ nước nhân tạo với cảnh quan tuyệt đẹp. Nước được căn chỉnh để tạo hệ sinh thái lành mạnh. Được lựa chọn cẩn thận để an toàn cho du khách. Có các cụm cây xanh quanh hồ tạo bóng mát.",
+    "vi_tri": [],
+    "dang_su_dung": true,
+    "ngay_kiem_tra": null,
+    "hinh_anh": []
+  }
+},
+{
+  "model": "parks.tienichcongvien",
+  "pk": 5,
+  "fields": {
+    "ma_cong_vien": 2,
+    "ma_loai_tien_ich": 1,
+    "so_luong": 1,
+    "tinh_trang": "tot",
+    "mo_ta": "Nhà vệ sinh hiện đại với đầy đủ tiện nghi. Được bảo vệ 24/7. Vệ sinh hàng giờ với các sản phẩm vệ sinh an toàn. Có máy sấy tay hiện đại. Phòng vệ sinh cho người khuyết tật đầy đủ tiện ích.",
+    "vi_tri": [],
+    "dang_su_dung": true,
+    "ngay_kiem_tra": null,
+    "hinh_anh": []
+  }
+},
+{
+  "model": "parks.tienichcongvien",
+  "pk": 6,
+  "fields": {
+    "ma_cong_vien": 2,
+    "ma_loai_tien_ich": 3,
+    "so_luong": 1,
+    "tinh_trang": "tot",
+    "mo_ta": "Sân bóng chuyền, cầu lông, bóng rổ. Được bảo trì hàng tuần. Có ánh sang tốt. Miễn phí cho tất cả thành viên cộng đồng.",
+    "vi_tri": [],
+    "dang_su_dung": true,
+    "ngay_kiem_tra": null,
+    "hinh_anh": []
+  }
+},
+{
+  "model": "parks.tienichcongvien",
+  "pk": 7,
+  "fields": {
+    "ma_cong_vien": 2,
+    "ma_loai_tien_ich": 4,
+    "so_luong": 1,
+    "tinh_trang": "tot",
+    "mo_ta": "Hồ nước lớn với cảnh quan đẹp. An toàn cho tất cả lứa tuổi. Được quản lý chất lượng nước thường xuyên. Có những khu vực ngồi quanh hồ để ngắm cảnh.",
+    "vi_tri": [],
+    "dang_su_dung": true,
+    "ngay_kiem_tra": null,
+    "hinh_anh": []
+  }
+},
+{
+  "model": "parks.tienichcongvien",
+  "pk": 8,
+  "fields": {
+    "ma_cong_vien": 3,
+    "ma_loai_tien_ich": 1,
+    "so_luong": 1,
+    "tinh_trang": "tot",
+    "mo_ta": "Nhà vệ sinh sang trọng, hiện đại. Được thiết kế theo tiêu chuẩn quốc tế. Vệ sinh quanh đồng hồ. Có các dịch vụ bổ sung cao cấp.",
+    "vi_tri": [],
+    "dang_su_dung": true,
+    "ngay_kiem_tra": null,
+    "hinh_anh": []
+  }
+},
+{
+  "model": "parks.tienichcongvien",
+  "pk": 9,
+  "fields": {
+    "ma_cong_vien": 3,
+    "ma_loai_tien_ich": 2,
+    "so_luong": 1,
+    "tinh_trang": "tot",
+    "mo_ta": "Hồ bơi ngoài trời cao cấp với tiêu chuẩn Olympic. Có hệ thống lọc nước hiện đại. Nhân viên cứu hộ chuyên nghiệp. Phòng thay đồ sạch sẽ.",
+    "vi_tri": [],
+    "dang_su_dung": true,
+    "ngay_kiem_tra": null,
+    "hinh_anh": []
+  }
+},
+{
+  "model": "parks.tienichcongvien",
+  "pk": 10,
+  "fields": {
+    "ma_cong_vien": 3,
+    "ma_loai_tien_ich": 3,
+    "so_luong": 1,
+    "tinh_trang": "tot",
+    "mo_ta": "Sân bóng chuyền, bóng rổ, cầu lông chuyên nghiệp. Có chiếu sáng hiện đại. Sân được bảo trì thường xuyên.",
+    "vi_tri": [],
+    "dang_su_dung": true,
+    "ngay_kiem_tra": null,
+    "hinh_anh": []
+  }
+},
+{
+  "model": "parks.tienichcongvien",
+  "pk": 11,
+  "fields": {
+    "ma_cong_vien": 3,
+    "ma_loai_tien_ich": 4,
+    "so_luong": 1,
+    "tinh_trang": "tot",
+    "mo_ta": "Hồ nước lớn với dịch vụ ca nô du lịch. Cảnh quan thiên nhiên đẹp. Được quản lý chất lượng nước từng giờ. Có quán cafe quanh hồ.",
+    "vi_tri": [],
+    "dang_su_dung": true,
+    "ngay_kiem_tra": null,
+    "hinh_anh": []
+  }
+},
+{
+  "model": "parks.tienichcongvien",
+  "pk": 12,
+  "fields": {
+    "ma_cong_vien": 4,
+    "ma_loai_tien_ich": 1,
+    "so_luong": 1,
+    "tinh_trang": "tot",
+    "mo_ta": "Nhà vệ sinh sinh thái, được xây dựng với vật liệu thân thiện môi trường. Được vệ sinh hàng ngày. Có nước sạch từ nguồn tự nhiên được lọc.",
+    "vi_tri": [],
+    "dang_su_dung": true,
+    "ngay_kiem_tra": null,
+    "hinh_anh": []
+  }
+},
+{
+  "model": "parks.tienichcongvien",
+  "pk": 13,
+  "fields": {
+    "ma_cong_vien": 4,
+    "ma_loai_tien_ich": 3,
+    "so_luong": 1,
+    "tinh_trang": "tot",
+    "mo_ta": "Sân chơi tự nhiên với cỏ xanh. Được bảo trì thường xuyên. Không có mái che nhân tạo, tận dụng tự nhiên.",
+    "vi_tri": [],
+    "dang_su_dung": true,
+    "ngay_kiem_tra": null,
+    "hinh_anh": []
+  }
+},
+{
+  "model": "parks.tienichcongvien",
+  "pk": 14,
+  "fields": {
+    "ma_cong_vien": 4,
+    "ma_loai_tien_ich": 4,
+    "so_luong": 1,
+    "tinh_trang": "tot",
+    "mo_ta": "Hồ nước tự nhiên với hệ sinh thái đa dạng. Được bảo vệ và quản lý bền vững. Không được sử dụng hóa chất. An toàn cho cộng đồng.",
+    "vi_tri": [],
+    "dang_su_dung": true,
+    "ngay_kiem_tra": null,
+    "hinh_anh": []
+  }
+},
+{
+  "model": "parks.tienichcongvien",
+  "pk": 15,
+  "fields": {
+    "ma_cong_vien": 5,
+    "ma_loai_tien_ich": 1,
+    "so_luong": 1,
+    "tinh_trang": "tot",
+    "mo_ta": "Nhà vệ sinh công cộng sạch sẽ.",
+    "vi_tri": [],
+    "dang_su_dung": true,
+    "ngay_kiem_tra": null,
+    "hinh_anh": []
+  }
+},
+{
+  "model": "parks.tienichcongvien",
+  "pk": 16,
+  "fields": {
+    "ma_cong_vien": 5,
+    "ma_loai_tien_ich": 8,
+    "so_luong": 1,
+    "tinh_trang": "tot",
+    "mo_ta": "Khu vui chơi nhỏ cho trẻ em.",
+    "vi_tri": [],
+    "dang_su_dung": true,
+    "ngay_kiem_tra": null,
+    "hinh_anh": []
+  }
+},
+{
+  "model": "parks.tienichcongvien",
+  "pk": 17,
+  "fields": {
+    "ma_cong_vien": 6,
+    "ma_loai_tien_ich": 6,
+    "so_luong": 1,
+    "tinh_trang": "tot",
+    "mo_ta": "Bãi giữ xe máy ngầm.",
+    "vi_tri": [],
+    "dang_su_dung": true,
+    "ngay_kiem_tra": null,
+    "hinh_anh": []
+  }
+},
+{
+  "model": "parks.tienichcongvien",
+  "pk": 18,
+  "fields": {
+    "ma_cong_vien": 6,
+    "ma_loai_tien_ich": 3,
+    "so_luong": 1,
+    "tinh_trang": "tot",
+    "mo_ta": "Khu vực tập dưỡng sinh.",
+    "vi_tri": [],
+    "dang_su_dung": true,
+    "ngay_kiem_tra": null,
+    "hinh_anh": []
+  }
+},
+{
+  "model": "parks.tienichcongvien",
+  "pk": 19,
+  "fields": {
+    "ma_cong_vien": 7,
+    "ma_loai_tien_ich": 4,
+    "so_luong": 1,
+    "tinh_trang": "tot",
+    "mo_ta": "Hồ cá Koi và đài phun nước.",
+    "vi_tri": [],
+    "dang_su_dung": true,
+    "ngay_kiem_tra": null,
+    "hinh_anh": []
+  }
+},
+{
+  "model": "parks.tienichcongvien",
+  "pk": 20,
+  "fields": {
+    "ma_cong_vien": 7,
+    "ma_loai_tien_ich": 8,
+    "so_luong": 1,
+    "tinh_trang": "tot",
+    "mo_ta": "Nhiều khu vui chơi hiện đại.",
+    "vi_tri": [],
+    "dang_su_dung": true,
+    "ngay_kiem_tra": null,
+    "hinh_anh": []
+  }
+},
+{
+  "model": "parks.tienichcongvien",
+  "pk": 21,
+  "fields": {
+    "ma_cong_vien": 7,
+    "ma_loai_tien_ich": 3,
+    "so_luong": 1,
+    "tinh_trang": "tot",
+    "mo_ta": "Sân golf mini, sân tennis.",
+    "vi_tri": [],
+    "dang_su_dung": true,
+    "ngay_kiem_tra": null,
+    "hinh_anh": []
+  }
+},
+{
+  "model": "parks.tienichcongvien",
+  "pk": 22,
+  "fields": {
+    "ma_cong_vien": 9,
+    "ma_loai_tien_ich": 6,
+    "so_luong": 1,
+    "tinh_trang": "tot",
+    "mo_ta": "",
+    "vi_tri": [],
+    "dang_su_dung": true,
+    "ngay_kiem_tra": null,
+    "hinh_anh": []
+  }
+},
+{
+  "model": "parks.tienichcongvien",
+  "pk": 23,
+  "fields": {
+    "ma_cong_vien": 9,
+    "ma_loai_tien_ich": 4,
+    "so_luong": 1,
+    "tinh_trang": "tot",
+    "mo_ta": "",
+    "vi_tri": [],
+    "dang_su_dung": true,
+    "ngay_kiem_tra": null,
+    "hinh_anh": []
+  }
+},
+{
+  "model": "parks.tienichcongvien",
+  "pk": 24,
+  "fields": {
+    "ma_cong_vien": 9,
+    "ma_loai_tien_ich": 1,
+    "so_luong": 1,
+    "tinh_trang": "tot",
+    "mo_ta": "",
+    "vi_tri": [],
+    "dang_su_dung": true,
+    "ngay_kiem_tra": null,
+    "hinh_anh": []
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 81,
+  "fields": {
+    "ma_cong_vien": 9,
+    "url_anh": "http://localhost:8000/media/park_images/Screenshot%202026-03-06%20162941_L6ixfeg.png",
+    "mo_ta": null,
+    "la_anh_chinh": true,
+    "ngay_chup": null
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 82,
+  "fields": {
+    "ma_cong_vien": 9,
+    "url_anh": "http://localhost:8000/media/park_images/Screenshot%202026-03-06%20162624_YoDO7Kp.png",
+    "mo_ta": null,
+    "la_anh_chinh": false,
+    "ngay_chup": null
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 83,
+  "fields": {
+    "ma_cong_vien": 9,
+    "url_anh": "http://localhost:8000/media/park_images/Screenshot%202026-03-06%20162557_ozzJcGq.png",
+    "mo_ta": null,
+    "la_anh_chinh": false,
+    "ngay_chup": null
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 84,
+  "fields": {
+    "ma_cong_vien": 9,
+    "url_anh": "http://localhost:8000/media/park_images/Screenshot%202026-03-06%20162537_eyXcKZw.png",
+    "mo_ta": null,
+    "la_anh_chinh": false,
+    "ngay_chup": null
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 85,
+  "fields": {
+    "ma_cong_vien": 9,
+    "url_anh": "http://localhost:8000/media/park_images/Screenshot%202026-03-06%20162515_X2Z0zm9.png",
+    "mo_ta": null,
+    "la_anh_chinh": false,
+    "ngay_chup": null
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 86,
+  "fields": {
+    "ma_cong_vien": 9,
+    "url_anh": "http://localhost:8000/media/park_images/Screenshot%202026-03-06%20162449_KOXGf2o.png",
+    "mo_ta": null,
+    "la_anh_chinh": false,
+    "ngay_chup": null
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 87,
+  "fields": {
+    "ma_cong_vien": 1,
+    "url_anh": "https://images.unsplash.com/photo-1585938389612-a552a28d6914?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Tao Đàn - Ảnh 1",
+    "la_anh_chinh": true,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 88,
+  "fields": {
+    "ma_cong_vien": 1,
+    "url_anh": "https://images.unsplash.com/photo-1575995995938-7a6f2e5e7958?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Tao Đàn - Ảnh 2",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 89,
+  "fields": {
+    "ma_cong_vien": 1,
+    "url_anh": "https://images.unsplash.com/photo-1562664377-709f2c337eb2?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Tao Đàn - Ảnh 3",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 90,
+  "fields": {
+    "ma_cong_vien": 1,
+    "url_anh": "https://images.unsplash.com/photo-1596233064276-093322da7a00?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Tao Đàn - Ảnh 4",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 91,
+  "fields": {
+    "ma_cong_vien": 1,
+    "url_anh": "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Tao Đàn - Ảnh 5",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 92,
+  "fields": {
+    "ma_cong_vien": 2,
+    "url_anh": "https://images.unsplash.com/photo-1562664377-709f2c337eb2?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Gia Định - Ảnh 1",
+    "la_anh_chinh": true,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 93,
+  "fields": {
+    "ma_cong_vien": 2,
+    "url_anh": "https://images.unsplash.com/photo-1596233064276-093322da7a00?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Gia Định - Ảnh 2",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 94,
+  "fields": {
+    "ma_cong_vien": 2,
+    "url_anh": "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Gia Định - Ảnh 3",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 95,
+  "fields": {
+    "ma_cong_vien": 2,
+    "url_anh": "https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Gia Định - Ảnh 4",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 96,
+  "fields": {
+    "ma_cong_vien": 2,
+    "url_anh": "https://images.unsplash.com/photo-1498084393753-b411b2d26b34?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Gia Định - Ảnh 5",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 97,
+  "fields": {
+    "ma_cong_vien": 3,
+    "url_anh": "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Phú Mỹ Hưng - Khu Orchard - Ảnh 1",
+    "la_anh_chinh": true,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 98,
+  "fields": {
+    "ma_cong_vien": 3,
+    "url_anh": "https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Phú Mỹ Hưng - Khu Orchard - Ảnh 2",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 99,
+  "fields": {
+    "ma_cong_vien": 3,
+    "url_anh": "https://images.unsplash.com/photo-1498084393753-b411b2d26b34?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Phú Mỹ Hưng - Khu Orchard - Ảnh 3",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 100,
+  "fields": {
+    "ma_cong_vien": 3,
+    "url_anh": "https://images.unsplash.com/photo-1519331379826-f947873e307d?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Phú Mỹ Hưng - Khu Orchard - Ảnh 4",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 101,
+  "fields": {
+    "ma_cong_vien": 3,
+    "url_anh": "https://images.unsplash.com/photo-1585938389612-a552a28d6914?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Phú Mỹ Hưng - Khu Orchard - Ảnh 5",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 102,
+  "fields": {
+    "ma_cong_vien": 4,
+    "url_anh": "https://images.unsplash.com/photo-1498084393753-b411b2d26b34?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Bình Khánh - Ảnh 1",
+    "la_anh_chinh": true,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 103,
+  "fields": {
+    "ma_cong_vien": 4,
+    "url_anh": "https://images.unsplash.com/photo-1519331379826-f947873e307d?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Bình Khánh - Ảnh 2",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 104,
+  "fields": {
+    "ma_cong_vien": 4,
+    "url_anh": "https://images.unsplash.com/photo-1585938389612-a552a28d6914?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Bình Khánh - Ảnh 3",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 105,
+  "fields": {
+    "ma_cong_vien": 4,
+    "url_anh": "https://images.unsplash.com/photo-1575995995938-7a6f2e5e7958?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Bình Khánh - Ảnh 4",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 106,
+  "fields": {
+    "ma_cong_vien": 4,
+    "url_anh": "https://images.unsplash.com/photo-1562664377-709f2c337eb2?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Bình Khánh - Ảnh 5",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 107,
+  "fields": {
+    "ma_cong_vien": 5,
+    "url_anh": "https://images.unsplash.com/photo-1585938389612-a552a28d6914?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Lê Văn Tám - Ảnh 1",
+    "la_anh_chinh": true,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 108,
+  "fields": {
+    "ma_cong_vien": 5,
+    "url_anh": "https://images.unsplash.com/photo-1575995995938-7a6f2e5e7958?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Lê Văn Tám - Ảnh 2",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 109,
+  "fields": {
+    "ma_cong_vien": 5,
+    "url_anh": "https://images.unsplash.com/photo-1562664377-709f2c337eb2?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Lê Văn Tám - Ảnh 3",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 110,
+  "fields": {
+    "ma_cong_vien": 5,
+    "url_anh": "https://images.unsplash.com/photo-1596233064276-093322da7a00?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Lê Văn Tám - Ảnh 4",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 111,
+  "fields": {
+    "ma_cong_vien": 5,
+    "url_anh": "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Lê Văn Tám - Ảnh 5",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 112,
+  "fields": {
+    "ma_cong_vien": 6,
+    "url_anh": "https://images.unsplash.com/photo-1562664377-709f2c337eb2?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên 23 tháng 9 - Ảnh 1",
+    "la_anh_chinh": true,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 113,
+  "fields": {
+    "ma_cong_vien": 6,
+    "url_anh": "https://images.unsplash.com/photo-1596233064276-093322da7a00?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên 23 tháng 9 - Ảnh 2",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 114,
+  "fields": {
+    "ma_cong_vien": 6,
+    "url_anh": "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên 23 tháng 9 - Ảnh 3",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 115,
+  "fields": {
+    "ma_cong_vien": 6,
+    "url_anh": "https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên 23 tháng 9 - Ảnh 4",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 116,
+  "fields": {
+    "ma_cong_vien": 6,
+    "url_anh": "https://images.unsplash.com/photo-1498084393753-b411b2d26b34?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên 23 tháng 9 - Ảnh 5",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 117,
+  "fields": {
+    "ma_cong_vien": 7,
+    "url_anh": "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Vinhomes Central Park - Ảnh 1",
+    "la_anh_chinh": true,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 118,
+  "fields": {
+    "ma_cong_vien": 7,
+    "url_anh": "https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Vinhomes Central Park - Ảnh 2",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 119,
+  "fields": {
+    "ma_cong_vien": 7,
+    "url_anh": "https://images.unsplash.com/photo-1498084393753-b411b2d26b34?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Vinhomes Central Park - Ảnh 3",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 120,
+  "fields": {
+    "ma_cong_vien": 7,
+    "url_anh": "https://images.unsplash.com/photo-1519331379826-f947873e307d?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Vinhomes Central Park - Ảnh 4",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 121,
+  "fields": {
+    "ma_cong_vien": 7,
+    "url_anh": "https://images.unsplash.com/photo-1585938389612-a552a28d6914?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Vinhomes Central Park - Ảnh 5",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 122,
+  "fields": {
+    "ma_cong_vien": 8,
+    "url_anh": "https://images.unsplash.com/photo-1498084393753-b411b2d26b34?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Lê Thị Riêng - Ảnh 1",
+    "la_anh_chinh": true,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 123,
+  "fields": {
+    "ma_cong_vien": 8,
+    "url_anh": "https://images.unsplash.com/photo-1519331379826-f947873e307d?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Lê Thị Riêng - Ảnh 2",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 124,
+  "fields": {
+    "ma_cong_vien": 8,
+    "url_anh": "https://images.unsplash.com/photo-1585938389612-a552a28d6914?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Lê Thị Riêng - Ảnh 3",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 125,
+  "fields": {
+    "ma_cong_vien": 8,
+    "url_anh": "https://images.unsplash.com/photo-1575995995938-7a6f2e5e7958?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Lê Thị Riêng - Ảnh 4",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.hinhanhcongvien",
+  "pk": 126,
+  "fields": {
+    "ma_cong_vien": 8,
+    "url_anh": "https://images.unsplash.com/photo-1562664377-709f2c337eb2?w=800&q=80",
+    "mo_ta": "Cảnh quan Công viên Lê Thị Riêng - Ảnh 5",
+    "la_anh_chinh": false,
+    "ngay_chup": "2026-03-27"
+  }
+},
+{
+  "model": "parks.nhomquyen",
+  "pk": 1,
+  "fields": {
+    "ten_nhom": "QUAN_TRI",
+    "mo_ta": "Quản trị viên"
+  }
+},
+{
+  "model": "parks.nhomquyen",
+  "pk": 2,
+  "fields": {
+    "ten_nhom": "QUAN_LY_CV",
+    "mo_ta": "Quản lý công viên"
+  }
+},
+{
+  "model": "parks.nhomquyen",
+  "pk": 3,
+  "fields": {
+    "ten_nhom": "KIEM_TRA",
+    "mo_ta": "Nhân viên kiểm tra"
+  }
+},
+{
+  "model": "parks.nhomquyen",
+  "pk": 4,
+  "fields": {
+    "ten_nhom": "BIEN_TAP_GIS",
+    "mo_ta": "Biên tập viên GIS"
+  }
+},
+{
+  "model": "parks.nhomquyen",
+  "pk": 5,
+  "fields": {
+    "ten_nhom": "CONG_DONG",
+    "mo_ta": "Người dùng cộng đồng"
+  }
+},
+{
+  "model": "parks.nguoidung",
+  "pk": 1,
+  "fields": {
+    "ma_nhom_quyen": 1,
+    "ten_dang_nhap": "admin",
+    "email": "admin@gis.com",
+    "mat_khau_hash": "pbkdf2_sha256$390000$IErPfw0ru63CDDUYMGIV2i$ipLF3JpBrK5NGkp9oHrj3JLZgRCErEsJMbX1rIEKb7E=",
+    "ho_ten": "Quản Trị Viên",
+    "dang_hoat_dong": true,
+    "da_xac_thuc_email": true,
+    "so_lan_dang_nhap": 0,
+    "lan_dang_nhap_cuoi": null,
+    "token": "admin-initial-token",
+    "ngay_tao": "2026-03-13T05:11:03.204Z",
+    "ngay_cap_nhat": "2026-03-27T08:50:45.578Z"
+  }
+},
+{
+  "model": "parks.nguoidung",
+  "pk": 2,
+  "fields": {
+    "ma_nhom_quyen": 2,
+    "ten_dang_nhap": "manager",
+    "email": "manager@gis.com",
+    "mat_khau_hash": "pbkdf2_sha256$390000$IErPfw0ru63CDDUYMGIV2i$ipLF3JpBrK5NGkp9oHrj3JLZgRCErEsJMbX1rIEKb7E=",
+    "ho_ten": "Quản Lý Công Viên",
+    "dang_hoat_dong": true,
+    "da_xac_thuc_email": false,
+    "so_lan_dang_nhap": 0,
+    "lan_dang_nhap_cuoi": null,
+    "token": null,
+    "ngay_tao": "2026-03-13T05:11:03.220Z",
+    "ngay_cap_nhat": "2026-03-27T08:50:45.585Z"
+  }
+},
+{
+  "model": "parks.nguoidung",
+  "pk": 3,
+  "fields": {
+    "ma_nhom_quyen": 4,
+    "ten_dang_nhap": "editor",
+    "email": "editor@gis.com",
+    "mat_khau_hash": "pbkdf2_sha256$390000$IErPfw0ru63CDDUYMGIV2i$ipLF3JpBrK5NGkp9oHrj3JLZgRCErEsJMbX1rIEKb7E=",
+    "ho_ten": "Biên Tập Viên",
+    "dang_hoat_dong": true,
+    "da_xac_thuc_email": false,
+    "so_lan_dang_nhap": 0,
+    "lan_dang_nhap_cuoi": null,
+    "token": null,
+    "ngay_tao": "2026-03-13T05:11:03.228Z",
+    "ngay_cap_nhat": "2026-03-27T08:50:45.591Z"
+  }
+},
+{
+  "model": "parks.nguoidung",
+  "pk": 4,
+  "fields": {
+    "ma_nhom_quyen": 5,
+    "ten_dang_nhap": "user",
+    "email": "user@gis.com",
+    "mat_khau_hash": "pbkdf2_sha256$390000$IErPfw0ru63CDDUYMGIV2i$ipLF3JpBrK5NGkp9oHrj3JLZgRCErEsJMbX1rIEKb7E=",
+    "ho_ten": "Người Dùng",
+    "dang_hoat_dong": true,
+    "da_xac_thuc_email": true,
+    "so_lan_dang_nhap": 0,
+    "lan_dang_nhap_cuoi": null,
+    "token": "user-initial-token",
+    "ngay_tao": "2026-03-13T05:11:03.236Z",
+    "ngay_cap_nhat": "2026-03-27T08:50:45.597Z"
+  }
+},
+{
+  "model": "parks.danhmucsuco",
+  "pk": 1,
+  "fields": {
+    "ten_danh_muc": "Hư hỏng tài sản",
+    "mo_ta": null
+  }
+},
+{
+  "model": "parks.danhmucsuco",
+  "pk": 2,
+  "fields": {
+    "ten_danh_muc": "Vấn đề vệ sinh",
+    "mo_ta": null
+  }
+},
+{
+  "model": "parks.danhmucsuco",
+  "pk": 3,
+  "fields": {
+    "ten_danh_muc": "An ninh trật tự",
+    "mo_ta": null
+  }
+},
+{
+  "model": "parks.danhmucsuco",
+  "pk": 4,
+  "fields": {
+    "ten_danh_muc": "Cây xanh gãy đổ",
+    "mo_ta": null
+  }
+},
+{
+  "model": "parks.danhmucsuco",
+  "pk": 5,
+  "fields": {
+    "ten_danh_muc": "Chiếu sáng công cộng",
+    "mo_ta": null
+  }
+},
+{
+  "model": "parks.danhmucsuco",
+  "pk": 6,
+  "fields": {
+    "ten_danh_muc": "Khác",
+    "mo_ta": null
+  }
+},
+{
+  "model": "parks.baocaosuco",
+  "pk": 1,
+  "fields": {
+    "ma_cong_vien": 9,
+    "ma_danh_muc": 5,
+    "tieu_de": "Đèn Hư",
+    "noi_dung_mo_ta": "ádawdwqdqwd",
+    "url_hinh_anh": [
+      "http://localhost:8000/media/incident_images/Screenshot%202026-03-06%20162515.png"
+    ],
+    "trang_thai": "dang_xu_ly",
+    "muc_do_uu_tien": "trung_binh",
+    "ma_nguoi_phu_trach": null,
+    "ma_nguoi_bao_cao": 1,
+    "vi_tri": [
+      10.678591,
+      106.624242
+    ],
+    "so_nguoi_xac_nhan": 0,
+    "ngay_tao": "2026-03-13T06:02:31.032Z",
+    "ngay_cap_nhat": "2026-03-13T06:02:44.664Z"
+  }
+},
+{
+  "model": "parks.baocaosuco",
+  "pk": 2,
+  "fields": {
+    "ma_cong_vien": 4,
+    "ma_danh_muc": 2,
+    "tieu_de": "da",
+    "noi_dung_mo_ta": "ưdqwdq",
+    "url_hinh_anh": [
+      "http://localhost:8000/media/incident_images/Screenshot%202026-03-06%20162557.png"
+    ],
+    "trang_thai": "cho_xu_ly",
+    "muc_do_uu_tien": "trung_binh",
+    "ma_nguoi_phu_trach": null,
+    "ma_nguoi_bao_cao": 4,
+    "vi_tri": [],
+    "so_nguoi_xac_nhan": 0,
+    "ngay_tao": "2026-03-13T06:03:36.631Z",
+    "ngay_cap_nhat": "2026-03-13T06:03:36.631Z"
+  }
+}
+]

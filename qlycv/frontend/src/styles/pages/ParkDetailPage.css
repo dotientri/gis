@@ -1,0 +1,314 @@
+.park-detail-page {
+  padding: 24px;
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  gap: 12px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.detail-container {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
+}
+
+.detail-card {
+  background: white;
+  border-radius: var(--border-radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 24px;
+}
+
+.detail-card h1 {
+  font-size: 28px;
+  margin-bottom: 16px;
+  color: var(--color-text-primary);
+}
+
+.detail-card h2 {
+  font-size: 18px;
+  margin-top: 24px;
+  margin-bottom: 16px;
+  color: var(--color-text-primary);
+}
+
+/* Metadata */
+.detail-meta {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  padding: 16px 0;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 24px;
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.meta-item .label {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.meta-item .value {
+  color: var(--color-text-primary);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Description */
+.description-section p {
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+/* Info Grid */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  background: var(--color-bg-secondary);
+  padding: 16px;
+  border-radius: var(--border-radius-md);
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-item .label {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
+.info-item .value {
+  color: var(--color-text-primary);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Amenities Grid */
+.amenities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.amenity-card {
+  background: var(--color-bg-secondary);
+  padding: 12px;
+  border-radius: var(--border-radius-md);
+  border-left: 3px solid var(--color-primary);
+}
+
+.amenity-name {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 8px;
+}
+
+.amenity-details p {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin: 4px 0;
+}
+
+.condition {
+  font-weight: 600;
+}
+
+.condition-tot {
+  color: #22c55e;
+}
+
+.condition-kha {
+  color: #3b82f6;
+}
+
+.condition-trung_binh {
+  color: #f59e0b;
+}
+
+.condition-kem {
+  color: #ef4444;
+}
+
+/* Ratings List */
+.ratings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rating-item {
+  background: var(--color-bg-secondary);
+  padding: 12px;
+  border-radius: var(--border-radius-md);
+  border-left: 3px solid #fbbf24;
+}
+
+.rating-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.rating-author {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-size: 13px;
+}
+
+.rating-score {
+  font-weight: 700;
+  color: #fbbf24;
+}
+
+.rating-comment {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.rating-date {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+}
+
+.no-data {
+  color: var(--color-text-secondary);
+  text-align: center;
+  padding: 20px 0;
+  font-style: italic;
+}
+
+/* Sidebar */
+.detail-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: fit-content;
+}
+
+.sidebar-card {
+  background: white;
+  border-radius: var(--border-radius-lg);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.sidebar-card h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--color-text-primary);
+}
+
+.quick-info p {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin: 8px 0;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.quick-info p:last-child {
+  border-bottom: none;
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.btn-full {
+  width: 100%;
+  padding: 10px 12px;
+}
+
+/* Error Container */
+.error-container {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: white;
+  border-radius: var(--border-radius-lg);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .detail-container {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-sidebar {
+    grid-column: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .park-detail-page {
+    padding: 12px;
+  }
+
+  .detail-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .header-actions {
+    width: 100%;
+  }
+
+  .header-actions .btn {
+    flex: 1;
+  }
+
+  .detail-card h1 {
+    font-size: 24px;
+  }
+
+  .detail-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .amenities-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+
+  .sidebar-card .action-buttons {
+    gap: 6px;
+  }
+
+  .sidebar-card .action-buttons .btn {
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+}
