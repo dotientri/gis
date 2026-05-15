@@ -1,1 +1,100 @@
+name: He Thong CI Toan Dien (Restore SQL)
 
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  kiem-tra-toan-dien:
+    name: 🚀 Test Toàn Bộ Hệ Thống (Có Data Thật)
+    runs-on: ubuntu-latest
+
+    # 1. Khởi động DB PostGIS (lúc này DB vẫn đang trống rỗng)
+    services:
+      db:
+        image: postgis/postgis:17-3.5-alpine
+        env:
+          POSTGRES_DB: gis_database
+          POSTGRES_USER: admin
+          POSTGRES_PASSWORD: YourPassword123
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      # Bước 1: Kéo toàn bộ code (bao gồm cả file backup_full.sql) về máy ảo
+      - name: 📥 Tải code về
+        uses: actions/checkout@v4
+
+      # Bước 2: Cài công cụ PostgreSQL Client (để dùng lệnh psql)
+      - name: 🛠️ Cài đặt công cụ hệ thống (psql, libs)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client libjpeg-dev zlib1g-dev
+
+      # Bước 3: SIÊU QUAN TRỌNG - Đổ dữ liệu từ file backup vào DB ảo
+      - name: ♻️ Đổ dữ liệu từ file backup_full.sql vào Database
+        env:
+          PGPASSWORD: YourPassword123
+        run: |
+          # Dùng psql kết nối vào DB ảo và chạy file SQL
+          psql -h localhost -p 5432 -U admin -d gis_database -f ./qlycv/backup_full.sql
+
+      # Bước 4: Setup Python
+      - name: 🐍 Cài đặt Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      # Bước 5: Cài thư viện Backend
+      - name: 📦 Cài thư viện Backend (Django)
+        working-directory: ./qlycv/backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Bước 6: Chạy Migrate (Kiểm tra xem file backup có lỗi thời không)
+      # Lệnh này sẽ an toàn vì dữ liệu đã được nạp ở Bước 3
+      - name: 🗄️ Cập nhật cấu trúc DB (Django Migrate)
+        working-directory: ./qlycv/backend
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: gis_database
+          DB_USER: admin
+          DB_PASSWORD: YourPassword123
+        run: python manage.py migrate --noinput
+
+      # Bước 7: Test Backend xem có chạy được với Data thật không
+      - name: ✅ Kiểm tra hệ thống Backend
+        working-directory: ./qlycv/backend
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: gis_database
+          DB_USER: admin
+          DB_PASSWORD: YourPassword123
+        run: python manage.py check
+
+      # Bước 8: Setup Frontend
+      - name: 🟢 Cài đặt Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: ./qlycv/frontend/package-lock.json
+
+      # Bước 9: Cài thư viện Frontend
+      - name: 📦 Cài thư viện Frontend (React)
+        working-directory: ./qlycv/frontend
+        run: npm ci
+
+      # Bước 10: Build Frontend xem có lỗi gì không
+      - name: 🏗️ Build Giao diện
+        working-directory: ./qlycv/frontend
+        run: npm run build
