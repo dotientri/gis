@@ -10,8 +10,7 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        checkout([$class: 'GitSCM', branches: [[name: '*/main']],
-          userRemoteConfigs: [[url: 'https://github.com/dotientri/gis.git', credentialsId: 'github-token']]])
+        checkout scm
       }
     }
     stage('Prepare tag') {
@@ -25,27 +24,31 @@ pipeline {
     stage('Build & Push Docker Images') {
       steps {
         withCredentials([usernamePassword(credentialsId: "${DOCKERHUB_CRED}", usernameVariable: 'DH_USER', passwordVariable: 'DH_PASS')]) {
-          sh '''
-            echo $DH_PASS | docker login -u $DH_USER --password-stdin
-            docker build -f backend/Dockerfile -t ${DOCKERHUB}/${REPO_PREFIX}-backend:${IMG_TAG} .
-            docker push ${DOCKERHUB}/${REPO_PREFIX}-backend:${IMG_TAG}
-            docker build -f frontend/Dockerfile -t ${DOCKERHUB}/${REPO_PREFIX}-frontend:${IMG_TAG} frontend
-            docker push ${DOCKERHUB}/${REPO_PREFIX}-frontend:${IMG_TAG}
-          '''
+          dir('qlycv') {
+            sh '''
+              echo $DH_PASS | docker login -u $DH_USER --password-stdin
+              docker build -f backend/Dockerfile -t ${DOCKERHUB}/${REPO_PREFIX}-backend:${IMG_TAG} .
+              docker push ${DOCKERHUB}/${REPO_PREFIX}-backend:${IMG_TAG}
+              docker build -f frontend/Dockerfile -t ${DOCKERHUB}/${REPO_PREFIX}-frontend:${IMG_TAG} .
+              docker push ${DOCKERHUB}/${REPO_PREFIX}-frontend:${IMG_TAG}
+            '''
+          }
         }
       }
     }
     stage('Deploy to k3s') {
       steps {
         withCredentials([file(credentialsId: "${KUBECONFIG_CRED}", variable: 'KUBECONFIG_FILE')]) {
-          sh '''
-            export KUBECONFIG=$KUBECONFIG_FILE
-            kubectl apply -f k8s/namespace.yaml
-            kubectl apply -f k8s/postgres.yaml
-            sed "s|DOCKERHUB_USERNAME|${DOCKERHUB}|g; s|TAG|${IMG_TAG}|g" k8s/backend-deployment.yaml | kubectl -n ${NAMESPACE} apply -f -
-            sed "s|DOCKERHUB_USERNAME|${DOCKERHUB}|g; s|TAG|${IMG_TAG}|g" k8s/frontend-deployment.yaml | kubectl -n ${NAMESPACE} apply -f -
-            kubectl apply -f k8s/service.yaml -n ${NAMESPACE}
-          '''
+          dir('qlycv') {
+            sh '''
+              export KUBECONFIG=$KUBECONFIG_FILE
+              kubectl apply -f k8s/namespace.yaml
+              kubectl apply -f k8s/postgres.yaml
+              sed "s|DOCKERHUB_USERNAME|${DOCKERHUB}|g; s|TAG|${IMG_TAG}|g" k8s/backend-deployment.yaml | kubectl -n ${NAMESPACE} apply -f -
+              sed "s|DOCKERHUB_USERNAME|${DOCKERHUB}|g; s|TAG|${IMG_TAG}|g" k8s/frontend-deployment.yaml | kubectl -n ${NAMESPACE} apply -f -
+              kubectl apply -f k8s/service.yaml -n ${NAMESPACE}
+            '''
+          }
         }
       }
     }
