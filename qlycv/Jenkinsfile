@@ -36,7 +36,7 @@ pipeline {
         }
       }
     }
-    stage('Deploy to k3s') {
+    stage('Create imagePullSecret') {
       steps {
         withCredentials([file(credentialsId: "${KUBECONFIG_CRED}", variable: 'KUBECONFIG_FILE'), usernamePassword(credentialsId: "${DOCKERHUB_CRED}", usernameVariable: 'DH_USER', passwordVariable: 'DH_PASS')]) {
           dir('qlycv') {
