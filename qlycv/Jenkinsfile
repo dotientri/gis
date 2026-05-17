@@ -31,9 +31,10 @@ pipeline {
                 backend: {
                   sh '''
                     set -e
-                    export DOCKER_BUILDKIT=1
+                    export DOCKER_BUILDKIT=0
+                    BUILD_CTX=$(pwd)
                     docker pull ${DH_USER}/${REPO_PREFIX}-backend:latest || true
-                    docker build --cache-from ${DH_USER}/${REPO_PREFIX}-backend:latest -f backend/Dockerfile -t ${DH_USER}/${REPO_PREFIX}-backend:${IMG_TAG} backend
+                    docker build --cache-from ${DH_USER}/${REPO_PREFIX}-backend:latest -f backend/Dockerfile -t ${DH_USER}/${REPO_PREFIX}-backend:${IMG_TAG} "$BUILD_CTX"
                     docker tag ${DH_USER}/${REPO_PREFIX}-backend:${IMG_TAG} ${DH_USER}/${REPO_PREFIX}-backend:latest
                     docker push ${DH_USER}/${REPO_PREFIX}-backend:${IMG_TAG}
                     docker push ${DH_USER}/${REPO_PREFIX}-backend:latest
@@ -42,9 +43,10 @@ pipeline {
                 frontend: {
                   sh '''
                     set -e
-                    export DOCKER_BUILDKIT=1
+                    export DOCKER_BUILDKIT=0
+                    BUILD_CTX=$(pwd)
                     docker pull ${DH_USER}/${REPO_PREFIX}-frontend:latest || true
-                    docker build --cache-from ${DH_USER}/${REPO_PREFIX}-frontend:latest -f frontend/Dockerfile -t ${DH_USER}/${REPO_PREFIX}-frontend:${IMG_TAG} frontend
+                    docker build --cache-from ${DH_USER}/${REPO_PREFIX}-frontend:latest -f frontend/Dockerfile -t ${DH_USER}/${REPO_PREFIX}-frontend:${IMG_TAG} "$BUILD_CTX"
                     docker tag ${DH_USER}/${REPO_PREFIX}-frontend:${IMG_TAG} ${DH_USER}/${REPO_PREFIX}-frontend:latest
                     docker push ${DH_USER}/${REPO_PREFIX}-frontend:${IMG_TAG}
                     docker push ${DH_USER}/${REPO_PREFIX}-frontend:latest
