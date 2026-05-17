@@ -1,0 +1,12 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: 'telegram-default'
+
+receivers:
+- name: 'telegram-default'
+  telegram_configs:
+  - bot_token: '<PUT_BOT_TOKEN_HERE>'
+    chat_id: '<PUT_CHAT_ID_HERE>'
+    message: "{{ .CommonAnnotations.summary }}\n{{ .CommonAnnotations.description }}"

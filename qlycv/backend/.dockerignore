@@ -1,3 +1,20 @@
+__pycache__/
+*.py[cod]
+.Python
+env/
+venv/
+.venv/
+*.sqlite3
+*.log
+.git
+.github
+node_modules/
+build/
+dist/
+backup_full.sql
+*.md
+*.json
+.env
 # Git
 .git
 .gitignore
