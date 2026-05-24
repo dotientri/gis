@@ -1,0 +1,18 @@
+# kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+helmGlobals:
+  chartHome: .
+
+# Sử dụng helmCharts để render chart vừa tạo
+helmCharts:
+  - name: gis_qlycv
+    releaseName: my-app-release
+    namespace: my-namespace
+    valuesInline:
+      replicaCount: 3 # Ghi đè values mặc định của Helm tại đây
+      
+# Bạn cũng có thể thêm các file patch Kustomize ở đây
+# patches:
+#   - target: ...

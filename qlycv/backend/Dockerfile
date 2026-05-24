@@ -1,32 +1,9 @@
 FROM python:3.11-slim
-
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    netcat-openbsd \
-    gcc \
-    libjpeg-dev \
-    zlib1g-dev \
-    libpq-dev \
-  && rm -rf /var/lib/apt/lists/*
-
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 WORKDIR /app
-
-COPY backend/requirements.txt ./requirements.txt
-RUN pip install --upgrade pip && pip install -r requirements.txt
-
-COPY backend/ .
-
-RUN chmod +x /app/entrypoint.sh && \
-    useradd -m -u 1000 appuser && \
-    mkdir -p /app/media /app/static /app/logs && \
-    chown -R appuser:appuser /app
-
-USER appuser
-
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
 EXPOSE 8000
-
-ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
