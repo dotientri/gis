@@ -10,10 +10,15 @@ pipeline {
                 // Code build image nam o day
             }
         }
-        stage('Deploy to K3s (Auto)') {
+        stage('Cho Phe Duyet (Manual Approval)') {
             steps {
-                echo 'Tien hanh cap nhat thang len K3s...'
-                sh 'kubectl set image deployment/${APP_NAME} api=taikhoan/${APP_NAME}:${BUILD_NUMBER} -n default'
+                // He thong se dung hinh o day va cho con nguoi bam nut
+                input message: 'Image da san sang. Co dong y trien khai len K3s khong sếp?', ok: 'Deploy Ngay!'
+            }
+        }
+        stage('Deploy to K3s (Controlled)') {
+            steps {
+                echo 'Da duoc phep! Tien hanh cap nhat len K3s...'
             }
         }
     }
