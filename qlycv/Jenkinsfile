@@ -1,0 +1,20 @@
+pipeline {
+    agent any
+    environment {
+        APP_NAME = 'ecommerce-api'
+    }
+    stages {
+        stage('Build & Push Docker') {
+            steps {
+                echo 'Dang dong goi va day image len kho...'
+                // Code build image nam o day
+            }
+        }
+        stage('Deploy to K3s (Auto)') {
+            steps {
+                echo 'Tien hanh cap nhat thang len K3s...'
+                sh 'kubectl set image deployment/${APP_NAME} api=taikhoan/${APP_NAME}:${BUILD_NUMBER} -n default'
+            }
+        }
+    }
+}
