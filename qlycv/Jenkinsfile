@@ -1,25 +1,30 @@
-pipeline {
+pipeline{
     agent any
     environment {
-        APP_NAME = 'ecommerce-api'
+        DOCKERHUB_CREDS = credentials('dockerhub-creds')
+        DOCKERHUB_USER = "hiiamgay" // Thay bằng username Docker Hub của bạn
     }
-    stages {
-        stage('Build & Push Docker') {
+    stages{
+        stage('Build and Push Image DockerHub'){
             steps {
-                echo 'Dang dong goi va day image len kho...'
-                // Code build image nam o day
+                echo "Login DockerHub"
+                sh "docker login -u ${DOCKERHUB_CREDS_USR} -p ${DOCKERHUB_CREDS_PSW}"
+                
+                echo "Build Image Backend and Frontend"
+                // Sử dụng biến BUILD_NUMBER của Jenkins để đánh tag tự động (v1, v2, v3...)
+                sh "docker build -f qlycv/backend/Dockerfile -t ${DOCKERHUB_USER}/gis-backend:v${BUILD_NUMBER} ./qlycv/backend"
+                sh "docker build -f qlycv/frontend/Dockerfile -t ${DOCKERHUB_USER}/gis-frontend:v${BUILD_NUMBER} ./qlycv/frontend"
+                
+                echo "Push Image to DockerHub"
+                sh "docker push ${DOCKERHUB_USER}/gis-backend:v${BUILD_NUMBER}"
+                sh "docker push ${DOCKERHUB_USER}/gis-frontend:v${BUILD_NUMBER}"
             }
         }
-        stage('Cho Phe Duyet (Manual Approval)') {
-            steps {
-                // He thong se dung hinh o day va cho con nguoi bam nut
-                input message: 'Image da san sang. Co dong y trien khai len K3s khong sếp?', ok: 'Deploy Ngay!'
-            }
-        }
-        stage('Deploy to K3s (Controlled)') {
-            steps {
-                echo 'Da duoc phep! Tien hanh cap nhat len K3s...'
-            }
+    }
+    post{
+        always {
+            // Xoá thông tin đăng nhập Docker sau khi chạy xong để bảo mật
+            sh "docker logout"
         }
     }
 }
