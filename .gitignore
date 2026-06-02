@@ -34,7 +34,7 @@ backend/staticfiles/
 backend/logs/
 frontend/node_modules/
 frontend/dist/
-
+.terraform/
 # IDE
 .vscode/
 .idea/
