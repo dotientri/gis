@@ -1,0 +1,84 @@
+---
+- name: Trien khai ha tang Docker thuan, Swap, Node Exporter va Nginx
+  hosts: all
+  become: yes
+  tasks:
+    - name: Tao file RAM ao (Swap) 2GB de cuu canh cho 1GB RAM vat ly
+      command: fallocate -l 2G /swapfile
+      args:
+        creates: /swapfile
+
+    - name: Thiet lap quyen bao mat tuyet doi cho file Swap
+      file:
+        path: /swapfile
+        mode: '0600'
+
+    - name: Dinh dang file tro thanh bo nho Swap
+      command: mkswap /swapfile
+      when: ansible_swaptotal_mb < 1
+      ignore_errors: true
+
+    - name: Kich hoat Swap chay ngam vao he thong
+      command: swapon /swapfile
+      when: ansible_swaptotal_mb < 1
+      ignore_errors: true
+
+    - name: Ghi cau hinh Swap vao fstab de song sot qua moi lan reboot
+      mount:
+        name: none
+        src: /swapfile
+        fstype: swap
+        opts: sw
+        passno: '0'
+        dump: '0'
+        state: present
+
+    - name: Cai dat cac goi phu thuoc de tai Docker
+      apt:
+        name: ['apt-transport-https', 'ca-certificates', 'curl', 'software-properties-common']
+        state: present
+        update_cache: yes
+
+    - name: Them chia khoa GPG chinh chu cua Docker
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Them kho luu tru Docker danh cho Ubuntu Jammy
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable
+        state: present
+
+    - name: Cai dat nhan loi Docker CE va plugin Compose
+      apt:
+        name: ['docker-ce', 'docker-compose-plugin']
+        state: present
+        update_cache: yes
+
+    - name: Cap quyen cho azureuser chay Docker khong can sudo
+      user:
+        name: azureuser
+        groups: docker
+        append: yes
+
+    - name: Cai dat Node Exporter de thu thap thong so phan cung
+      apt:
+        name: prometheus-node-exporter
+        state: present
+
+    - name: Cai dat Nginx va Certbot de lam Reverse proxy va bao mat TLS
+      apt:
+        name: ['nginx', 'certbot', 'python3-certbot-nginx']
+        state: present
+
+    - name: Don san thu muc o cung de gan vao container he thong cong vien
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: azureuser
+        group: azureuser
+        mode: '0755'
+      loop:
+        - /opt/gis_data/postgres
+        - /opt/gis_data/backend
+        - /opt/gis_data/frontend
