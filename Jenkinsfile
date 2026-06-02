@@ -6,12 +6,12 @@ pipeline{
     }
     stages{
         stage('Check code'){
-            step{
+            steps{
                 checkout scm
             }
         }
         stage('Build Container'){
-            step{
+            steps{
                 sh 'docker build -t qlycv_backend:${BUILD_NUMBER} ./qlycv/backend'
                 sh 'docker build -t qlycv_frontend:${BUILD_NUMBER} ./qlycv/frontend'
             }
