@@ -41,6 +41,8 @@ pipeline {
                             ssh -o StrictHostKeyChecking=no $SERVER_IP "cd /opt/gis_data && docker compose down -v || true"
                             
                             ssh -o StrictHostKeyChecking=no $SERVER_IP "cd /opt/gis_data && export IMAGE_TAG=${BUILD_NUMBER} && docker compose up -d"
+                            
+                            ssh -o StrictHostKeyChecking=no $SERVER_IP "docker image prune -af"
                         '''
                     }
                 }
