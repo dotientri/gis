@@ -28,19 +28,19 @@ pipeline {
                             . $ENV_FILE
                             set +a
                             
-                            ssh -o StrictHostKeyChecking=no $SERVER_IP "mkdir -p /opt/gis_data"
+                            ssh -o StrictHostKeyChecking=no $SERVER_IP "mkdir -p ~/gis_data"
                             
-                            scp -o StrictHostKeyChecking=no $ENV_FILE $SERVER_IP:/opt/gis_data/.env
+                            scp -o StrictHostKeyChecking=no $ENV_FILE $SERVER_IP:~/gis_data/.env
                             
-                            scp -o StrictHostKeyChecking=no docker-compose.yml backup_full.sql nginx.conf $SERVER_IP:/opt/gis_data/
+                            scp -o StrictHostKeyChecking=no docker-compose.yml backup_full.sql nginx.conf $SERVER_IP:~/gis_data/
                             
                             docker save qlycv_backend:${BUILD_NUMBER} | ssh -o StrictHostKeyChecking=no $SERVER_IP "docker load"
                             
                             docker save qlycv_frontend:${BUILD_NUMBER} | ssh -o StrictHostKeyChecking=no $SERVER_IP "docker load"
                             
-                            ssh -o StrictHostKeyChecking=no $SERVER_IP "cd /opt/gis_data && docker compose down -v || true"
+                            ssh -o StrictHostKeyChecking=no $SERVER_IP "cd ~/gis_data && docker compose down -v || true"
                             
-                            ssh -o StrictHostKeyChecking=no $SERVER_IP "cd /opt/gis_data && export IMAGE_TAG=${BUILD_NUMBER} && docker compose up -d"
+                            ssh -o StrictHostKeyChecking=no $SERVER_IP "cd ~/gis_data && export IMAGE_TAG=${BUILD_NUMBER} && docker compose up -d"
                             
                             ssh -o StrictHostKeyChecking=no $SERVER_IP "docker image prune -af"
                         '''
