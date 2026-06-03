@@ -1,26 +1,28 @@
-pipeline{
+pipeline {
     agent any
-    environment{
-        CRED_ID = 'azure-vm-ssh-key-id'
 
+    environment {
+        CRED_ID = 'azure-vm-ssh-key-id'
     }
-    stages{
-        stage('Check code'){
-            steps{
+
+    stages {
+        stage('Check code') {
+            steps {
                 checkout scm
             }
         }
-        stage('Build Container'){
-            steps{
+
+        stage('Build Container') {
+            steps {
                 sh 'docker build -t qlycv_backend:${BUILD_NUMBER} ./qlycv/backend'
                 sh 'docker build -t qlycv_frontend:${BUILD_NUMBER} ./qlycv/frontend'
             }
-            
         }
+
         stage('Deploy len Azure') {
             steps {
-                withCredentials([secretFile(credentialsId: 'env-qlycv', variable: 'ENV_FILE')]){
-                    sshagent([CRED_ID]){
+                withCredentials([file(credentialsId: 'env-qlycv', variable: 'ENV_FILE')]) {
+                    sshagent([CRED_ID]) {
                         sh '''
                             set -a
                             . $ENV_FILE
@@ -39,12 +41,10 @@ pipeline{
                             ssh -o StrictHostKeyChecking=no $SERVER_IP "cd /opt/gis_data && docker compose down -v || true"
                             
                             ssh -o StrictHostKeyChecking=no $SERVER_IP "cd /opt/gis_data && export IMAGE_TAG=${BUILD_NUMBER} && docker compose up -d"
-
                         '''
                     }
-                }
                 }
             }
         }
     }
-    
+}
