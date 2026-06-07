@@ -22,8 +22,14 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DEBUG=${DEBUG}
+      - LANG=C.UTF-8
+      - LC_ALL=C.UTF-8
+      - PYTHONIOENCODING=utf-8
     depends_on:
       - db
+    volumes:
+      - ./qlycv/backend/media:/app/media
+      - ./qlycv/backend/static:/app/static
 
   frontend:
     image: qlycv_frontend:${IMAGE_TAG}
@@ -39,6 +45,8 @@ services:
       - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./qlycv/backend/media:/var/www/media:ro
+      - ./qlycv/backend/static:/var/www/static:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro 
     depends_on:
       - frontend
