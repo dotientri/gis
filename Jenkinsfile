@@ -27,7 +27,8 @@ pipeline {
                     sshagent([CRED_ID]) {
                         sh '''
                             ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "mkdir -p ${APP_DIR}/qlycv/backend/media ${APP_DIR}/qlycv/backend/static"
-                            scp -o StrictHostKeyChecking=no $ENV_FILE ${SERVER_USER}@${SERVER_IP}:${APP_DIR}/.env
+                            scp -o StrictHostKeyChecking=no $ENV_FILE ${SERVER_USER}@${SERVER_IP}:/tmp/.env
+                            ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "sudo mv /tmp/.env ${APP_DIR}/.env && sudo chown ${SERVER_USER}:${SERVER_USER} ${APP_DIR}/.env || true"
                             scp -o StrictHostKeyChecking=no docker-compose.yml backup_full.sql nginx.conf ${SERVER_USER}@${SERVER_IP}:${APP_DIR}/
                             scp -o StrictHostKeyChecking=no backend.tar frontend.tar ${SERVER_USER}@${SERVER_IP}:${APP_DIR}/
                             ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "docker load < ${APP_DIR}/backend.tar && docker load < ${APP_DIR}/frontend.tar"
