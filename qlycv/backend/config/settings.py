@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     # 'django.contrib.gis', # Uncomment if GDAL is installed and needed
     
     # Third party
+    'django_prometheus',  # <-- THÊM DÒNG NÀY
     'rest_framework',
     'corsheaders',
     'django_filters',
@@ -54,6 +55,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',  # <-- THÊM VÀO ĐẦU TIÊN
     'corsheaders.middleware.CorsMiddleware', # CORS first
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -63,6 +65,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'parks.middleware.UTF8ResponseMiddleware',  # UTF-8 encoding fix
+    'django_prometheus.middleware.PrometheusAfterMiddleware',   # <-- THÊM VÀO CUỐI CÙNG
 ]
 
 ROOT_URLCONF = 'config.urls'

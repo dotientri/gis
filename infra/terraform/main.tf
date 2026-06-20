@@ -90,6 +90,41 @@ resource "azurerm_network_security_group" "nsg" {
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
+  security_rule {
+    name                       = "Postgres_Exporter"
+    priority                   = 1005
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "9187"
+    source_address_prefix      = "*" # Nên thay dấu * này bằng IP Public mạng nhà ông để bảo mật
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "Django_Backend_Metrics"
+    priority                   = 1006
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "8000"
+    source_address_prefix      = "*" 
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "Node_Exporter"
+    priority                   = 1007
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "9100"
+    source_address_prefix      = "*" 
+    destination_address_prefix = "*"
+  }
 }
 
 resource "azurerm_network_interface" "nic" {
