@@ -6,6 +6,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('parks.urls')),
+    path('', include('django_prometheus.urls')),
 ]
 
 # Phục vụ file media (ảnh upload) trong môi trường development

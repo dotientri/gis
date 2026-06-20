@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   db:
     image: postgis/postgis:17-3.5-alpine
@@ -12,6 +14,17 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./backup_full.sql:/docker-entrypoint-initdb.d/backup_full.sql
 
+  db-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    container_name: postgres-exporter
+    ports:
+      - "9187:9187"
+    environment:
+      # Đã sửa: Đồng bộ biến môi trường và trỏ đúng về service 'db'
+      DATA_SOURCE_NAME: "postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?sslmode=disable"
+    depends_on:
+      - db
+
   backend:
     image: qlycv_backend:${IMAGE_TAG}
     container_name: qlycv_backend
@@ -25,6 +38,9 @@ services:
       - LANG=C.UTF-8
       - LC_ALL=C.UTF-8
       - PYTHONIOENCODING=utf-8
+    ports:
+      # Đã sửa: Mở port 8000 ra ngoài để Prometheus từ K3s local ở nhà kéo metrics
+      - "8000:8000"
     depends_on:
       - db
     volumes:
